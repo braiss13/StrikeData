@@ -1,0 +1,67 @@
+@page
+@model StrikeData.Pages.TeamdataModel
+@{
+    ViewData["Title"] = "Team Data";
+}
+
+<h1 class="page-title">Team Data</h1>
+
+<h3 class="table-subtitle">Win Trends - <span class="highlight">Home</span></h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Team</th>
+            <th>Record</th>
+            <th>Win %</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.HomeData != null && Model.HomeData.Count > 0)
+        {
+            foreach (var row in Model.HomeData)
+            {
+                <tr>
+                    <td>@row[0]</td> <!-- Team -->
+                    <td>@row[1]</td> <!-- Record -->
+                    <td>@row[2]</td> <!-- Win % -->
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="3">No data available</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h3 class="table-subtitle">Win Trends - <span class="highlight">Away</span></h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Team</th>
+            <th>Record</th>
+            <th>Win %</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.AwayData != null && Model.AwayData.Count > 0)
+        {
+            foreach (var row in Model.AwayData)
+            {
+                <tr>
+                    <td>@row[0]</td> <!-- Team -->
+                    <td>@row[1]</td> <!-- Record -->
+                    <td>@row[2]</td> <!-- Win % -->
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="3">No data available</td>
+            </tr>
+        }
+    </tbody>
+</table>

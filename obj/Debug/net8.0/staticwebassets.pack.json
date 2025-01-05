@@ -9,8 +9,24 @@
       "PackagePath": "staticwebassets\\css\\site.css"
     },
     {
+      "Id": "C:\\Users\\bsamp\\Documents\\Uni\\TFG\\StrikeData\\wwwroot\\css\\styles.css",
+      "PackagePath": "staticwebassets\\css\\styles.css"
+    },
+    {
       "Id": "C:\\Users\\bsamp\\Documents\\Uni\\TFG\\StrikeData\\wwwroot\\favicon.ico",
       "PackagePath": "staticwebassets\\favicon.ico"
+    },
+    {
+      "Id": "C:\\Users\\bsamp\\Documents\\Uni\\TFG\\StrikeData\\wwwroot\\images\\baseball.png",
+      "PackagePath": "staticwebassets\\images\\baseball.png"
+    },
+    {
+      "Id": "C:\\Users\\bsamp\\Documents\\Uni\\TFG\\StrikeData\\wwwroot\\images\\baseball_field.jpg",
+      "PackagePath": "staticwebassets\\images\\baseball_field.jpg"
+    },
+    {
+      "Id": "C:\\Users\\bsamp\\Documents\\Uni\\TFG\\StrikeData\\wwwroot\\images\\bating.jpg",
+      "PackagePath": "staticwebassets\\images\\bating.jpg"
     },
     {
       "Id": "C:\\Users\\bsamp\\Documents\\Uni\\TFG\\StrikeData\\wwwroot\\js\\site.js",

@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "mh0aZljxeE4=",
+  "dgSpecHash": "CbwH0lr0YMA=",
   "success": true,
   "projectFilePath": "C:\\Users\\bsamp\\Documents\\Uni\\TFG\\StrikeData\\StrikeData.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\bsamp\\.nuget\\packages\\htmlagilitypack\\1.11.72\\htmlagilitypack.1.11.72.nupkg.sha512"
+  ],
   "logs": []
 }

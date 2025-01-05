@@ -28,3 +28,7 @@ C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\refint\StrikeData.d
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.pdb
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.genruntimeconfig.cache
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\ref\StrikeData.dll
+C:\Users\bsamp\Documents\Uni\TFG\StrikeData\bin\Debug\net8.0\HtmlAgilityPack.dll
+C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.csproj.AssemblyReference.cache
+C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.sourcelink.json
+C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.csproj.Up2Date

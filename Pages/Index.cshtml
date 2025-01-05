@@ -1,10 +1,16 @@
 ﻿@page
-@model IndexModel
+@model StrikeData.Pages.IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Welcome to StrikeData";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>This will be a Index page of StrikeData</a>.</p>
+<div class="welcome">
+    <img src="/images/bating.jpg" alt="Baseball" />
+    <h1>Welcome to StrikeData</h1>
+    <p>Your one-stop platform for comprehensive MLB statistics.</p>
+
+    <div class="buttons">
+        <a class="btn" href="/Teamdata">View Team Data</a>
+        <a class="btn secondary" href="/Privacy">Privacy Policy</a>
+    </div>
 </div>

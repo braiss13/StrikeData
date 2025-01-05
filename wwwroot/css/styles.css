@@ -1,0 +1,211 @@
+/* Reset */
+body, h1, p, a {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* General */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #1e3a8a, #3b82f6); /* Degradado azul */
+    color: #f1f1f1;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Header más grande */
+header {
+    background-color: #1e3a8a; /* Fondo azul oscuro */
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* Sombra sutil */
+    padding: 20px 0; /* Incrementamos el padding para hacerlo más alto */
+}
+
+/* Centrar los enlaces dentro del header */
+header nav {
+    display: flex;
+    justify-content: center; /* Centra horizontalmente */
+    align-items: center; /* Centra verticalmente */
+}
+
+/* Estilo de los enlaces del header */
+header nav a {
+    color: #93c5fd; /* Azul claro */
+    text-decoration: none;
+    font-weight: 500;
+    margin: 0 15px; /* Espaciado entre enlaces */
+    transition: color 0.3s ease; /* Solo cambia el color al pasar el ratón */
+    font-size: 1.2em; /* Tamaño de fuente más grande para más legibilidad */
+}
+
+header nav a:hover {
+    color: #ffffff; /* Blanco al pasar el ratón */
+}
+
+
+
+/* Welcome Section */
+.welcome {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.welcome img {
+    width: 220px;
+    border-radius: 15px;
+    margin-bottom: 25px;
+    box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.4);
+    border: 3px solid #ffffff;
+}
+
+.welcome h1 {
+    font-size: 3.5em;
+    font-weight: 800;
+    margin-bottom: 15px;
+    color: #ffffff;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.welcome p {
+    font-size: 1.3em;
+    margin-bottom: 35px;
+    color: #e5e7eb;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.buttons .btn {
+    display: inline-block;
+    margin: 10px;
+    padding: 12px 30px;
+    font-size: 1.2em;
+    color: #ffffff;
+    background-color: #2563eb; /* Azul vivo */
+    text-decoration: none;
+    border-radius: 30px;
+    box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.3);
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.buttons .btn:hover {
+    background-color: #3b82f6; /* Azul claro */
+    transform: translateY(-3px);
+    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.4);
+}
+
+.buttons .btn.secondary {
+    background-color: #93c5fd; /* Azul pálido */
+    color: #1e3a8a; /* Azul oscuro */
+    border: 2px solid #2563eb;
+}
+
+.buttons .btn.secondary:hover {
+    background-color: #2563eb;
+    color: #ffffff;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px;
+    background-color: #1e3a8a;
+    color: #93c5fd;
+    font-size: 0.9em;
+    box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.4);
+}
+
+
+/* Estilos para las tablas */
+.table {
+    width: 90%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Cambiar el color del encabezado de las tablas */
+.table-subtitle {
+    text-align: left;
+    font-size: 1.8em; /* Tamaño más grande */
+    font-weight: bold;
+    margin: 20px 0 10px 10px;
+    color: #00eeff; /* Naranja vivo */
+    text-transform: uppercase; /* Texto en mayúsculas */
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3); /* Sombra para destacar */
+}
+
+.table-subtitle .highlight {
+    color: #00eeff; /* Naranja más vivo */
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+
+/* Encabezado de la tabla */
+.table thead {
+    background-color: #1e40af; /* Azul oscuro */
+    color: #ffffff; /* Texto blanco */
+    font-size: 1.1em;
+    text-align: center;
+}
+
+/* Filas de la tabla */
+.table tbody tr:nth-child(odd) {
+    background-color: #f3f4f6; /* Gris claro */
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: #e5e7eb; /* Gris más claro */
+}
+
+/* Tamaño y estilo de las celdas */
+.table td {
+    color: #374151; /* Gris oscuro */
+    font-size: 1.2em; /* Tamaño de texto más grande */
+    padding: 20px 25px; /* Más espacio en las celdas */
+    text-align: center;
+}
+
+
+
+/* Hover en filas */
+.table tbody tr:hover {
+    background-color: #7dd3fc; /* Azul vivo al pasar el ratón */
+    transition: background-color 0.3s ease;
+}
+
+
+/* Estilo para el título general */
+.page-title {
+    text-align: center;
+    font-size: 3em;
+    font-weight: bold;
+    margin: 20px 0;
+    color: #ffffff; /* Blanco puro */
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+
+/* Estilo para subtítulos */
+.section-title {
+    text-align: center;
+    font-size: 2em;
+    font-weight: 700;
+    margin: 20px 0;
+    color: #f1f1f1; /* Color oscuro para contraste */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); /* Sombras para mejor visibilidad */
+}
+
