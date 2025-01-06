@@ -11,6 +11,7 @@ namespace StrikeData.Pages
 
         public List<List<string>> HomeData { get; set; } = new List<List<string>>();
         public List<List<string>> AwayData { get; set; } = new List<List<string>>();
+        public List<List<string>> WinTrendsData { get; set; } = new List<List<string>>();
 
         public TeamdataModel()
         {
@@ -21,9 +22,11 @@ namespace StrikeData.Pages
         {
             string homeUrl = "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_home";
             string awayUrl = "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_away";
+            string winTrendsUrl = "https://www.teamrankings.com/mlb/trends/win_trends/";
 
             HomeData = await _scraper.ScrapeTable(homeUrl);
             AwayData = await _scraper.ScrapeTable(awayUrl);
+            WinTrendsData = await _scraper.ScrapeTable(winTrendsUrl); 
         }
     }
 }

@@ -6,62 +6,128 @@
 
 <h1 class="page-title">Team Data</h1>
 
-<h3 class="table-subtitle">Win Trends - <span class="highlight">Home</span></h3>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Team</th>
-            <th>Record</th>
-            <th>Win %</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (Model.HomeData != null && Model.HomeData.Count > 0)
-        {
-            foreach (var row in Model.HomeData)
-            {
-                <tr>
-                    <td>@row[0]</td> <!-- Team -->
-                    <td>@row[1]</td> <!-- Record -->
-                    <td>@row[2]</td> <!-- Win % -->
-                </tr>
-            }
-        }
-        else
-        {
-            <tr>
-                <td colspan="3">No data available</td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="table-selector">
+    <label for="tableDropdown" class="dropdown-label">Select a table:</label>
+    <select id="tableDropdown" class="dropdown" onchange="switchTable()">
+        <option value="overall">All</option>
+        <option value="home">Home</option>
+        <option value="away">Away</option>
+    </select>
+</div>
 
-<h3 class="table-subtitle">Win Trends - <span class="highlight">Away</span></h3>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Team</th>
-            <th>Record</th>
-            <th>Win %</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (Model.AwayData != null && Model.AwayData.Count > 0)
-        {
-            foreach (var row in Model.AwayData)
+<div id="overallTable" class="table-container">
+    <h3 class="table-subtitle">Win Trends - <span class="highlight">Overall</span></h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Team</th>
+                <th>Record</th>
+                <th>Win %</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.WinTrendsData != null && Model.WinTrendsData.Count > 0)
+            {
+                foreach (var row in Model.WinTrendsData)
+                {
+                    <tr>
+                        <td>@row[0]</td> <!-- Team -->
+                        <td>@row[1]</td> <!-- Record -->
+                        <td>@row[2]</td> <!-- Win % -->
+                    </tr>
+                }
+            }
+            else
             {
                 <tr>
-                    <td>@row[0]</td> <!-- Team -->
-                    <td>@row[1]</td> <!-- Record -->
-                    <td>@row[2]</td> <!-- Win % -->
+                    <td colspan="3">No data available</td>
                 </tr>
             }
-        }
-        else
-        {
+        </tbody>
+    </table>
+</div>
+
+<div id="homeTable" class="table-container hidden">
+    <h3 class="table-subtitle">Win Trends - <span class="highlight">Home</span></h3>
+    <table class="table">
+        <thead>
             <tr>
-                <td colspan="3">No data available</td>
+                <th>Team</th>
+                <th>Record</th>
+                <th>Win %</th>
             </tr>
+        </thead>
+        <tbody>
+            @if (Model.HomeData != null && Model.HomeData.Count > 0)
+            {
+                foreach (var row in Model.HomeData)
+                {
+                    <tr>
+                        <td>@row[0]</td> <!-- Team -->
+                        <td>@row[1]</td> <!-- Record -->
+                        <td>@row[2]</td> <!-- Win % -->
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="3">No data available</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div id="awayTable" class="table-container hidden">
+    <h3 class="table-subtitle">Win Trends - <span class="highlight">Away</span></h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Team</th>
+                <th>Record</th>
+                <th>Win %</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.AwayData != null && Model.AwayData.Count > 0)
+            {
+                foreach (var row in Model.AwayData)
+                {
+                    <tr>
+                        <td>@row[0]</td> <!-- Team -->
+                        <td>@row[1]</td> <!-- Record -->
+                        <td>@row[2]</td> <!-- Win % -->
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="3">No data available</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function switchTable() {
+        const selectedTable = document.getElementById('tableDropdown').value;
+
+        // Ocultar todas las tablas
+        document.getElementById('overallTable').classList.add('hidden');
+        document.getElementById('homeTable').classList.add('hidden');
+        document.getElementById('awayTable').classList.add('hidden');
+
+        // Mostrar la tabla seleccionada
+        if (selectedTable === 'overall') {
+            document.getElementById('overallTable').classList.remove('hidden');
+        } else if (selectedTable === 'home') {
+            document.getElementById('homeTable').classList.remove('hidden');
+        } else if (selectedTable === 'away') {
+            document.getElementById('awayTable').classList.remove('hidden');
         }
-    </tbody>
-</table>
+    }
+</script>
+
