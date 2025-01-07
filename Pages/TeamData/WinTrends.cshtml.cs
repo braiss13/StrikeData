@@ -3,9 +3,9 @@ using StrikeData.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace StrikeData.Pages
+namespace StrikeData.Pages.TeamData
 {
-    public class TeamdataModel : PageModel
+    public class WinTrendsModel : PageModel
     {
         private readonly TeamRankingScraper _scraper;
 
@@ -13,7 +13,7 @@ namespace StrikeData.Pages
         public List<List<string>> AwayData { get; set; } = new List<List<string>>();
         public List<List<string>> WinTrendsData { get; set; } = new List<List<string>>();
 
-        public TeamdataModel()
+        public WinTrendsModel()
         {
             _scraper = new TeamRankingScraper();
         }
@@ -22,11 +22,11 @@ namespace StrikeData.Pages
         {
             string homeUrl = "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_home";
             string awayUrl = "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_away";
-            string winTrendsUrl = "https://www.teamrankings.com/mlb/trends/win_trends/";
+            string overallUrl = "https://www.teamrankings.com/mlb/trends/win_trends/";
 
             HomeData = await _scraper.ScrapeTable(homeUrl);
             AwayData = await _scraper.ScrapeTable(awayUrl);
-            WinTrendsData = await _scraper.ScrapeTable(winTrendsUrl); 
+            WinTrendsData = await _scraper.ScrapeTable(overallUrl);
         }
     }
 }

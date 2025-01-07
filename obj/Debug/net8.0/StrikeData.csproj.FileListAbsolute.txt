@@ -6,6 +6,8 @@ C:\Users\bsamp\Documents\Uni\TFG\StrikeData\bin\Debug\net8.0\StrikeData.deps.jso
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\bin\Debug\net8.0\StrikeData.runtimeconfig.json
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\bin\Debug\net8.0\StrikeData.dll
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\bin\Debug\net8.0\StrikeData.pdb
+C:\Users\bsamp\Documents\Uni\TFG\StrikeData\bin\Debug\net8.0\HtmlAgilityPack.dll
+C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.csproj.AssemblyReference.cache
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.GeneratedMSBuildEditorConfig.editorconfig
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.AssemblyInfoInputs.cache
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.AssemblyInfo.cs
@@ -13,6 +15,7 @@ C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.csproj.C
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.MvcApplicationPartsAssemblyInfo.cache
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.RazorAssemblyInfo.cache
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.RazorAssemblyInfo.cs
+C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.sourcelink.json
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\staticwebassets.build.json
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\staticwebassets.development.json
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\staticwebassets\msbuild.StrikeData.Microsoft.AspNetCore.StaticWebAssets.props
@@ -23,12 +26,9 @@ C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\staticwebassets.pac
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\scopedcss\Pages\Shared\_Layout.cshtml.rz.scp.css
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\scopedcss\bundle\StrikeData.styles.css
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\scopedcss\projectbundle\StrikeData.bundle.scp.css
+C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.csproj.Up2Date
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.dll
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\refint\StrikeData.dll
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.pdb
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.genruntimeconfig.cache
 C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\ref\StrikeData.dll
-C:\Users\bsamp\Documents\Uni\TFG\StrikeData\bin\Debug\net8.0\HtmlAgilityPack.dll
-C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.csproj.AssemblyReference.cache
-C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.sourcelink.json
-C:\Users\bsamp\Documents\Uni\TFG\StrikeData\obj\Debug\net8.0\StrikeData.csproj.Up2Date
