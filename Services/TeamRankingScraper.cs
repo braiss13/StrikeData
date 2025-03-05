@@ -18,7 +18,7 @@ namespace StrikeData.Services
                 // Descargar contenido HTML
                 var response = await client.GetStringAsync(url);
 
-                // Cargar HTML con HtmlAgilityPack
+                // Cargar HTML con HtmlAgilityPack en un obketo DOM para poder recorrer y consultar
                 HtmlDocument doc = new HtmlDocument();
                 doc.LoadHtml(response);
 

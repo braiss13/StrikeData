@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\bsamp\\Documents\\Uni\\TFG\\StrikeData\\StrikeData.csproj": {}
+    "C:\\Users\\bsamp\\Documents\\Formacion\\TFG\\StrikeData\\StrikeData.csproj": {}
   },
   "projects": {
-    "C:\\Users\\bsamp\\Documents\\Uni\\TFG\\StrikeData\\StrikeData.csproj": {
+    "C:\\Users\\bsamp\\Documents\\Formacion\\TFG\\StrikeData\\StrikeData.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\bsamp\\Documents\\Uni\\TFG\\StrikeData\\StrikeData.csproj",
+        "projectUniqueName": "C:\\Users\\bsamp\\Documents\\Formacion\\TFG\\StrikeData\\StrikeData.csproj",
         "projectName": "StrikeData",
-        "projectPath": "C:\\Users\\bsamp\\Documents\\Uni\\TFG\\StrikeData\\StrikeData.csproj",
+        "projectPath": "C:\\Users\\bsamp\\Documents\\Formacion\\TFG\\StrikeData\\StrikeData.csproj",
         "packagesPath": "C:\\Users\\bsamp\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\bsamp\\Documents\\Uni\\TFG\\StrikeData\\obj\\",
+        "outputPath": "C:\\Users\\bsamp\\Documents\\Formacion\\TFG\\StrikeData\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\bsamp\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -46,6 +46,16 @@
             "HtmlAgilityPack": {
               "target": "Package",
               "version": "[1.11.72, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.1, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[9.0.3, )"
             }
           },
           "imports": [
