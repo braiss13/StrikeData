@@ -22,7 +22,7 @@ namespace StrikeData.Pages.TeamData
         {
             string homeUrl = "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_home";
             string awayUrl = "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_away";
-            string overallUrl = "https://www.teamrankings.com/mlb/trends/win_trends/";
+            string overallUrl = "https://www.teamrankings.com/mlb/trends/win_trends";
 
             HomeData = await _scraper.ScrapeTable(homeUrl);
             AwayData = await _scraper.ScrapeTable(awayUrl);
