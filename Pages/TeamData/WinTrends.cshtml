@@ -6,128 +6,22 @@
 
 <h1 class="page-title">Win Trends</h1>
 
-<div class="table-selector">
-    <label for="tableDropdown" class="dropdown-label">Select a table:</label>
-    <select id="winTrendsDropdown" class="dropdown" onchange="switchWinTrendsTable()">
-        <option value="overall">All</option>
-        <option value="home">Home</option>
-        <option value="away">Away</option>
-    </select>
-</div>
-
-<div id="overallWinTrendsTable" class="table-container">
-    <h3 class="table-subtitle">Win Trends - <span class="highlight">Overall</span></h3>
-    <table class="table">
-        <thead>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Team</th>
+            <th>Record</th>
+            <th>Win %</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var team in Model.Teams)
+        {
             <tr>
-                <th>Team</th>
-                <th>Record</th>
-                <th>Win %</th>
+                <td>@team.Name</td>
+                <td>@team.OverallRecord</td>
+                <td>@team.WinPercentage?.ToString("P2")</td>
             </tr>
-        </thead>
-        <tbody>
-            @if (Model.WinTrendsData != null && Model.WinTrendsData.Count > 0)
-            {
-                foreach (var row in Model.WinTrendsData)
-                {
-                    <tr>
-                        <td>@row[0]</td>
-                        <td>@row[1]</td>
-                        <td>@row[2]</td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="3">No data available</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
-
-<div id="homeWinTrendsTable" class="table-container hidden">
-    <h3 class="table-subtitle">Win Trends - <span class="highlight">Home</span></h3>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Team</th>
-                <th>Record</th>
-                <th>Win %</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Model.HomeData != null && Model.HomeData.Count > 0)
-            {
-                foreach (var row in Model.HomeData)
-                {
-                    <tr>
-                        <td>@row[0]</td>
-                        <td>@row[1]</td>
-                        <td>@row[2]</td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="3">No data available</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
-
-<div id="awayWinTrendsTable" class="table-container hidden">
-    <h3 class="table-subtitle">Win Trends - <span class="highlight">Away</span></h3>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Team</th>
-                <th>Record</th>
-                <th>Win %</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Model.AwayData != null && Model.AwayData.Count > 0)
-            {
-                foreach (var row in Model.AwayData)
-                {
-                    <tr>
-                        <td>@row[0]</td>
-                        <td>@row[1]</td>
-                        <td>@row[2]</td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="3">No data available</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
-
-<script>
-    function switchWinTrendsTable() {
-        const selectedTable = document.getElementById('winTrendsDropdown').value;
-
-        // Ocultar todas las tablas
-        document.getElementById('overallWinTrendsTable').classList.add('hidden');
-        document.getElementById('homeWinTrendsTable').classList.add('hidden');
-        document.getElementById('awayWinTrendsTable').classList.add('hidden');
-
-        // Mostrar la tabla seleccionada
-        if (selectedTable === 'overall') {
-            document.getElementById('overallWinTrendsTable').classList.remove('hidden');
-        } else if (selectedTable === 'home') {
-            document.getElementById('homeWinTrendsTable').classList.remove('hidden');
-        } else if (selectedTable === 'away') {
-            document.getElementById('awayWinTrendsTable').classList.remove('hidden');
         }
-    }
-</script>
-
+    </tbody>
+</table>

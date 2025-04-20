@@ -1,32 +1,27 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using StrikeData.Services;
+using StrikeData.Data;
+using StrikeData.Models;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Linq;
 
 namespace StrikeData.Pages.TeamData
 {
     public class WinTrendsModel : PageModel
     {
-        private readonly TeamRankingScraper _scraper;
+        private readonly AppDbContext _context;
 
-        public List<List<string>> HomeData { get; set; } = new List<List<string>>();
-        public List<List<string>> AwayData { get; set; } = new List<List<string>>();
-        public List<List<string>> WinTrendsData { get; set; } = new List<List<string>>();
-
-        public WinTrendsModel()
+        public WinTrendsModel(AppDbContext context)
         {
-            _scraper = new TeamRankingScraper();
+            _context = context;
         }
 
-        public async Task OnGetAsync()
-        {
-            string homeUrl = "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_home";
-            string awayUrl = "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_away";
-            string overallUrl = "https://www.teamrankings.com/mlb/trends/win_trends";
+        public List<Team> Teams { get; set; }
 
-            HomeData = await _scraper.ScrapeTable(homeUrl);
-            AwayData = await _scraper.ScrapeTable(awayUrl);
-            WinTrendsData = await _scraper.ScrapeTable(overallUrl);
+        public void OnGet()
+        {
+            Teams = _context.Teams
+                .Where(t => t.OverallRecord != null && t.WinPercentage != null)
+                .ToList();
         }
     }
 }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using StrikeData.Data;
@@ -11,9 +12,11 @@ using StrikeData.Data;
 namespace StrikeData.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250418203112_MakeTeamFieldsNullable")]
+    partial class MakeTeamFieldsNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -114,24 +117,6 @@ namespace StrikeData.Migrations
                     b.ToTable("Players");
                 });
 
-            modelBuilder.Entity("StrikeData.Models.StatType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("StatTypes");
-                });
-
             modelBuilder.Entity("StrikeData.Models.Team", b =>
                 {
                     b.Property<int>("Id")
@@ -140,13 +125,28 @@ namespace StrikeData.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<float?>("AwayPerformance")
+                        .HasColumnType("real");
+
                     b.Property<string>("AwayRecord")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<float?>("HitsPerGame")
+                        .HasColumnType("real");
+
+                    b.Property<float?>("HomePerformance")
+                        .HasColumnType("real");
+
                     b.Property<string>("HomeRecord")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<float?>("Last3Games")
+                        .HasColumnType("real");
+
+                    b.Property<float?>("LastGame")
+                        .HasColumnType("real");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -157,6 +157,12 @@ namespace StrikeData.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<float?>("RunsPerGame")
+                        .HasColumnType("real");
+
+                    b.Property<int>("SeasonYear")
+                        .HasColumnType("integer");
+
                     b.Property<float?>("WinPercentage")
                         .HasColumnType("real");
 
@@ -166,53 +172,6 @@ namespace StrikeData.Migrations
                         .IsUnique();
 
                     b.ToTable("Teams");
-                });
-
-            modelBuilder.Entity("StrikeData.Models.TeamStat", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<float?>("Away")
-                        .HasColumnType("real");
-
-                    b.Property<int>("CurrentSeason")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("Games")
-                        .HasColumnType("integer");
-
-                    b.Property<float?>("Home")
-                        .HasColumnType("real");
-
-                    b.Property<float?>("Last3Games")
-                        .HasColumnType("real");
-
-                    b.Property<float?>("LastGame")
-                        .HasColumnType("real");
-
-                    b.Property<float?>("PrevSeason")
-                        .HasColumnType("real");
-
-                    b.Property<int>("StatTypeId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TeamId")
-                        .HasColumnType("integer");
-
-                    b.Property<float?>("Total")
-                        .HasColumnType("real");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StatTypeId");
-
-                    b.HasIndex("TeamId");
-
-                    b.ToTable("TeamStats");
                 });
 
             modelBuilder.Entity("StrikeData.Models.Match", b =>
@@ -243,30 +202,6 @@ namespace StrikeData.Migrations
                     b.Navigation("Team");
                 });
 
-            modelBuilder.Entity("StrikeData.Models.TeamStat", b =>
-                {
-                    b.HasOne("StrikeData.Models.StatType", "StatType")
-                        .WithMany("TeamStats")
-                        .HasForeignKey("StatTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("StrikeData.Models.Team", "Team")
-                        .WithMany("TeamStats")
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StatType");
-
-                    b.Navigation("Team");
-                });
-
-            modelBuilder.Entity("StrikeData.Models.StatType", b =>
-                {
-                    b.Navigation("TeamStats");
-                });
-
             modelBuilder.Entity("StrikeData.Models.Team", b =>
                 {
                     b.Navigation("AwayMatches");
@@ -274,8 +209,6 @@ namespace StrikeData.Migrations
                     b.Navigation("HomeMatches");
 
                     b.Navigation("Players");
-
-                    b.Navigation("TeamStats");
                 });
 #pragma warning restore 612, 618
         }

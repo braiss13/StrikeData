@@ -6,112 +6,20 @@
 
 <h1 class="page-title">Team Stats</h1>
 
-<div class="table-selector">
-    <label for="statsDropdown" class="dropdown-label">Select a stat:</label>
-    <select id="statsDropdown" class="dropdown" onchange="switchStatsTable()">
-        <option value="runs">Runs</option>
-        <option value="hits">Hits</option>
-    </select>
-</div>
-
-<div id="runsPerGameTable" class="table-container">
-    <h3 class="table-subtitle">Runs per Game</h3>
-    <table class="table">
-        <thead>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Team</th>
+            <th>Runs/Game</th>
+            <th>Hits/Game</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var team in Model.Teams)
+        {
             <tr>
-                <th>Rank</th>
-                <th>Team</th>
-                <th>2025</th>
-                <th>Last 3</th>
-                <th>Last 1</th>
-                <th>Home</th>
-                <th>Away</th>
-                <th>2024</th>
+                <td>@team.Name</td>
             </tr>
-        </thead>
-        <tbody>
-            @if (Model.RunsData != null && Model.RunsData.Count > 0)
-            {
-                foreach (var row in Model.RunsData)
-                {
-                    <tr>
-                        <td>@row[0]</td>
-                        <td>@row[1]</td>
-                        <td>@row[2]</td>
-                        <td>@row[3]</td>
-                        <td>@row[4]</td>
-                        <td>@row[5]</td>
-                        <td>@row[6]</td>
-                        <td>@row[7]</td>
-                        
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="2">No data available</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
-
-<div id="hitsPerGameTable" class="table-container hidden">
-    <h3 class="table-subtitle">Hits per Game</h3>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Rank</th>
-                <th>Team</th>
-                <th>2024</th>
-                <th>Last 3</th>
-                <th>Last 1</th>
-                <th>Home</th>
-                <th>Away</th>
-                <th>2023</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Model.HitsData != null && Model.HitsData.Count > 0)
-            {
-                foreach (var row in Model.HitsData)
-                {
-                    <tr>
-                        <td>@row[0]</td>
-                        <td>@row[1]</td>
-                        <td>@row[2]</td>
-                        <td>@row[3]</td>
-                        <td>@row[4]</td>
-                        <td>@row[5]</td>
-                        <td>@row[6]</td>
-                        <td>@row[7]</td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="2">No data available</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
-
-<script>
-    function switchStatsTable() {
-        const selectedTable = document.getElementById('statsDropdown').value;
-
-        // Ocultar todas las tablas
-        document.getElementById('runsPerGameTable').classList.add('hidden');
-        document.getElementById('hitsPerGameTable').classList.add('hidden');
-
-        // Mostrar la tabla seleccionada
-        if (selectedTable === 'runs') {
-            document.getElementById('runsPerGameTable').classList.remove('hidden');
-        } else if (selectedTable === 'hits') {
-            document.getElementById('hitsPerGameTable').classList.remove('hidden');
         }
-    }
-</script>
+    </tbody>
+</table>

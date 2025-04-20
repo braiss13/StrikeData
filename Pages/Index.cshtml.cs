@@ -1,31 +1,24 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using StrikeData.Services;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using StrikeData.Data;
 
 namespace StrikeData.Pages
 {
     public class IndexModel : PageModel
     {
-        private readonly TeamRankingScraper _scraper;
+        private readonly TeamDataImporter _importer;
 
-        // Propiedades para almacenar los datos de las tablas
-        public List<List<string>> HomeData { get; set; } = new List<List<string>>();
-        public List<List<string>> AwayData { get; set; } = new List<List<string>>();
-
-        public IndexModel()
+        public IndexModel(AppDbContext context)
         {
-            _scraper = new TeamRankingScraper();
+            //_importer = new TeamDataImporter(context);
         }
 
         public async Task OnGetAsync()
         {
-            string homeUrl = "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_home";
-            string awayUrl = "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_away";
-
-            // Obtener datos de ambas tablas
-            HomeData = await _scraper.ScrapeTable(homeUrl);
-            AwayData = await _scraper.ScrapeTable(awayUrl);
+            await _importer.ImportWinTrendsAsync();
+            await _importer.ImportRunsPerGameAsync();
+            await _importer.ImportHitsPerGameAsync();
         }
     }
 }
