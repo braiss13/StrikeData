@@ -11,14 +11,13 @@ namespace StrikeData.Pages
 
         public IndexModel(AppDbContext context)
         {
-            //_importer = new TeamDataImporter(context);
+            _importer = new TeamDataImporter(context);
         }
 
         public async Task OnGetAsync()
         {
             await _importer.ImportWinTrendsAsync();
-            await _importer.ImportRunsPerGameAsync();
-            await _importer.ImportHitsPerGameAsync();
+            await _importer.ImportAllStatsAsync();
         }
     }
 }

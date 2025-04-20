@@ -1,24 +1,49 @@
 @page
 @model StrikeData.Pages.TeamData.StatsModel
 @{
-    ViewData["Title"] = "Stats";
+    ViewData["Title"] = "Team Stats";
 }
 
 <h1 class="page-title">Team Stats</h1>
 
+<!-- Selector desplegable para filtrar por tipo de estadística -->
+<form method="get" class="table-selector">
+    <label for="statDropdown" class="dropdown-label">Select a stat type:</label>
+    <select id="statDropdown" name="SelectedStatTypeId" class="dropdown" onchange="this.form.submit()">
+        <option value="">-- All --</option>
+        @foreach (var statType in Model.StatTypes)
+        {
+            var isSelected = statType.Id == Model.SelectedStatTypeId ? "selected" : "";
+            <option value="@statType.Id" selected="@isSelected">@statType.Name</option>
+        }
+    </select>
+</form>
+
+
+<!-- Tabla con los datos de TeamStats -->
 <table class="table">
     <thead>
         <tr>
             <th>Team</th>
-            <th>Runs/Game</th>
-            <th>Hits/Game</th>
+            <th>2025</th>
+            <th>Last 3</th>
+            <th>Last 1</th>
+            <th>Home</th>
+            <th>Away</th>
+            <th>2024</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var team in Model.Teams)
+        @foreach (var stat in Model.TeamStats)
         {
             <tr>
-                <td>@team.Name</td>
+                <td>@stat.Team.Name</td>
+                <td>@(stat.CurrentSeason)</td>
+                <td>@(stat.Last3Games ?? 0)</td>
+                <td>@(stat.LastGame ?? 0)</td>
+                <td>@(stat.Home ?? 0)</td>
+                <td>@(stat.Away ?? 0)</td>
+                <td>@(stat.PrevSeason ?? 0)</td>
             </tr>
         }
     </tbody>
