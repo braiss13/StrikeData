@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace StrikeData.Services
 {
@@ -19,9 +20,10 @@ namespace StrikeData.Services
             _httpClient = new HttpClient();
         }
 
+        /*
         public async Task ImportWinTrendsAsync()
         {
-            /*
+
             var url = "https://www.teamrankings.com/mlb/trends/win_trends";
             var rows = await ScrapeTable(url);
 
@@ -46,11 +48,17 @@ namespace StrikeData.Services
             }
 
             await _context.SaveChangesAsync();
-            */
+            
         }
+        */
 
-          public async Task ImportAllStatsAsync()
+        public async Task ImportAllStatsAsync()
         {
+
+            // 1. Primero, scrapea la página de la MLB para obtener TOTAL y GAMES
+            await ImportStatsFromMLBAsync();
+
+            // 2. Luego, el scraping de TeamRankings donde se obtienen los promedios por partido de cada aspecto
             var stats = new Dictionary<string, string>
             {
                 { "Runs", "https://www.teamrankings.com/mlb/stat/runs-per-game" },
@@ -82,9 +90,134 @@ namespace StrikeData.Services
             }
         }
 
+        public async Task ImportStatsFromMLBAsync()
+        {
+            var url = "https://www.mlb.com/stats/team";
+            var web = new HtmlWeb();
+            var doc = web.Load(url);
+
+            var statColumnMap = new Dictionary<string, string>
+            {
+                { "R", "Runs" },
+                { "AB", "At Bat" },
+                { "H", "Hits" },
+                { "HR", "Home Runs" },
+                { "2B", "Doubles" },
+                { "3B", "Triples" },
+                { "RBI", "RBIs" },
+                { "BB", "Walks / Base on Ball" },
+                { "SO", "Strikeouts (SO)" },
+                { "SB", "Stolen Bases (SB)" },
+                { "CS", "Caught Stealing" },
+                { "SF", "Sacrifice Flys" },
+                { "HBP", "Hit by pitch" },
+                { "GIDP", "Grounded into Double Plays" },
+                { "TB", "Total Bases" }
+            };
+
+            var table = doc.DocumentNode.SelectSingleNode("//table[contains(@class, 'bui-table')]");
+            if (table == null) return;
+
+            // Mapear los encabezados a índices
+            var headerCells = table.SelectSingleNode(".//thead/tr").SelectNodes("th");
+            var headerMap = new Dictionary<string, int>();
+
+            for (int i = 0; i < headerCells.Count; i++)
+            {
+                string colName = headerCells[i].InnerText.Trim();
+                if (colName == "Team" || colName == "G" || statColumnMap.ContainsKey(colName))
+                {
+                    headerMap[colName] = i;
+                }
+            }
+
+            // Validar existencia de columnas clave
+            if (!headerMap.ContainsKey("Team") || !headerMap.ContainsKey("G")) return;
+
+            var rows = table.SelectNodes(".//tbody/tr");
+
+            foreach (var row in rows)
+            {
+                var cells = row.SelectNodes("td");
+                if (cells == null || cells.Count <= headerMap["G"]) continue;
+
+                string teamName = cells[headerMap["Team"]].InnerText.Trim();
+                string gamesRaw = cells[headerMap["G"]].InnerText.Trim();
+
+                // Normalizar nombre si fuera necesario (opcional)
+                teamName = TeamNameNormalizer.Normalize(teamName); // si has creado esta clase
+
+                var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
+                if (team == null)
+                {
+                    team = new Team { Name = teamName };
+                    _context.Teams.Add(team);
+                    await _context.SaveChangesAsync();
+                }
+
+                if (int.TryParse(gamesRaw.Replace(",", ""), out int parsedGames))
+                {
+                    team.Games = parsedGames;
+                    Console.WriteLine($"✅ {teamName} => Games: {parsedGames}");
+                }
+                else
+                {
+                    Console.WriteLine($"❌ Error al parsear Games para {teamName}. Raw: {gamesRaw}");
+                }
+
+                // Guardar Total stats
+                foreach (var statKvp in statColumnMap)
+                {
+                    if (!headerMap.ContainsKey(statKvp.Key)) continue;
+
+                    int statIndex = headerMap[statKvp.Key];
+                    if (statIndex >= cells.Count) continue;
+
+                    string statRaw = cells[statIndex].InnerText.Trim();
+                    float? statValue = float.TryParse(statRaw.Replace(",", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
+
+                    var statTypeName = statKvp.Value;
+
+                    var statType = _context.StatTypes.FirstOrDefault(s => s.Name == statTypeName);
+                    if (statType == null)
+                    {
+                        statType = new StatType { Name = statTypeName };
+                        _context.StatTypes.Add(statType);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id);
+                    if (stat == null)
+                    {
+                        stat = new TeamStat
+                        {
+                            TeamId = team.Id,
+                            StatTypeId = statType.Id,
+                            CurrentSeason = DateTime.Now.Year
+                        };
+                        _context.TeamStats.Add(stat);
+                    }
+
+                    stat.Total = statValue;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+
+
         public async Task ImportStatAsync(string statTypeName, string url)
         {
-            var rows = await ScrapeTable(url);
+            var response = await _httpClient.GetStringAsync(url);
+            var doc = new HtmlDocument();
+            doc.LoadHtml(response);
+
+            var table = doc.DocumentNode.SelectSingleNode("//table[contains(@class, 'datatable')]");
+
+            var header = table.SelectSingleNode(".//thead/tr");
+
+            var rows = table.SelectNodes(".//tr").Skip(1); // skip header
 
             var statType = _context.StatTypes.FirstOrDefault(s => s.Name == statTypeName);
             if (statType == null)
@@ -96,9 +229,13 @@ namespace StrikeData.Services
 
             foreach (var row in rows)
             {
-                if (row.Count < 8) continue;
+                var cells = row.SelectNodes("td");
+                if (cells == null || cells.Count < 8) continue;
 
-                string teamName = row[1];
+                // Se obtiene el nombre del equipo
+                string rawTeamName = cells[1].InnerText.Trim();
+                string teamName = TeamNameNormalizer.Normalize(rawTeamName);
+
                 var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
                 if (team == null)
                 {
@@ -107,57 +244,32 @@ namespace StrikeData.Services
                     await _context.SaveChangesAsync();
                 }
 
-                float? ParseFloat(string val)
-                {
-                    return float.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out float result)
-                        ? result : null;
-                }
+                float? Parse(string input) =>
+                    float.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
 
-                var existing = _context.TeamStats.FirstOrDefault(ts =>
+                var stat = _context.TeamStats.FirstOrDefault(ts =>
                     ts.TeamId == team.Id &&
-                    ts.StatTypeId == statType.Id &&
-                    ts.CurrentSeason == 2025);
+                    ts.StatTypeId == statType.Id);
 
-                if (existing == null)
+                if (stat == null)
                 {
-                    existing = new TeamStat
+                    stat = new TeamStat
                     {
                         TeamId = team.Id,
-                        StatTypeId = statType.Id,
-                        CurrentSeason = 2025
+                        StatTypeId = statType.Id
                     };
-                    _context.TeamStats.Add(existing);
+                    _context.TeamStats.Add(stat);
                 }
 
-                existing.Last3Games = ParseFloat(row[3]);
-                existing.LastGame = ParseFloat(row[4]);
-                existing.Home = ParseFloat(row[5]);
-                existing.Away = ParseFloat(row[6]);
-                existing.PrevSeason = ParseFloat(row[7]);
+                stat.CurrentSeason = Parse(cells[2].InnerText);
+                stat.Last3Games = Parse(cells[3].InnerText);
+                stat.LastGame = Parse(cells[4].InnerText);
+                stat.Home = Parse(cells[5].InnerText);
+                stat.Away = Parse(cells[6].InnerText);
+                stat.PrevSeason = Parse(cells[7].InnerText);
             }
 
             await _context.SaveChangesAsync();
-        }
-
-        private async Task<List<List<string>>> ScrapeTable(string url)
-        {
-            var response = await _httpClient.GetStringAsync(url);
-            var doc = new HtmlDocument();
-            doc.LoadHtml(response);
-
-            var table = doc.DocumentNode.SelectSingleNode("//table[contains(@class, 'datatable')]");
-            var rows = table.SelectNodes(".//tr");
-
-            var result = new List<List<string>>();
-            foreach (var row in rows)
-            {
-                var cells = row.SelectNodes(".//td");
-                if (cells == null) continue;
-
-                result.Add(cells.Select(c => c.InnerText.Trim()).ToList());
-            }
-
-            return result;
         }
     }
 }

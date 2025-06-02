@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using StrikeData.Data;
@@ -11,9 +12,11 @@ using StrikeData.Data;
 namespace StrikeData.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250420162319_RestructureTeamStats2")]
+    partial class RestructureTeamStats2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -144,9 +147,6 @@ namespace StrikeData.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<int?>("Games")
-                        .HasColumnType("integer");
-
                     b.Property<string>("HomeRecord")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
@@ -182,8 +182,11 @@ namespace StrikeData.Migrations
                     b.Property<float?>("Away")
                         .HasColumnType("real");
 
-                    b.Property<float>("CurrentSeason")
-                        .HasColumnType("real");
+                    b.Property<int>("CurrentSeason")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Games")
+                        .HasColumnType("integer");
 
                     b.Property<float?>("Home")
                         .HasColumnType("real");

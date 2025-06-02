@@ -17,9 +17,7 @@ namespace StrikeData.Models
         public StatType StatType { get; set; }
 
         [Required]
-        public int CurrentSeason { get; set; }
-
-        public int? Games { get; set; }
+        public float? CurrentSeason { get; set; }
         public float? Total { get; set; }
         public float? Last3Games { get; set; }
         public float? LastGame { get; set; }

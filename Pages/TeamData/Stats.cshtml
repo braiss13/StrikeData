@@ -10,11 +10,12 @@
 <form method="get" class="table-selector">
     <label for="statDropdown" class="dropdown-label">Select a stat type:</label>
     <select id="statDropdown" name="SelectedStatTypeId" class="dropdown" onchange="this.form.submit()">
-        <option value="">-- All --</option>
+        <option value="" selected="@(Model.SelectedStatTypeId == null)">-- All --</option>
         @foreach (var statType in Model.StatTypes)
         {
-            var isSelected = statType.Id == Model.SelectedStatTypeId ? "selected" : "";
-            <option value="@statType.Id" selected="@isSelected">@statType.Name</option>
+            <option value="@statType.Id" selected="@(Model.SelectedStatTypeId == statType.Id)">
+                @statType.Name
+            </option>
         }
     </select>
 </form>
@@ -24,27 +25,38 @@
 <table class="table">
     <thead>
         <tr>
+            <th>#</th>
             <th>Team</th>
-            <th>2025</th>
+            <th>Games</th>
+            <th>Total</th>
+            <th>Season</th>
             <th>Last 3</th>
             <th>Last 1</th>
             <th>Home</th>
             <th>Away</th>
-            <th>2024</th>
+            <th>Previous</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var stat in Model.TeamStats)
-        {
-            <tr>
-                <td>@stat.Team.Name</td>
-                <td>@(stat.CurrentSeason)</td>
-                <td>@(stat.Last3Games ?? 0)</td>
-                <td>@(stat.LastGame ?? 0)</td>
-                <td>@(stat.Home ?? 0)</td>
-                <td>@(stat.Away ?? 0)</td>
-                <td>@(stat.PrevSeason ?? 0)</td>
-            </tr>
+        @{
+            var index = 1;
+            foreach (var stat in Model.TeamStats)
+            {
+                <tr>
+                    <td>@index</td>
+                    <td>@stat.Team.Name</td>
+                    <td>@(stat.Team.Games ?? 0)</td>
+                    <td>@(stat.Total ?? 0)</td>
+                    <td>@stat.CurrentSeason</td>
+                    <td>@(stat.Last3Games ?? 0)</td>
+                    <td>@(stat.LastGame ?? 0)</td>
+                    <td>@(stat.Home ?? 0)</td>
+                    <td>@(stat.Away ?? 0)</td>
+                    <td>@(stat.PrevSeason ?? 0)</td>
+                </tr>
+                index++;
+            }
         }
     </tbody>
 </table>
+

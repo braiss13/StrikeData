@@ -15,8 +15,9 @@ namespace StrikeData.Pages
         }
 
         public async Task OnGetAsync()
-        {
-            await _importer.ImportWinTrendsAsync();
+        {   
+            // TODO: Descomentar estas líneas para importar los datos del scrapping, ahora mismo están comentadas para evitar que se ejecute cada vez que se carga la página.
+            // await _importer.ImportWinTrendsAsync();
             await _importer.ImportAllStatsAsync();
         }
     }
