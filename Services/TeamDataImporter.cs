@@ -96,56 +96,71 @@ namespace StrikeData.Services
             var web = new HtmlWeb();
             var doc = web.Load(url);
 
-            var statColumnMap = new Dictionary<string, string>
-            {
-                { "R", "Runs" },
-                { "AB", "At Bat" },
-                { "H", "Hits" },
-                { "HR", "Home Runs" },
-                { "2B", "Doubles" },
-                { "3B", "Triples" },
-                { "RBI", "RBIs" },
-                { "BB", "Walks / Base on Ball" },
-                { "SO", "Strikeouts (SO)" },
-                { "SB", "Stolen Bases (SB)" },
-                { "CS", "Caught Stealing" },
-                { "SF", "Sacrifice Flys" },
-                { "HBP", "Hit by pitch" },
-                { "GIDP", "Grounded into Double Plays" },
-                { "TB", "Total Bases" }
-            };
-
             var table = doc.DocumentNode.SelectSingleNode("//table[contains(@class, 'bui-table')]");
-            if (table == null) return;
+            if (table == null)
+            {
+                Console.WriteLine("❌ No se encontró la tabla de estadísticas.");
+                return;
+            }
 
-            // Mapear los encabezados a índices
             var headerCells = table.SelectSingleNode(".//thead/tr").SelectNodes("th");
-            var headerMap = new Dictionary<string, int>();
+            if (headerCells == null)
+            {
+                Console.WriteLine("❌ No se encontraron encabezados.");
+                return;
+            }
 
+            var columnIndexToStatName = new Dictionary<int, string>();
             for (int i = 0; i < headerCells.Count; i++)
             {
-                string colName = headerCells[i].InnerText.Trim();
-                if (colName == "Team" || colName == "G" || statColumnMap.ContainsKey(colName))
+                var th = headerCells[i];
+                var span = th.SelectSingleNode(".//span");
+                string headerText = (span != null ? span.InnerText : th.InnerText).Trim();
+
+                switch (headerText)
                 {
-                    headerMap[colName] = i;
+                    case "G": columnIndexToStatName[i] = "Games"; break;
+                    case "AB": columnIndexToStatName[i] = "At Bat"; break;
+                    case "R": columnIndexToStatName[i] = "Runs"; break;
+                    case "H": columnIndexToStatName[i] = "Hits"; break;
+                    case "HR": columnIndexToStatName[i] = "Home Runs"; break;
+                    case "2B": columnIndexToStatName[i] = "Doubles"; break;
+                    case "3B": columnIndexToStatName[i] = "Triples"; break;
+                    case "RBI": columnIndexToStatName[i] = "RBIs"; break;
+                    case "BB": columnIndexToStatName[i] = "Walks / Base on Ball"; break;
+                    case "SO": columnIndexToStatName[i] = "Strikeouts (SO)"; break;
+                    case "SB": columnIndexToStatName[i] = "Stolen Bases (SB)"; break;
+                    case "CS": columnIndexToStatName[i] = "Caught Stealing"; break;
+                    case "SF": columnIndexToStatName[i] = "Sacrifice Flys"; break;
+                    /* case "HBP": columnIndexToStatName[i] = "Hit by pitch"; break;
+                    case "GIDP": columnIndexToStatName[i] = "Grounded into Double Plays"; break;
+                    case "TB": columnIndexToStatName[i] = "Total Bases"; break; */
                 }
             }
 
-            // Validar existencia de columnas clave
-            if (!headerMap.ContainsKey("Team") || !headerMap.ContainsKey("G")) return;
-
             var rows = table.SelectNodes(".//tbody/tr");
+            if (rows == null)
+            {
+                Console.WriteLine("❌ No se encontraron filas de datos.");
+                return;
+            }
 
             foreach (var row in rows)
             {
+                var teamLink = row.SelectSingleNode(".//a");
+                string teamName = teamLink?.InnerText.Trim() ?? "UNKNOWN";
+                if (teamName == "UNKNOWN")
+                {
+                    Console.WriteLine("⚠️ No se pudo extraer el nombre del equipo.");
+                    continue;
+                }
+
                 var cells = row.SelectNodes("td");
-                if (cells == null || cells.Count <= headerMap["G"]) continue;
-
-                string teamName = cells[headerMap["Team"]].InnerText.Trim();
-                string gamesRaw = cells[headerMap["G"]].InnerText.Trim();
-
-                // Normalizar nombre si fuera necesario (opcional)
-                teamName = TeamNameNormalizer.Normalize(teamName); // si has creado esta clase
+                if (cells == null || cells.Count < 3)
+                {
+                    Console.WriteLine($"⚠️ No se encontraron celdas válidas para {teamName}");
+                    continue;
+                }
 
                 var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
                 if (team == null)
@@ -155,28 +170,33 @@ namespace StrikeData.Services
                     await _context.SaveChangesAsync();
                 }
 
-                if (int.TryParse(gamesRaw.Replace(",", ""), out int parsedGames))
+                var gamesIndex = columnIndexToStatName.FirstOrDefault(kv => kv.Value == "Games").Key;
+                if (gamesIndex >= 0 && gamesIndex < cells.Count)
                 {
-                    team.Games = parsedGames;
-                    Console.WriteLine($"✅ {teamName} => Games: {parsedGames}");
+                    var gamesRaw = cells[gamesIndex+1].InnerText.Trim();
+                    Console.WriteLine($"📊 Procesando equipo: {teamName} | Games (raw): {gamesRaw}");
+
+                    if (int.TryParse(gamesRaw.Replace(",", ""), out int g))
+                    {
+                        team.Games = g;
+                        Console.WriteLine($"✅ Games parseado: {g}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"⚠️ Error al parsear games para {teamName}");
+                    }
                 }
-                else
+
+                foreach (var kv in columnIndexToStatName)
                 {
-                    Console.WriteLine($"❌ Error al parsear Games para {teamName}. Raw: {gamesRaw}");
-                }
+                    int colIndex = kv.Key;
+                    string statTypeName = kv.Value;
 
-                // Guardar Total stats
-                foreach (var statKvp in statColumnMap)
-                {
-                    if (!headerMap.ContainsKey(statKvp.Key)) continue;
+                    if (statTypeName == "Games") continue;
+                    if (colIndex >= cells.Count) continue;
 
-                    int statIndex = headerMap[statKvp.Key];
-                    if (statIndex >= cells.Count) continue;
-
-                    string statRaw = cells[statIndex].InnerText.Trim();
-                    float? statValue = float.TryParse(statRaw.Replace(",", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
-
-                    var statTypeName = statKvp.Value;
+                    var valueRaw = cells[colIndex].InnerText.Trim();
+                    float? total = float.TryParse(valueRaw.Replace(",", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
 
                     var statType = _context.StatTypes.FirstOrDefault(s => s.Name == statTypeName);
                     if (statType == null)
@@ -198,14 +218,12 @@ namespace StrikeData.Services
                         _context.TeamStats.Add(stat);
                     }
 
-                    stat.Total = statValue;
+                    stat.Total = total;
                 }
             }
 
             await _context.SaveChangesAsync();
         }
-
-
 
         public async Task ImportStatAsync(string statTypeName, string url)
         {
