@@ -23,7 +23,7 @@ namespace StrikeData.Models
         [MaxLength(20)]
         public string? OverallRecord { get; set; }
 
-        public int? Games { get; set; } // NUEVO campo en Team
+        public int? Games { get; set; } 
 
         // Relaciones
         public ICollection<Player> Players { get; set; }
