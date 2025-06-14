@@ -60,8 +60,8 @@ namespace StrikeData.Services
             // 2. Luego, el scraping de TeamRankings donde se obtienen los promedios por partido de cada aspecto -> SE CREA UN DICCIONARIO
             var stats = new Dictionary<string, string>
             {
-                { "R", "https://www.teamrankings.com/mlb/stat/runs-per-game" },
                 { "AB", "https://www.teamrankings.com/mlb/stat/at-bats-per-game" },
+                { "R", "https://www.teamrankings.com/mlb/stat/runs-per-game" },
                 { "H", "https://www.teamrankings.com/mlb/stat/hits-per-game" },
                 { "HR", "https://www.teamrankings.com/mlb/stat/home-runs-per-game" },
                 { "S", "https://www.teamrankings.com/mlb/stat/singles-per-game" },
@@ -129,17 +129,15 @@ namespace StrikeData.Services
                 return;
             }
 
+            // Limpia los encabezados obtenidos, eliminando nodos problemáticos y decorativos. Luego creamos una lista de headers limpios.
             var headers = new List<string>();
-
-            // Para cada encabezado, intenta leer el texto desde la etiqueta <span> (si existe), o directamente desde el <th> 
-            for (int i = 0; i < headerCells.Count; i++)
+            foreach (var th in headerCells)
             {
-                var th = headerCells[i];
-                var headerText = CleanHeader(th);
-                headers.Add(headerText);
-                Console.WriteLine($"Header {i}: {headerText}");
-
+                headers.Add(CleanHeader(th));
             }
+
+            // Saltamos dos posiciones puesto que serían "Team" y "League", que son datos que no interesan.
+            var statHeaders = headers.Skip(2).ToList();
 
             // Se buscan todas las filas <tr> dentro del body
             var rows = table.SelectNodes(".//tbody/tr");
@@ -182,13 +180,13 @@ namespace StrikeData.Services
                 }
 
                 // Se busca la columna con el índice de "Games"
-                var gamesIndex = headers.FindIndex(h => h == "G");
+                var gamesIndex = statHeaders.FindIndex(h => h == "G");
 
                 if (gamesIndex >= 0 && gamesIndex < cells.Count - 1)
                 {
-                    var gamesRaw = cells[gamesIndex].InnerText.Trim();
+                    var gamesRaw = cells[gamesIndex + 1].InnerText.Trim();
 
-                    // Se intenta convertir el valor a entero y asignarlo al equpo
+                    // Se intenta convertir el valor a entero y asignarlo al equipo
                     if (int.TryParse(gamesRaw.Replace(",", ""), out int g))
                     {
                         team.Games = g;
@@ -202,9 +200,9 @@ namespace StrikeData.Services
                 };
 
                 // Para cada estadística del encabezado (Runs, At bat...)
-                for (int colIndex = 0; colIndex < headers.Count; colIndex++)
+                for (int colIndex = 0; colIndex < statHeaders.Count; colIndex++)
                 {
-                    string statTypeName = headers[colIndex];
+                    string statTypeName = statHeaders[colIndex];
 
                     if (statTypeName == "G") continue;
 
@@ -212,7 +210,7 @@ namespace StrikeData.Services
 
                     if (colIndex >= cells.Count) continue;
 
-                    var valueRaw = cells[colIndex].InnerText.Trim();
+                    var valueRaw = cells[colIndex+1].InnerText.Trim();
 
                     float? total = float.TryParse(valueRaw.Replace(",", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
 
