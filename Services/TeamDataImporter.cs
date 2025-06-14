@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace StrikeData.Services
 {
@@ -55,33 +56,31 @@ namespace StrikeData.Services
         // Método principal -> Contiene las llamadas a los dos métodos de scrapping
         public async Task ImportAllStatsAsync()
         {
-            // 1. Primero, scrapea la página de la MLB para obtener TOTAL y GAMES
-            await ImportStatsFromMLBAsync();
 
             // 2. Luego, el scraping de TeamRankings donde se obtienen los promedios por partido de cada aspecto -> SE CREA UN DICCIONARIO
             var stats = new Dictionary<string, string>
             {
-                { "Runs (R)", "https://www.teamrankings.com/mlb/stat/runs-per-game" },
-                { "At Bat (AB)", "https://www.teamrankings.com/mlb/stat/at-bats-per-game" },
-                { "Hits (H)", "https://www.teamrankings.com/mlb/stat/hits-per-game" },
-                { "Home Runs (HR)", "https://www.teamrankings.com/mlb/stat/home-runs-per-game" },
-                { "Singles (S)", "https://www.teamrankings.com/mlb/stat/singles-per-game" },
-                { "Doubles (2B)", "https://www.teamrankings.com/mlb/stat/doubles-per-game" },
-                { "Triples (3B)", "https://www.teamrankings.com/mlb/stat/triples-per-game" },
-                { "RBIs", "https://www.teamrankings.com/mlb/stat/rbis-per-game" },
-                { "Walks / Base on Ball (W/BB)", "https://www.teamrankings.com/mlb/stat/walks-per-game" },
-                { "Strikeouts (SO)", "https://www.teamrankings.com/mlb/stat/strikeouts-per-game" },
-                { "Stolen Bases (SB)", "https://www.teamrankings.com/mlb/stat/stolen-bases-per-game" },
-                { "Caught Stealing (CS)", "https://www.teamrankings.com/mlb/stat/caught-stealing-per-game" },
-                { "Sacrifice Hits (SH)", "https://www.teamrankings.com/mlb/stat/sacrifice-hits-per-game" },
-                { "Sacrifice Flys (SF)", "https://www.teamrankings.com/mlb/stat/sacrifice-flys-per-game" },
-                { "Hit by Pitch (HP)", "https://www.teamrankings.com/mlb/stat/hit-by-pitch-per-game" },
-                { "Grounded into Double Plays (GIDP)", "https://www.teamrankings.com/mlb/stat/grounded-into-double-plays-per-game" },
-                { "Total Bases (TB)", "https://www.teamrankings.com/mlb/stat/total-bases-per-game" },
-                { "Batting Average (%)", "https://www.teamrankings.com/mlb/stat/batting-average" },
-                { "Slugging (%)", "https://www.teamrankings.com/mlb/stat/slugging-pct" },
-                { "On Base (%)", "https://www.teamrankings.com/mlb/stat/on-base-pct" },
-                { "On Base plus Slugging (%)", "https://www.teamrankings.com/mlb/stat/on-base-plus-slugging-pct" }
+                { "R", "https://www.teamrankings.com/mlb/stat/runs-per-game" },
+                { "AB", "https://www.teamrankings.com/mlb/stat/at-bats-per-game" },
+                { "H", "https://www.teamrankings.com/mlb/stat/hits-per-game" },
+                { "HR", "https://www.teamrankings.com/mlb/stat/home-runs-per-game" },
+                { "S", "https://www.teamrankings.com/mlb/stat/singles-per-game" },
+                { "2B", "https://www.teamrankings.com/mlb/stat/doubles-per-game" },
+                { "3B", "https://www.teamrankings.com/mlb/stat/triples-per-game" },
+                { "RBI", "https://www.teamrankings.com/mlb/stat/rbis-per-game" },
+                { "BB", "https://www.teamrankings.com/mlb/stat/walks-per-game" },
+                { "SO", "https://www.teamrankings.com/mlb/stat/strikeouts-per-game" },
+                { "SB", "https://www.teamrankings.com/mlb/stat/stolen-bases-per-game" },
+                { "CS", "https://www.teamrankings.com/mlb/stat/caught-stealing-per-game" },
+                { "SH", "https://www.teamrankings.com/mlb/stat/sacrifice-hits-per-game" },
+                { "SF", "https://www.teamrankings.com/mlb/stat/sacrifice-flys-per-game" },
+                { "HP", "https://www.teamrankings.com/mlb/stat/hit-by-pitch-per-game" },
+                { "GIDP", "https://www.teamrankings.com/mlb/stat/grounded-into-double-plays-per-game" },
+                { "TB", "https://www.teamrankings.com/mlb/stat/total-bases-per-game" },
+                { "AVG", "https://www.teamrankings.com/mlb/stat/batting-average" },
+                { "SLG", "https://www.teamrankings.com/mlb/stat/slugging-pct" },
+                { "OBP", "https://www.teamrankings.com/mlb/stat/on-base-pct" },
+                { "OPS", "https://www.teamrankings.com/mlb/stat/on-base-plus-slugging-pct" }
             };
 
             // Va recorriendo el diccionario y llama al método para cada estadística por separado, indicando la estadística y la URL a consultar
@@ -89,6 +88,9 @@ namespace StrikeData.Services
             {
                 await ImportStatAsync(stat.Key, stat.Value);
             }
+
+            // 1. Primero, scrapea la página de la MLB para obtener TOTAL y GAMES
+            await ImportStatsFromMLBAsync();
         }
 
         // Este método se encarga de obtener las estadísticas necesarias de la MLB
@@ -127,38 +129,16 @@ namespace StrikeData.Services
                 return;
             }
 
-            // Se construye un diccionario donde cada par es <índice_campo, nombre_campo>
-            var columnIndexToStatName = new Dictionary<int, string>();
+            var headers = new List<string>();
 
             // Para cada encabezado, intenta leer el texto desde la etiqueta <span> (si existe), o directamente desde el <th> 
             for (int i = 0; i < headerCells.Count; i++)
             {
                 var th = headerCells[i];
-                var span = th.SelectSingleNode(".//span");
+                var headerText = CleanHeader(th);
+                headers.Add(headerText);
+                Console.WriteLine($"Header {i}: {headerText}");
 
-                // Para cada encabezado, se extrae el texto visible del header y se limpia con trim()
-                var headerText = (th.SelectSingleNode(".//span")?.InnerText ?? th.InnerText)?.Trim();
-
-                // Se recorre para cada encabezado y se obtiene el nombre largo
-                switch (headerText)
-                {
-                    case "G": columnIndexToStatName[i] = "Games"; break;
-                    case "AB": columnIndexToStatName[i] = "At Bat"; break;
-                    case "R": columnIndexToStatName[i] = "Runs"; break;
-                    case "H": columnIndexToStatName[i] = "Hits"; break;
-                    case "HR": columnIndexToStatName[i] = "Home Runs"; break;
-                    case "2B": columnIndexToStatName[i] = "Doubles"; break;
-                    case "3B": columnIndexToStatName[i] = "Triples"; break;
-                    case "RBI": columnIndexToStatName[i] = "RBIs"; break;
-                    case "BB": columnIndexToStatName[i] = "Walks / Base on Ball"; break;
-                    case "SO": columnIndexToStatName[i] = "Strikeouts (SO)"; break;
-                    case "SB": columnIndexToStatName[i] = "Stolen Bases (SB)"; break;
-                    case "CS": columnIndexToStatName[i] = "Caught Stealing"; break;
-                    case "SF": columnIndexToStatName[i] = "Sacrifice Flys"; break;
-                    /* case "HBP": columnIndexToStatName[i] = "Hit by pitch"; break;
-                        case "GIDP": columnIndexToStatName[i] = "Grounded into Double Plays"; break;
-                        case "TB": columnIndexToStatName[i] = "Total Bases"; break; */
-                }
             }
 
             // Se buscan todas las filas <tr> dentro del body
@@ -202,11 +182,11 @@ namespace StrikeData.Services
                 }
 
                 // Se busca la columna con el índice de "Games"
-                var gamesIndex = columnIndexToStatName.FirstOrDefault(kv => kv.Value == "Games").Key;
+                var gamesIndex = headers.FindIndex(h => h == "G");
 
                 if (gamesIndex >= 0 && gamesIndex < cells.Count - 1)
                 {
-                    var gamesRaw = cells[gamesIndex + 1].InnerText.Trim();
+                    var gamesRaw = cells[gamesIndex].InnerText.Trim();
 
                     // Se intenta convertir el valor a entero y asignarlo al equpo
                     if (int.TryParse(gamesRaw.Replace(",", ""), out int g))
@@ -215,26 +195,28 @@ namespace StrikeData.Services
                     }
                 }
 
-                // Para cada estadística del encabezado (Runs, At bat...)
-                foreach (var kv in columnIndexToStatName)
+                // Lista de aspectos para los que se debe guardar el campo Total
+                var allowedTotals = new HashSet<string>
                 {
-                    int colIndex = kv.Key;
-                    string statTypeName = kv.Value;
+                    "AB", "R", "H", "HR", "2B", "3B", "RBI", "BB", "SO", "SB", "CS", "SF"
+                };
 
-                    // Se salta Games porque ya se procesó
-                    if (statTypeName == "Games") continue;
+                // Para cada estadística del encabezado (Runs, At bat...)
+                for (int colIndex = 0; colIndex < headers.Count; colIndex++)
+                {
+                    string statTypeName = headers[colIndex];
 
-                    // Se salta en caso de que la columna ya esté fuera del rango
+                    if (statTypeName == "G") continue;
+
+                    if (!allowedTotals.Contains(statTypeName)) continue;
+
                     if (colIndex >= cells.Count) continue;
 
-                    // Se obtiene el valor de la celda
                     var valueRaw = cells[colIndex].InnerText.Trim();
 
-                    // Se intenta parsear el valor de la celda como decimal (usa InvariantCulture por si el número tiene punto decimal en vez de coma)
                     float? total = float.TryParse(valueRaw.Replace(",", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
 
-                    // Se busca si el tipo de estadística ya está en la BD, sino se crea
-                    var statType = _context.StatTypes.FirstOrDefault(s => s.Name == kv.Value) ?? new StatType { Name = kv.Value };
+                    var statType = _context.StatTypes.FirstOrDefault(s => s.Name == statTypeName) ?? new StatType { Name = statTypeName };
 
                     if (statType.Id == 0)
                     {
@@ -242,14 +224,12 @@ namespace StrikeData.Services
                         await _context.SaveChangesAsync();
                     }
 
-                    // Se busca si está el TeamStat en la BD, sino se crea. (Se asociaría el valor de la estadística al equipo y al tipo de estadística y se guarda)
-                    var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id) ?? new TeamStat { TeamId = team.Id, StatTypeId = statType.Id, CurrentSeason = DateTime.Now.Year };
-
-                    if (stat.Id == 0)
-                    { 
+                    var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id);
+                    if (stat == null)
+                    {
+                        stat = new TeamStat { TeamId = team.Id, StatTypeId = statType.Id };
                         _context.TeamStats.Add(stat);
                     }
-                    
 
                     stat.Total = total;
                 }
@@ -332,11 +312,43 @@ namespace StrikeData.Services
             await _context.SaveChangesAsync();
         }
 
-
         // Método creado para conviertir el String a float (usado para parsear los datos al final)
         private static float? Parse(string input)
         {
             return float.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
+        }
+
+        // Método para limpiar los encabezados de la tabla (headerText), eliminando nodos problemáticos y decorativos
+        private string CleanHeader(HtmlNode th)
+        {
+            // Eliminamos nodos problemáticos como svg, iconos, etc.
+            foreach (var node in th.SelectNodes(".//svg|.//i|.//icon") ?? Enumerable.Empty<HtmlNode>())
+            {
+                node.Remove();
+            }
+
+            // Extraemos el texto limpio
+            var rawText = th.InnerText?.Trim();
+
+            if (string.IsNullOrEmpty(rawText))
+                return string.Empty;
+
+            // Eliminamos duplicaciones (como TEAMTEAM)
+            // Si un texto tiene exactamente el mismo contenido duplicado, lo cortamos a la mitad.
+            if (rawText.Length % 2 == 0)
+            {
+                var halfLength = rawText.Length / 2;
+                var firstHalf = rawText.Substring(0, halfLength);
+                var secondHalf = rawText.Substring(halfLength);
+
+                if (firstHalf == secondHalf)
+                    return firstHalf;
+            }
+
+            // Eliminamos textos decorativos
+            rawText = rawText.Replace("caret-up", "").Replace("caret-down", "").Trim();
+
+            return rawText;
         }
 
     }
