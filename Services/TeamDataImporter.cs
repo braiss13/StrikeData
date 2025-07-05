@@ -2,6 +2,7 @@ using HtmlAgilityPack;
 using StrikeData.Data;
 using StrikeData.Models;
 using System.Globalization;
+using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Linq;
@@ -91,6 +92,7 @@ namespace StrikeData.Services
 
             // 1. Primero, scrapea la página de la MLB para obtener TOTAL y GAMES
             await ImportStatsFromMLBAsync();
+            await ImportExpandedStatsFromMLBApiAsync();
         }
 
         // Este método se encarga de obtener las estadísticas necesarias de la MLB
@@ -210,7 +212,7 @@ namespace StrikeData.Services
 
                     if (colIndex >= cells.Count) continue;
 
-                    var valueRaw = cells[colIndex+1].InnerText.Trim();
+                    var valueRaw = cells[colIndex + 1].InnerText.Trim();
 
                     float? total = float.TryParse(valueRaw.Replace(",", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
 
@@ -235,6 +237,108 @@ namespace StrikeData.Services
 
             // Guarda todo al final para evitar múltiples escrituras en la BD
             await _context.SaveChangesAsync();
+        }
+
+        private async Task ImportExpandedStatsFromMLBApiAsync()
+        {
+            var statsArray = await FetchExpandedTeamStatsAsync();
+
+            // Campos que NO son estadísticas
+            // TODO: Coger solo el campo que necesito
+            var excludedFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "year", "type", "rank", "shortName", "teamId", "teamAbbrev",
+                "teamName", "teamShortName", "leagueAbbrev", "leagueName", "leagueShortName",
+                "gamesPlayed", "groundOuts", "airOuts", "runs", "hits", "doubles",
+                "triples", "homeRuns", "strikeOuts", "baseOnBalls", "intentionalWalks",
+                "hits", "hitByPitch", "avg", "atBats", "obp", "slg", "ops",
+                "caughtStealing", "stolenBases", "groundIntoDoublePlay", "stolenBasesPercentage",
+                "groundIntoDoublePlay", "numberOfPitches", "plateAppearances", "totalBases",
+            };
+
+            foreach (var teamStat in statsArray)
+            {
+                var teamNameRaw = teamStat["teamName"]?.ToString();
+                if (string.IsNullOrEmpty(teamNameRaw))
+                {
+                    Console.WriteLine("⚠️ Nombre de equipo no encontrado o vacío.");
+                    continue;
+                }
+
+                Console.WriteLine($"➡️ Procesando equipo: {teamNameRaw}");
+                var teamName = TeamNameNormalizer.Normalize(teamNameRaw);
+
+                var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
+                if (team == null)
+                {
+                    team = new Team { Name = teamName };
+                    _context.Teams.Add(team);
+                    await _context.SaveChangesAsync();
+                }
+
+                int statsCount = 0;
+
+                foreach (var prop in ((JObject)teamStat).Properties())
+                {
+                    string statName = prop.Name;
+                    if (excludedFields.Contains(statName))
+                        continue;
+
+                    string valueRaw = prop.Value.ToString();
+
+                    float? value = float.TryParse(valueRaw, NumberStyles.Float, CultureInfo.InvariantCulture, out float val)? val: null;
+
+                    if (value == null)
+                    {
+                        Console.WriteLine($"⚠️ No se pudo parsear el valor '{valueRaw}' para estadística '{statName}' de {teamName}");
+                        continue;
+                    }
+
+                    var statType = _context.StatTypes.FirstOrDefault(s => s.Name == statName);
+                    if (statType == null)
+                    {
+                        statType = new StatType { Name = statName };
+                        _context.StatTypes.Add(statType);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id);
+                    if (stat == null)
+                    {
+                        Console.WriteLine($"🆕 Creando TeamStat para {teamName} - {statName}");
+                        stat = new TeamStat { TeamId = team.Id, StatTypeId = statType.Id };
+                        _context.TeamStats.Add(stat);
+                    }
+
+                    stat.Total = value;
+                    statsCount++;
+                }
+
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+
+        private async Task<JArray> FetchExpandedTeamStatsAsync()
+        {
+            Console.WriteLine("🌐 Realizando petición a la API de MLB...");
+
+            var url = "https://bdfed.stitch.mlbinfra.com/bdfed/stats/team?stitch_env=prod&sportId=1&gameType=R&group=hitting&stats=season&season=2025&limit=30&offset=0";
+
+            var response = await _httpClient.GetStringAsync(url);
+
+            var json = JObject.Parse(response);
+
+            // DEBUG: imprimir el primer equipo como ejemplo
+            var stats = (JArray)json["stats"];
+            if (stats != null && stats.Count > 0)
+            {
+                Console.WriteLine("🧪 Primer objeto de stats:");
+                Console.WriteLine(stats[0].ToString());
+            }
+
+            return stats;
         }
 
         public async Task ImportStatAsync(string statTypeName, string url)

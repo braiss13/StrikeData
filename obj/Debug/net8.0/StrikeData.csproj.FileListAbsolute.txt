@@ -270,3 +270,4 @@ C:\Users\bsamp\Documents\Formacion\TFG\StrikeData\obj\Debug\net8.0\refint\Strike
 C:\Users\bsamp\Documents\Formacion\TFG\StrikeData\obj\Debug\net8.0\StrikeData.pdb
 C:\Users\bsamp\Documents\Formacion\TFG\StrikeData\obj\Debug\net8.0\StrikeData.genruntimeconfig.cache
 C:\Users\bsamp\Documents\Formacion\TFG\StrikeData\obj\Debug\net8.0\ref\StrikeData.dll
+C:\Users\bsamp\Documents\Formacion\TFG\StrikeData\bin\Debug\net8.0\Newtonsoft.Json.dll
