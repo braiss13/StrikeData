@@ -49,11 +49,13 @@ namespace StrikeData.Services
         }
         */
 
-        // Método principal -> Contiene las llamadas a los dos métodos de scrapping
+        // Método principal -> Contiene las llamadas a los dos métodos de obtención de datos (MLB y TeamRankings)
         public async Task ImportAllStatsAsync()
         {
+            // 1. Primero scrapear la MLB para tener el número de Games por equipo y el valor total para cada tipo de estadística
+            await ImportStatsFromMLB();
 
-            // 2. Luego, el scraping de TeamRankings donde se obtienen los promedios por partido de cada aspecto -> SE CREA UN DICCIONARIO
+            // 2. Luego, el scraping de TeamRankings con promedios por partido
             var stats = new Dictionary<string, string>
             {
                 { "AB", "https://www.teamrankings.com/mlb/stat/at-bats-per-game" },
@@ -79,16 +81,14 @@ namespace StrikeData.Services
                 { "OPS", "https://www.teamrankings.com/mlb/stat/on-base-plus-slugging-pct" }
             };
 
-            //1. TeamRanking -> Va recorriendo el diccionario y llama al método para cada estadística por separado, indicando la estadística y la URL a consultar
             foreach (var stat in stats)
             {
                 await ImportStatAsync(stat.Key, stat.Value);
             }
-
-            // 2. Una vez lo tengamos, se scrapea la página de la MLB para obtener TOTAL y GAMES
-            await ImportStatsFromMLB();
         }
 
+
+        // Método de scrapping de TeamRankings
         public async Task ImportStatAsync(string statTypeName, string url)
         {
 
@@ -156,6 +156,31 @@ namespace StrikeData.Services
                 stat.Home = Parse(cells[5].InnerText);
                 stat.Away = Parse(cells[6].InnerText);
                 stat.PrevSeason = Parse(cells[7].InnerText);
+
+                // Si es "S" (singles), calcular el total como Games * CurrentSeason
+                if (statTypeName == "S")
+                {
+                    if (team.Games < 1)
+                    {
+                        Console.WriteLine($"⚠️ El equipo {team.Name} no tiene juegos registrados. La operación será inválida.");
+                    }
+                    else if (stat.CurrentSeason.HasValue)
+                    {
+                        // Aquí se obtiene el valor de currentSeason como float
+                        float currentSeasonValue = stat.CurrentSeason ?? 0;
+
+                        // Como la librería Math.Round no acepta float, se convierte a double el valor final (en .net no hay sobrecarga de Math.Round para float)
+                        double rawTotal = (double)(team.Games * currentSeasonValue);
+
+                        // Por último, se redondea a 2 decimales y se asigna al Total en formato float, puesto que es el que hay en la BD
+                        stat.Total = (float)Math.Round(rawTotal, 2);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"⚠️ El valor de CurrentSeason es null para el equipo {team.Name} en la estadística 'S' (Singles). La operación será inválida.");
+                    }
+
+                }
             }
 
             // Guarda todo al final para evitar múltiples escrituras en la BD
@@ -275,8 +300,6 @@ namespace StrikeData.Services
             var response = await _httpClient.GetStringAsync(url);
             var json = JObject.Parse(response);
             var stats = (JArray)json["stats"];
-
-            Console.WriteLine($"📊 Estadísticas obtenidas: {stats} ");
 
             if (stats == null || !stats.Any())
             {
