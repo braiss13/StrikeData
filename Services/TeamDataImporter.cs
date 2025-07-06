@@ -3,11 +3,6 @@ using StrikeData.Data;
 using StrikeData.Models;
 using System.Globalization;
 using Newtonsoft.Json.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
-using System.Linq;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace StrikeData.Services
 {
@@ -73,9 +68,9 @@ namespace StrikeData.Services
                 { "SO", "https://www.teamrankings.com/mlb/stat/strikeouts-per-game" },
                 { "SB", "https://www.teamrankings.com/mlb/stat/stolen-bases-per-game" },
                 { "CS", "https://www.teamrankings.com/mlb/stat/caught-stealing-per-game" },
-                { "SH", "https://www.teamrankings.com/mlb/stat/sacrifice-hits-per-game" },
+                { "SAC", "https://www.teamrankings.com/mlb/stat/sacrifice-hits-per-game" },
                 { "SF", "https://www.teamrankings.com/mlb/stat/sacrifice-flys-per-game" },
-                { "HP", "https://www.teamrankings.com/mlb/stat/hit-by-pitch-per-game" },
+                { "HBP", "https://www.teamrankings.com/mlb/stat/hit-by-pitch-per-game" },
                 { "GIDP", "https://www.teamrankings.com/mlb/stat/grounded-into-double-plays-per-game" },
                 { "TB", "https://www.teamrankings.com/mlb/stat/total-bases-per-game" },
                 { "AVG", "https://www.teamrankings.com/mlb/stat/batting-average" },
@@ -84,261 +79,14 @@ namespace StrikeData.Services
                 { "OPS", "https://www.teamrankings.com/mlb/stat/on-base-plus-slugging-pct" }
             };
 
-            // Va recorriendo el diccionario y llama al método para cada estadística por separado, indicando la estadística y la URL a consultar
+            //1. TeamRanking -> Va recorriendo el diccionario y llama al método para cada estadística por separado, indicando la estadística y la URL a consultar
             foreach (var stat in stats)
             {
                 await ImportStatAsync(stat.Key, stat.Value);
             }
 
-            // 1. Primero, scrapea la página de la MLB para obtener TOTAL y GAMES
-            await ImportStatsFromMLBAsync();
-            await ImportExpandedStatsFromMLBApiAsync();
-        }
-
-        // Este método se encarga de obtener las estadísticas necesarias de la MLB
-        public async Task ImportStatsFromMLBAsync()
-        {
-            // Se carga el documento HTML desde la URL de la MLB utilizando la librería HtmlAgilityPack
-            var url = "https://www.mlb.com/stats/team";
-            var web = new HtmlWeb();
-            var doc = web.Load(url);
-
-            // Busca la etiqueta <table> de estadísticas dentro del DOM de la MLB, emplea la clase bui-table
-            /* Esto lo hace con XPath: //table[contains(@class, 'bui-table')]:
-               - table busca cualquier tabla.
-               - [contains(@class, 'bui-table')] filtra por las que contienen esa clase.
-
-            Resultado: nodo de la tabla con estadísticas principales de los equipos. */
-
-            var table = doc.DocumentNode.SelectSingleNode("//table[contains(@class, 'bui-table')]");
-
-            if (table == null)
-            {
-                Console.WriteLine("❌ No se encontró la tabla de estadísticas.");
-                return;
-            }
-
-            // Extrae los encabezados de la tabla (primera fila) para mapear los nombres de las columnas a estadísticas.
-            /* 
-             - .//thead/tr navega al <thead> y a su única fila (<tr>).
-             - .SelectNodes("th") extrae las celdas de encabezado (<th>). */
-
-            var headerCells = table.SelectSingleNode(".//thead/tr").SelectNodes("th");
-
-            if (headerCells == null)
-            {
-                Console.WriteLine("❌ No se encontraron encabezados.");
-                return;
-            }
-
-            // Limpia los encabezados obtenidos, eliminando nodos problemáticos y decorativos. Luego creamos una lista de headers limpios.
-            var headers = new List<string>();
-            foreach (var th in headerCells)
-            {
-                headers.Add(CleanHeader(th));
-            }
-
-            // Saltamos dos posiciones puesto que serían "Team" y "League", que son datos que no interesan.
-            var statHeaders = headers.Skip(2).ToList();
-
-            // Se buscan todas las filas <tr> dentro del body
-            var rows = table.SelectNodes(".//tbody/tr");
-
-            if (rows == null)
-            {
-                Console.WriteLine("❌ No se encontraron filas de datos.");
-                return;
-            }
-
-            // Para cada fila...
-            foreach (var row in rows)
-            {
-                // Aquí se intenta obtener el nombre limpio del <span> dentro del <a>. Si no hay <span>, se usa solo la primera línea del texto del <a>, lo cual elimina la repetición de los nombres.
-                string teamName = row.SelectSingleNode(".//a/span")?.InnerText.Trim().Replace(" at ", " ") ?? row.SelectSingleNode(".//a")?.InnerText.Split('\n').First().Trim() ?? "UNKNOWN";
-
-                if (teamName == "UNKNOWN")
-                {
-                    Console.WriteLine("⚠️ No se pudo extraer el nombre del equipo.");
-                    continue;
-                }
-
-                // Se extraen las celdas para cada fila (sería el <td>)
-                var cells = row.SelectNodes("td");
-
-                if (cells == null || cells.Count < 3)
-                {
-                    Console.WriteLine($"⚠️ No se encontraron celdas válidas para {teamName}");
-                    continue;
-                }
-
-                // Se valida si el equipo ya existe en la BD, caso contrario se crea y se guarda
-                var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
-
-                if (team == null)
-                {
-                    team = new Team { Name = teamName };
-                    _context.Teams.Add(team);
-                    await _context.SaveChangesAsync();
-                }
-
-                // Se busca la columna con el índice de "Games"
-                var gamesIndex = statHeaders.FindIndex(h => h == "G");
-
-                if (gamesIndex >= 0 && gamesIndex < cells.Count - 1)
-                {
-                    var gamesRaw = cells[gamesIndex + 1].InnerText.Trim();
-
-                    // Se intenta convertir el valor a entero y asignarlo al equipo
-                    if (int.TryParse(gamesRaw.Replace(",", ""), out int g))
-                    {
-                        team.Games = g;
-                    }
-                }
-
-                // Lista de aspectos para los que se debe guardar el campo Total
-                var allowedTotals = new HashSet<string>
-                {
-                    "AB", "R", "H", "HR", "2B", "3B", "RBI", "BB", "SO", "SB", "CS", "SF"
-                };
-
-                // Para cada estadística del encabezado (Runs, At bat...)
-                for (int colIndex = 0; colIndex < statHeaders.Count; colIndex++)
-                {
-                    string statTypeName = statHeaders[colIndex];
-
-                    if (statTypeName == "G") continue;
-
-                    if (!allowedTotals.Contains(statTypeName)) continue;
-
-                    if (colIndex >= cells.Count) continue;
-
-                    var valueRaw = cells[colIndex + 1].InnerText.Trim();
-
-                    float? total = float.TryParse(valueRaw.Replace(",", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
-
-                    var statType = _context.StatTypes.FirstOrDefault(s => s.Name == statTypeName) ?? new StatType { Name = statTypeName };
-
-                    if (statType.Id == 0)
-                    {
-                        _context.StatTypes.Add(statType);
-                        await _context.SaveChangesAsync();
-                    }
-
-                    var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id);
-                    if (stat == null)
-                    {
-                        stat = new TeamStat { TeamId = team.Id, StatTypeId = statType.Id };
-                        _context.TeamStats.Add(stat);
-                    }
-
-                    stat.Total = total;
-                }
-            }
-
-            // Guarda todo al final para evitar múltiples escrituras en la BD
-            await _context.SaveChangesAsync();
-        }
-
-        private async Task ImportExpandedStatsFromMLBApiAsync()
-        {
-            var statsArray = await FetchExpandedTeamStatsAsync();
-
-            // Campos que NO son estadísticas
-            // TODO: Coger solo el campo que necesito
-            var excludedFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "year", "type", "rank", "shortName", "teamId", "teamAbbrev",
-                "teamName", "teamShortName", "leagueAbbrev", "leagueName", "leagueShortName",
-                "gamesPlayed", "groundOuts", "airOuts", "runs", "hits", "doubles",
-                "triples", "homeRuns", "strikeOuts", "baseOnBalls", "intentionalWalks",
-                "hits", "hitByPitch", "avg", "atBats", "obp", "slg", "ops",
-                "caughtStealing", "stolenBases", "groundIntoDoublePlay", "stolenBasesPercentage",
-                "groundIntoDoublePlay", "numberOfPitches", "plateAppearances", "totalBases",
-            };
-
-            foreach (var teamStat in statsArray)
-            {
-                var teamNameRaw = teamStat["teamName"]?.ToString();
-                if (string.IsNullOrEmpty(teamNameRaw))
-                {
-                    Console.WriteLine("⚠️ Nombre de equipo no encontrado o vacío.");
-                    continue;
-                }
-
-                Console.WriteLine($"➡️ Procesando equipo: {teamNameRaw}");
-                var teamName = TeamNameNormalizer.Normalize(teamNameRaw);
-
-                var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
-                if (team == null)
-                {
-                    team = new Team { Name = teamName };
-                    _context.Teams.Add(team);
-                    await _context.SaveChangesAsync();
-                }
-
-                int statsCount = 0;
-
-                foreach (var prop in ((JObject)teamStat).Properties())
-                {
-                    string statName = prop.Name;
-                    if (excludedFields.Contains(statName))
-                        continue;
-
-                    string valueRaw = prop.Value.ToString();
-
-                    float? value = float.TryParse(valueRaw, NumberStyles.Float, CultureInfo.InvariantCulture, out float val)? val: null;
-
-                    if (value == null)
-                    {
-                        Console.WriteLine($"⚠️ No se pudo parsear el valor '{valueRaw}' para estadística '{statName}' de {teamName}");
-                        continue;
-                    }
-
-                    var statType = _context.StatTypes.FirstOrDefault(s => s.Name == statName);
-                    if (statType == null)
-                    {
-                        statType = new StatType { Name = statName };
-                        _context.StatTypes.Add(statType);
-                        await _context.SaveChangesAsync();
-                    }
-
-                    var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id);
-                    if (stat == null)
-                    {
-                        Console.WriteLine($"🆕 Creando TeamStat para {teamName} - {statName}");
-                        stat = new TeamStat { TeamId = team.Id, StatTypeId = statType.Id };
-                        _context.TeamStats.Add(stat);
-                    }
-
-                    stat.Total = value;
-                    statsCount++;
-                }
-
-            }
-
-            await _context.SaveChangesAsync();
-        }
-
-
-        private async Task<JArray> FetchExpandedTeamStatsAsync()
-        {
-            Console.WriteLine("🌐 Realizando petición a la API de MLB...");
-
-            var url = "https://bdfed.stitch.mlbinfra.com/bdfed/stats/team?stitch_env=prod&sportId=1&gameType=R&group=hitting&stats=season&season=2025&limit=30&offset=0";
-
-            var response = await _httpClient.GetStringAsync(url);
-
-            var json = JObject.Parse(response);
-
-            // DEBUG: imprimir el primer equipo como ejemplo
-            var stats = (JArray)json["stats"];
-            if (stats != null && stats.Count > 0)
-            {
-                Console.WriteLine("🧪 Primer objeto de stats:");
-                Console.WriteLine(stats[0].ToString());
-            }
-
-            return stats;
+            // 2. Una vez lo tengamos, se scrapea la página de la MLB para obtener TOTAL y GAMES
+            await ImportStatsFromMLB();
         }
 
         public async Task ImportStatAsync(string statTypeName, string url)
@@ -420,38 +168,125 @@ namespace StrikeData.Services
             return float.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
         }
 
-        // Método para limpiar los encabezados de la tabla (headerText), eliminando nodos problemáticos y decorativos
-        private string CleanHeader(HtmlNode th)
+        private async Task ImportStatsFromMLB()
         {
-            // Eliminamos nodos problemáticos como svg, iconos, etc.
-            foreach (var node in th.SelectNodes(".//svg|.//i|.//icon") ?? Enumerable.Empty<HtmlNode>())
+            var statsArray = await FetchExpandedTeamStatsAsync();
+
+            // Mapeo de nombres de la API (extendidos) a abreviaturas deseadas
+            var statMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                node.Remove();
+                { "gamesPlayed", "G" },
+                { "atBats", "AB" },
+                { "runs", "R" },
+                { "hits", "H" },
+                { "homeRuns", "HR" },
+                { "doubles", "2B" },
+                { "triples", "3B" },
+                { "rbi", "RBI" },
+                { "baseOnBalls", "BB" },
+                { "strikeOuts", "SO" },
+                { "stolenBases", "SB" },
+                { "caughtStealing", "CS" },
+                { "sacBunts", "SAC" },
+                { "sacFlies", "SF" },
+                { "totalBases", "TB" },
+                { "hitByPitch", "HBP" },
+            };
+
+            foreach (var statToken in statsArray)
+            {
+                if (statToken is not JObject teamStat)
+                    continue;
+
+                var teamNameRaw = teamStat["teamName"]?.ToString();
+                if (string.IsNullOrWhiteSpace(teamNameRaw))
+                {
+                    Console.WriteLine("⚠️ Nombre de equipo no encontrado o vacío.");
+                    continue;
+                }
+
+                var teamName = TeamNameNormalizer.Normalize(teamNameRaw);
+
+                var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
+                if (team == null)
+                {
+                    team = new Team { Name = teamName };
+                    _context.Teams.Add(team);
+                    await _context.SaveChangesAsync();
+                }
+
+                foreach (var mapping in statMappings)
+                {
+                    string apiField = mapping.Key;
+                    string shortName = mapping.Value;
+
+                    if (!teamStat.TryGetValue(apiField, out var token))
+                        continue;
+
+                    string rawValue = token?.ToString();
+
+                    if (string.IsNullOrWhiteSpace(rawValue))
+                        continue;
+
+                    if (shortName == "G")
+                    {
+                        if (int.TryParse(rawValue, out int games))
+                        {
+                            team.Games = games;
+                        }
+                        continue;
+                    }
+
+                    if (!float.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out float statValue))
+                    {
+                        Console.WriteLine($"⚠️ Valor inválido para {shortName} en {teamName}: '{rawValue}'");
+                        continue;
+                    }
+
+                    // Obtener o crear el tipo de estadística
+                    var statType = _context.StatTypes.FirstOrDefault(s => s.Name == shortName);
+                    if (statType == null)
+                    {
+                        statType = new StatType { Name = shortName };
+                        _context.StatTypes.Add(statType);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    // Obtener o crear la estadística del equipo
+                    var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id);
+                    if (stat == null)
+                    {
+                        stat = new TeamStat { TeamId = team.Id, StatTypeId = statType.Id };
+                        _context.TeamStats.Add(stat);
+                    }
+
+                    stat.Total = statValue;
+                }
             }
 
-            // Extraemos el texto limpio
-            var rawText = th.InnerText?.Trim();
-
-            if (string.IsNullOrEmpty(rawText))
-                return string.Empty;
-
-            // Eliminamos duplicaciones (como TEAMTEAM)
-            // Si un texto tiene exactamente el mismo contenido duplicado, lo cortamos a la mitad.
-            if (rawText.Length % 2 == 0)
-            {
-                var halfLength = rawText.Length / 2;
-                var firstHalf = rawText.Substring(0, halfLength);
-                var secondHalf = rawText.Substring(halfLength);
-
-                if (firstHalf == secondHalf)
-                    return firstHalf;
-            }
-
-            // Eliminamos textos decorativos
-            rawText = rawText.Replace("caret-up", "").Replace("caret-down", "").Trim();
-
-            return rawText;
+            await _context.SaveChangesAsync();
         }
+
+        private async Task<JArray> FetchExpandedTeamStatsAsync()
+        {
+
+            var url = "https://bdfed.stitch.mlbinfra.com/bdfed/stats/team?stitch_env=prod&sportId=1&gameType=R&group=hitting&stats=season&season=2025&limit=30&offset=0";
+
+            var response = await _httpClient.GetStringAsync(url);
+            var json = JObject.Parse(response);
+            var stats = (JArray)json["stats"];
+
+            Console.WriteLine($"📊 Estadísticas obtenidas: {stats} ");
+
+            if (stats == null || !stats.Any())
+            {
+                Console.WriteLine("❌ No se encontraron estadísticas.");
+                return new JArray();
+            }
+
+            return stats;
+        }
+
 
     }
 }
