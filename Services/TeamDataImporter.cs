@@ -53,7 +53,7 @@ namespace StrikeData.Services
         public async Task ImportAllStatsAsync()
         {
             // 1. Primero scrapear la MLB para tener el número de Games por equipo y el valor total para cada tipo de estadística
-            await ImportStatsFromMLB();
+            await ImportTeamStatsMLB();
 
             // 2. Luego, el scraping de TeamRankings con promedios por partido
             var stats = new Dictionary<string, string>
@@ -69,11 +69,15 @@ namespace StrikeData.Services
                 { "BB", "https://www.teamrankings.com/mlb/stat/walks-per-game" },
                 { "SO", "https://www.teamrankings.com/mlb/stat/strikeouts-per-game" },
                 { "SB", "https://www.teamrankings.com/mlb/stat/stolen-bases-per-game" },
+                { "SBA", "https://www.teamrankings.com/mlb/stat/stolen-bases-attempted-per-game" },
                 { "CS", "https://www.teamrankings.com/mlb/stat/caught-stealing-per-game" },
                 { "SAC", "https://www.teamrankings.com/mlb/stat/sacrifice-hits-per-game" },
                 { "SF", "https://www.teamrankings.com/mlb/stat/sacrifice-flys-per-game" },
+                { "LOB", "https://www.teamrankings.com/mlb/stat/left-on-base-per-game" },
+                { "TLOB", "https://www.teamrankings.com/mlb/stat/team-left-on-base-per-game" },
                 { "HBP", "https://www.teamrankings.com/mlb/stat/hit-by-pitch-per-game" },
                 { "GIDP", "https://www.teamrankings.com/mlb/stat/grounded-into-double-plays-per-game" },
+                { "RLSP", "https://www.teamrankings.com/mlb/stat/runners-left-in-scoring-position-per-game" },
                 { "TB", "https://www.teamrankings.com/mlb/stat/total-bases-per-game" },
                 { "AVG", "https://www.teamrankings.com/mlb/stat/batting-average" },
                 { "SLG", "https://www.teamrankings.com/mlb/stat/slugging-pct" },
@@ -83,13 +87,12 @@ namespace StrikeData.Services
 
             foreach (var stat in stats)
             {
-                await ImportStatAsync(stat.Key, stat.Value);
+                await ImportTeamStatsTR(stat.Key, stat.Value);
             }
         }
 
-
-        // Método de scrapping de TeamRankings
-        public async Task ImportStatAsync(string statTypeName, string url)
+        // Método que realiza scrapping para obtener estadísticas de TeamRankings
+        public async Task ImportTeamStatsTR(string statTypeName, string url)
         {
 
             // Descarga la página html y crea un documento con todo el contenido
@@ -157,8 +160,18 @@ namespace StrikeData.Services
                 stat.Away = Parse(cells[6].InnerText);
                 stat.PrevSeason = Parse(cells[7].InnerText);
 
-                // Si es "S" (singles), calcular el total como Games * CurrentSeason
-                if (statTypeName == "S")
+                CalculateTotal(statTypeName, team, stat);
+
+            }
+
+            // Guarda todo al final para evitar múltiples escrituras en la BD
+            await _context.SaveChangesAsync();
+        }
+
+        private static void CalculateTotal(string statTypeName, Team team, TeamStat stat)
+        {
+                // Para los campos que no están en la página de la MLB, se calcula el "Total" como Games * CurrentSeason
+                if (statTypeName == "S" || statTypeName == "SBA" || statTypeName == "LOB" || statTypeName == "TLOB" || statTypeName == "RLSP")
                 {
                     if (team.Games < 1)
                     {
@@ -181,21 +194,19 @@ namespace StrikeData.Services
                     }
 
                 }
-            }
 
-            // Guarda todo al final para evitar múltiples escrituras en la BD
-            await _context.SaveChangesAsync();
         }
 
-        // Método creado para conviertir el String a float (usado para parsear los datos al final)
+        // Método creado para conviertir el String a float (empleado para parsear los datos al final)
         private static float? Parse(string input)
         {
             return float.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
         }
 
-        private async Task ImportStatsFromMLB()
+        // Método que importa las estadísticas de la página oficial de la MLB y las trata para guardarlas en la BD
+        private async Task ImportTeamStatsMLB()
         {
-            var statsArray = await FetchExpandedTeamStatsAsync();
+            var statsArray = await FetchTeamStatsMLB();
 
             // Mapeo de nombres de la API (extendidos) a abreviaturas deseadas
             var statMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -211,6 +222,7 @@ namespace StrikeData.Services
                 { "baseOnBalls", "BB" },
                 { "strikeOuts", "SO" },
                 { "stolenBases", "SB" },
+                { "groundIntoDoublePlay", "GIDP" },
                 { "caughtStealing", "CS" },
                 { "sacBunts", "SAC" },
                 { "sacFlies", "SF" },
@@ -292,7 +304,8 @@ namespace StrikeData.Services
             await _context.SaveChangesAsync();
         }
 
-        private async Task<JArray> FetchExpandedTeamStatsAsync()
+        // Método que realiza la llamada a la API de la MLB para obtener las estadísticas 
+        private async Task<JArray> FetchTeamStatsMLB()
         {
 
             var url = "https://bdfed.stitch.mlbinfra.com/bdfed/stats/team?stitch_env=prod&sportId=1&gameType=R&group=hitting&stats=season&season=2025&limit=30&offset=0";
@@ -304,7 +317,7 @@ namespace StrikeData.Services
             if (stats == null || !stats.Any())
             {
                 Console.WriteLine("❌ No se encontraron estadísticas.");
-                return new JArray();
+                return [];
             }
 
             return stats;
