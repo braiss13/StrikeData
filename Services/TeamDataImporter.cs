@@ -308,6 +308,7 @@ namespace StrikeData.Services
         private async Task<JArray> FetchTeamStatsMLB()
         {
 
+            // Esta URL es la que utiliza la página oficial de la MLB para obtener las estadísticas de los equipos (obtenida al hacer un análisis de red)
             var url = "https://bdfed.stitch.mlbinfra.com/bdfed/stats/team?stitch_env=prod&sportId=1&gameType=R&group=hitting&stats=season&season=2025&limit=30&offset=0";
 
             var response = await _httpClient.GetStringAsync(url);
