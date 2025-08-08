@@ -17,6 +17,10 @@
       "PackagePath": "staticwebassets\\favicon.ico"
     },
     {
+      "Id": "C:\\Users\\bsamp\\OneDrive\\Documenti\\TFG\\StrikeData\\wwwroot\\images\\MLB_teams.jpg",
+      "PackagePath": "staticwebassets\\images\\MLB_teams.jpg"
+    },
+    {
       "Id": "C:\\Users\\bsamp\\OneDrive\\Documenti\\TFG\\StrikeData\\wwwroot\\images\\baseball.png",
       "PackagePath": "staticwebassets\\images\\baseball.png"
     },

@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "O1y/xFj6F0W87qNjeKtU6dWf4SxzvEgAv7lfaPZ8M7k=",
+  "Hash": "FqTWikNGd6AbgGC3aS/Hm5oQzt4pse1GSB8ZV36r5SM=",
   "Source": "StrikeData",
   "BasePath": "_content/StrikeData",
   "Mode": "Default",
@@ -167,6 +167,25 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\images\\bating.jpg"
+    },
+    {
+      "Identity": "C:\\Users\\bsamp\\OneDrive\\Documenti\\TFG\\StrikeData\\wwwroot\\images\\MLB_teams.jpg",
+      "SourceId": "StrikeData",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\bsamp\\OneDrive\\Documenti\\TFG\\StrikeData\\wwwroot\\",
+      "BasePath": "_content/StrikeData",
+      "RelativePath": "images/MLB_teams.jpg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\images\\MLB_teams.jpg"
     },
     {
       "Identity": "C:\\Users\\bsamp\\OneDrive\\Documenti\\TFG\\StrikeData\\wwwroot\\js\\site.js",
