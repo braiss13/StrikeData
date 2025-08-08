@@ -82,7 +82,8 @@ namespace StrikeData.Services
                 { "AVG", "https://www.teamrankings.com/mlb/stat/batting-average" },
                 { "SLG", "https://www.teamrankings.com/mlb/stat/slugging-pct" },
                 { "OBP", "https://www.teamrankings.com/mlb/stat/on-base-pct" },
-                { "OPS", "https://www.teamrankings.com/mlb/stat/on-base-plus-slugging-pct" }
+                { "OPS", "https://www.teamrankings.com/mlb/stat/on-base-plus-slugging-pct" },
+                { "AB/HR", "https://www.teamrankings.com/mlb/stat/at-bats-per-home-run" }
             };
 
             foreach (var stat in stats)
@@ -197,7 +198,7 @@ namespace StrikeData.Services
 
         }
 
-        // Método creado para conviertir el String a float (empleado para parsear los datos al final)
+        // Método creado para convertir el String a float (empleado para parsear los datos al final)
         private static float? Parse(string input)
         {
             return float.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
@@ -228,6 +229,8 @@ namespace StrikeData.Services
                 { "sacFlies", "SF" },
                 { "totalBases", "TB" },
                 { "hitByPitch", "HBP" },
+                { "atBatsPerHomeRun", "AB/HR" }
+
             };
 
             foreach (var statToken in statsArray)
@@ -314,6 +317,7 @@ namespace StrikeData.Services
             var response = await _httpClient.GetStringAsync(url);
             var json = JObject.Parse(response);
             var stats = (JArray)json["stats"];
+            // Console.WriteLine(stats.ToString());
 
             if (stats == null || !stats.Any())
             {
