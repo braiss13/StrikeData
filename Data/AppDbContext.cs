@@ -15,6 +15,7 @@ namespace StrikeData.Data
         public DbSet<Player> Players { get; set; }
         public DbSet<Match> Matches { get; set; }
         public DbSet<StatType> StatTypes { get; set; }
+        public DbSet<StatCategory> StatCategories { get; set; }
         public DbSet<TeamStat> TeamStats { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -60,6 +61,17 @@ namespace StrikeData.Data
                 .WithMany(st => st.TeamStats)
                 .HasForeignKey(ts => ts.StatTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Relación 1:N StatCategory → StatType
+            modelBuilder.Entity<StatType>()
+                .HasOne(st => st.StatCategory)
+                .WithMany(sc => sc.StatTypes)
+                .HasForeignKey(st => st.StatCategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StatType>()
+                .Property(st => st.StatCategoryId)
+                .HasDefaultValue(1);
         }
     }
 }
