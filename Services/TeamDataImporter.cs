@@ -3,6 +3,7 @@ using StrikeData.Data;
 using StrikeData.Models;
 using System.Globalization;
 using Newtonsoft.Json.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace StrikeData.Services
 {
@@ -16,6 +17,19 @@ namespace StrikeData.Services
             _context = context;
             _httpClient = new HttpClient();
         }
+
+        private async Task<int> GetHittingCategoryIdAsync()
+        {
+            var category = _context.StatCategories.FirstOrDefault(c => c.Name == "Hitting");
+            if (category == null)
+            {
+                category = new StatCategory { Name = "Hitting" };
+                _context.StatCategories.Add(category);
+                await _context.SaveChangesAsync();
+            }
+            return category.Id;
+        }
+
 
         /*
         public async Task ImportWinTrendsAsync()
@@ -115,6 +129,7 @@ namespace StrikeData.Services
             if (statType == null)
             {
                 statType = new StatType { Name = statTypeName };
+                statType = new StatType { Name = statTypeName, StatCategoryId = hittingCategoryId };
                 _context.StatTypes.Add(statType);
                 await _context.SaveChangesAsync();
             }
@@ -171,30 +186,30 @@ namespace StrikeData.Services
 
         private static void CalculateTotal(string statTypeName, Team team, TeamStat stat)
         {
-                // Para los campos que no están en la página de la MLB, se calcula el "Total" como Games * CurrentSeason
-                if (statTypeName == "S" || statTypeName == "SBA" || statTypeName == "LOB" || statTypeName == "TLOB" || statTypeName == "RLSP")
+            // Para los campos que no están en la página de la MLB, se calcula el "Total" como Games * CurrentSeason
+            if (statTypeName == "S" || statTypeName == "SBA" || statTypeName == "LOB" || statTypeName == "TLOB" || statTypeName == "RLSP")
+            {
+                if (team.Games < 1)
                 {
-                    if (team.Games < 1)
-                    {
-                        Console.WriteLine($"⚠️ El equipo {team.Name} no tiene juegos registrados. La operación será inválida.");
-                    }
-                    else if (stat.CurrentSeason.HasValue)
-                    {
-                        // Aquí se obtiene el valor de currentSeason como float
-                        float currentSeasonValue = stat.CurrentSeason ?? 0;
-
-                        // Como la librería Math.Round no acepta float, se convierte a double el valor final (en .net no hay sobrecarga de Math.Round para float)
-                        double rawTotal = (double)(team.Games * currentSeasonValue);
-
-                        // Por último, se redondea a 2 decimales y se asigna al Total en formato float, puesto que es el que hay en la BD
-                        stat.Total = (float)Math.Round(rawTotal, 2);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"⚠️ El valor de CurrentSeason es null para el equipo {team.Name} en la estadística 'S' (Singles). La operación será inválida.");
-                    }
-
+                    Console.WriteLine($"⚠️ El equipo {team.Name} no tiene juegos registrados. La operación será inválida.");
                 }
+                else if (stat.CurrentSeason.HasValue)
+                {
+                    // Aquí se obtiene el valor de currentSeason como float
+                    float currentSeasonValue = stat.CurrentSeason ?? 0;
+
+                    // Como la librería Math.Round no acepta float, se convierte a double el valor final (en .net no hay sobrecarga de Math.Round para float)
+                    double rawTotal = (double)(team.Games * currentSeasonValue);
+
+                    // Por último, se redondea a 2 decimales y se asigna al Total en formato float, puesto que es el que hay en la BD
+                    stat.Total = (float)Math.Round(rawTotal, 2);
+                }
+                else
+                {
+                    Console.WriteLine($"⚠️ El valor de CurrentSeason es null para el equipo {team.Name} en la estadística 'S' (Singles). La operación será inválida.");
+                }
+
+            }
 
         }
 
@@ -208,6 +223,7 @@ namespace StrikeData.Services
         private async Task ImportTeamStatsMLB()
         {
             var statsArray = await FetchTeamStatsMLB();
+            var hittingCategoryId = await GetHittingCategoryIdAsync();
 
             // Mapeo de nombres de la API (extendidos) a abreviaturas deseadas
             var statMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -288,6 +304,7 @@ namespace StrikeData.Services
                     if (statType == null)
                     {
                         statType = new StatType { Name = shortName };
+                        statType = new StatType { Name = shortName, StatCategoryId = hittingCategoryId };
                         _context.StatTypes.Add(statType);
                         await _context.SaveChangesAsync();
                     }
