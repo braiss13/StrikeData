@@ -5,14 +5,15 @@ using System.Globalization;
 using Newtonsoft.Json.Linq;
 using Microsoft.EntityFrameworkCore;
 
-namespace StrikeData.Services
+namespace StrikeData.Services.TeamData
 {
-    public class TeamDataImporter
+    public class MainImporter
     {
+        // Este importador contiene los métodos para importar las estadísticas relativas a equipos en cuanto a bateo y pitcheo.
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
 
-        public TeamDataImporter(AppDbContext context)
+        public MainImporter(AppDbContext context)
         {
             _context = context;
             _httpClient = new HttpClient();
@@ -128,8 +129,17 @@ namespace StrikeData.Services
             var statType = _context.StatTypes.FirstOrDefault(s => s.Name == statTypeName);
             if (statType == null)
             {
-                statType = new StatType { Name = statTypeName };
-                statType = new StatType { Name = statTypeName, StatCategoryId = hittingCategoryId };
+
+                // Obtener o crear la categoría Hitting y recuperar su Id
+                int categoryId = await GetHittingCategoryIdAsync();
+
+                // Crear el nuevo tipo de estadística asociándolo a esa categoría
+                statType = new StatType
+                {
+                    Name = statTypeName,
+                    StatCategoryId = categoryId
+                };
+
                 _context.StatTypes.Add(statType);
                 await _context.SaveChangesAsync();
             }

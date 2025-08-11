@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace StrikeData.Services
+namespace StrikeData.Services.TeamData
 {
     public static class TeamNameNormalizer
     {
