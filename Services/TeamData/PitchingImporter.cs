@@ -18,35 +18,30 @@ namespace StrikeData.Services.TeamData
             _httpClient = httpClient;
         }
 
-        // Devuelve el Id de la categoría Pitching, creando la categoría si aún no existe.
-        private async Task<int> GetPitchingCategoryIdAsync()
+        // Método principal que llama a MLB y luego a TR.
+        public async Task ImportAllStatsAsync()
         {
-            var category = _context.StatCategories.FirstOrDefault(c => c.Name == "Pitching");
-            if (category == null)
+            // Primero obtenemos los totales de la MLB (ya implementado).
+            await ImportTeamPitchingStatsMLB();
+
+            // Después obtenemos los valores de TeamRankings (sólo 2025).
+            var stats = new Dictionary<string, string>
             {
-                category = new StatCategory { Name = "Pitching" };
-                _context.StatCategories.Add(category);
-                await _context.SaveChangesAsync();
+                { "OP/G", "https://www.teamrankings.com/mlb/stat/outs-pitched-per-game" },
+                { "ER/G", "https://www.teamrankings.com/mlb/stat/outs-pitched-per-game" },
+                { "SO/9", "https://www.teamrankings.com/mlb/stat/strikeouts-per-9" },
+                { "H/9",  "https://www.teamrankings.com/mlb/stat/home-runs-per-9" },
+                { "HR/9", "https://www.teamrankings.com/mlb/stat/walks-per-9" },
+                { "W/9",  "https://www.teamrankings.com/mlb/stat/walks-per-9" }
+            };
+
+            foreach (var stat in stats)
+            {
+                await ImportTeamStatTRAsync(stat.Key, stat.Value);
             }
-            return category.Id;
         }
 
-        // Llama a la API oficial de MLB para recuperar las estadísticas de pitching.
-        private async Task<JArray> FetchTeamPitchingStatsMLB()
-        {
-            var url = "https://bdfed.stitch.mlbinfra.com/bdfed/stats/team?&env=prod&gameType=R&group=pitching&order=desc&sortStat=strikeouts&stats=season&season=2025&limit=30&offset=0";
-            var response = await _httpClient.GetStringAsync(url);
-            var json = JObject.Parse(response);
-            var stats = (JArray)json["stats"];
-            if (stats == null || !stats.Any())
-            {
-                Console.WriteLine("⚠️ No se encontraron estadísticas de pitching.");
-                return new JArray();
-            }
-            return stats;
-        }
-
-        // Importa las estadísticas de pitching y las guarda en la base de datos.
+        // Importa las estadísticas de pitching necesarias desde la página oficial de la MLB y las guarda en la base de datos.
         private async Task ImportTeamPitchingStatsMLB()
         {
             var statsArray = await FetchTeamPitchingStatsMLB();
@@ -142,6 +137,134 @@ namespace StrikeData.Services.TeamData
 
                 await _context.SaveChangesAsync();
             }
+        }
+
+        // Devuelve el Id de la categoría Pitching, creando la categoría si aún no existe.
+        private async Task<int> GetPitchingCategoryIdAsync()
+        {
+            var category = _context.StatCategories.FirstOrDefault(c => c.Name == "Pitching");
+            if (category == null)
+            {
+                category = new StatCategory { Name = "Pitching" };
+                _context.StatCategories.Add(category);
+                await _context.SaveChangesAsync();
+            }
+            return category.Id;
+        }
+
+        // Llama a la API oficial de MLB para recuperar las estadísticas de pitching.
+        private async Task<JArray> FetchTeamPitchingStatsMLB()
+        {
+            var url = "https://bdfed.stitch.mlbinfra.com/bdfed/stats/team?&env=prod&gameType=R&group=pitching&order=desc&sortStat=strikeouts&stats=season&season=2025&limit=30&offset=0";
+            var response = await _httpClient.GetStringAsync(url);
+            var json = JObject.Parse(response);
+            var stats = (JArray)json["stats"];
+            if (stats == null || !stats.Any())
+            {
+                Console.WriteLine("⚠️ No se encontraron estadísticas de pitching.");
+                return new JArray();
+            }
+            return stats;
+        }
+
+        // Importa una estadística concreta desde TeamRankings (sólo columna 2025).
+        private async Task ImportTeamStatTRAsync(string statTypeName, string url)
+        {
+            var response = await _httpClient.GetStringAsync(url);
+            var doc = new HtmlDocument();
+            doc.LoadHtml(response);
+
+            var table = doc.DocumentNode.SelectSingleNode("//table[contains(@class,'datatable')]");
+            if (table == null) return;
+
+            // Localiza la columna cuyo encabezado es "2025".
+            var headerRow = table.SelectSingleNode(".//thead/tr");
+            var headerCells = headerRow.SelectNodes(".//th|.//td");
+            int currentSeasonIndex = -1;
+            for (int i = 0; i < headerCells.Count; i++)
+            {
+                var colName = headerCells[i].InnerText.Trim();
+                if (colName == "2025")
+                {
+                    currentSeasonIndex = i;
+                    break;
+                }
+            }
+            if (currentSeasonIndex == -1)
+            {
+                Console.WriteLine("⚠️ No se encontró la columna 2025 en la tabla de TeamRankings.");
+                return;
+            }
+
+            // Busca o crea el tipo de estadística y lo asocia a la categoría Pitching.
+            var statType = _context.StatTypes.FirstOrDefault(s => s.Name == statTypeName);
+            if (statType == null)
+            {
+                int categoryId = await GetPitchingCategoryIdAsync();
+                statType = new StatType { Name = statTypeName, StatCategoryId = categoryId };
+                _context.StatTypes.Add(statType);
+                await _context.SaveChangesAsync();
+            }
+
+            // Recorre todas las filas (equipos) de la tabla, saltando el encabezado.
+            var rows = table.SelectNodes(".//tr").Skip(1);
+            foreach (var row in rows)
+            {
+                var cells = row.SelectNodes("./td").ToList();
+                if (cells.Count <= currentSeasonIndex) continue;
+
+                // Nombre del equipo está en la segunda columna (índice 1).
+                var rawTeamName = cells[1].InnerText.Trim();
+                if (string.IsNullOrWhiteSpace(rawTeamName)) continue;
+                var teamName = TeamNameNormalizer.Normalize(rawTeamName);
+
+                // Busca o crea el equipo.
+                var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
+                if (team == null)
+                {
+                    team = new Team { Name = teamName };
+                    _context.Teams.Add(team);
+                    await _context.SaveChangesAsync();
+                }
+
+                // Obtiene el valor de la columna 2025.
+                var cellText = cells[currentSeasonIndex].InnerText.Trim();
+                if (string.IsNullOrWhiteSpace(cellText)) continue;
+
+                if (!float.TryParse(cellText, NumberStyles.Float, CultureInfo.InvariantCulture, out float currentSeason))
+                {
+                    Console.WriteLine($"⚠️ Valor inválido para {statTypeName} en {teamName}: '{cellText}'");
+                    continue;
+                }
+
+                // Busca o crea la estadística del equipo.
+                var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id);
+                if (stat == null)
+                {
+                    stat = new TeamStat { TeamId = team.Id, StatTypeId = statType.Id };
+                    _context.TeamStats.Add(stat);
+                }
+
+                stat.CurrentSeason = currentSeason;
+                CalculateTotal(team, stat);  // Calcula Total = Games * CurrentSeason
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        // Calcula el Total como Games * CurrentSeason para estadísticas de TR.
+        private static void CalculateTotal(Team team, TeamStat stat)
+        {
+            // Si el equipo no tiene juegos registrados, no se puede calcular el total.
+            if (team.Games < 1 || !stat.CurrentSeason.HasValue)
+            {
+                return;
+            }
+
+            // Total = Juegos * Valor de la temporada actual (2025).
+            float currentSeasonValue = stat.CurrentSeason ?? 0f;
+            double rawTotal = (double)team.Games * currentSeasonValue;
+            stat.Total = (float)Math.Round(rawTotal, 2);
         }
 
     }

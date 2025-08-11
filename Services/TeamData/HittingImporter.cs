@@ -9,6 +9,38 @@ namespace StrikeData.Services.TeamData
 {
     public class HittingImporter
     {
+        /*
+       public async Task ImportWinTrendsAsync()
+       {
+
+           var url = "https://www.teamrankings.com/mlb/trends/win_trends";
+           var rows = await ScrapeTable(url);
+
+           foreach (var row in rows)
+           {
+               if (row.Count < 3) continue;
+
+               string name = row[0];
+               string record = row[1];
+               if (!float.TryParse(row[2].TrimEnd('%'), out float winPct))
+                   continue;
+
+               var team = _context.Teams.FirstOrDefault(t => t.Name == name);
+               if (team == null)
+               {
+                   team = new Team { Name = name, SeasonYear = 2025 };
+                   _context.Teams.Add(team);
+               }
+
+               team.OverallRecord = record;
+               team.WinPercentage = winPct / 100f;
+           }
+
+           await _context.SaveChangesAsync();
+
+       }
+       */
+        
         // Este importador contiene los métodos para importar las estadísticas relativas a equipos en cuanto a bateo
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
@@ -19,56 +51,11 @@ namespace StrikeData.Services.TeamData
             _httpClient = new HttpClient();
         }
 
-        private async Task<int> GetHittingCategoryIdAsync()
-        {
-            var category = _context.StatCategories.FirstOrDefault(c => c.Name == "Hitting");
-            if (category == null)
-            {
-                category = new StatCategory { Name = "Hitting" };
-                _context.StatCategories.Add(category);
-                await _context.SaveChangesAsync();
-            }
-            return category.Id;
-        }
-
-
-        /*
-        public async Task ImportWinTrendsAsync()
-        {
-
-            var url = "https://www.teamrankings.com/mlb/trends/win_trends";
-            var rows = await ScrapeTable(url);
-
-            foreach (var row in rows)
-            {
-                if (row.Count < 3) continue;
-
-                string name = row[0];
-                string record = row[1];
-                if (!float.TryParse(row[2].TrimEnd('%'), out float winPct))
-                    continue;
-
-                var team = _context.Teams.FirstOrDefault(t => t.Name == name);
-                if (team == null)
-                {
-                    team = new Team { Name = name, SeasonYear = 2025 };
-                    _context.Teams.Add(team);
-                }
-
-                team.OverallRecord = record;
-                team.WinPercentage = winPct / 100f;
-            }
-
-            await _context.SaveChangesAsync();
-            
-        }
-        */
-
         // Método principal -> Contiene las llamadas a los dos métodos de obtención de datos (MLB y TeamRankings)
         public async Task ImportAllStatsAsync()
         {
             // 1. Primero scrapear la MLB para tener el número de Games por equipo y el valor total para cada tipo de estadística
-            await ImportTeamStatsMLB();
+            await ImportHittingTeamStatsMLB();
 
             // 2. Luego, el scraping de TeamRankings con promedios por partido
             var stats = new Dictionary<string, string>
@@ -103,12 +90,155 @@ namespace StrikeData.Services.TeamData
 
             foreach (var stat in stats)
             {
-                await ImportTeamStatsTR(stat.Key, stat.Value);
+                await ImportHittingTeamStatsTR(stat.Key, stat.Value);
             }
         }
 
+        // Método que importa las estadísticas de la página oficial de la MLB y las trata para guardarlas en la BD
+        private async Task ImportHittingTeamStatsMLB()
+        {
+            var statsArray = await FetchTeamHittingStatsMLB();
+            var hittingCategoryId = await GetHittingCategoryIdAsync();
+
+            // Mapeo de nombres de la API (extendidos) a abreviaturas deseadas
+            var statMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "gamesPlayed", "G" },
+                { "atBats", "AB" },
+                { "runs", "R" },
+                { "hits", "H" },
+                { "homeRuns", "HR" },
+                { "doubles", "2B" },
+                { "triples", "3B" },
+                { "rbi", "RBI" },
+                { "baseOnBalls", "BB" },
+                { "strikeOuts", "SO" },
+                { "stolenBases", "SB" },
+                { "groundIntoDoublePlay", "GIDP" },
+                { "caughtStealing", "CS" },
+                { "sacBunts", "SAC" },
+                { "sacFlies", "SF" },
+                { "totalBases", "TB" },
+                { "hitByPitch", "HBP" },
+                { "atBatsPerHomeRun", "AB/HR" }
+
+            };
+
+            foreach (var statToken in statsArray)
+            {
+                if (statToken is not JObject teamStat)
+                    continue;
+
+                var teamNameRaw = teamStat["teamName"]?.ToString();
+                if (string.IsNullOrWhiteSpace(teamNameRaw))
+                {
+                    Console.WriteLine("⚠️ Nombre de equipo no encontrado o vacío.");
+                    continue;
+                }
+
+                var teamName = TeamNameNormalizer.Normalize(teamNameRaw);
+
+                var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
+                if (team == null)
+                {
+                    team = new Team { Name = teamName };
+                    _context.Teams.Add(team);
+                    await _context.SaveChangesAsync();
+                }
+
+                foreach (var mapping in statMappings)
+                {
+                    string apiField = mapping.Key;
+                    string shortName = mapping.Value;
+
+                    if (!teamStat.TryGetValue(apiField, out var token))
+                        continue;
+
+                    string rawValue = token?.ToString();
+
+                    if (string.IsNullOrWhiteSpace(rawValue))
+                        continue;
+
+                    if (shortName == "G")
+                    {
+                        if (int.TryParse(rawValue, out int games))
+                        {
+                            team.Games = games;
+                        }
+                        continue;
+                    }
+
+                    if (!float.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out float statValue))
+                    {
+                        Console.WriteLine($"⚠️ Valor inválido para {shortName} en {teamName}: '{rawValue}'");
+                        continue;
+                    }
+
+                    // Obtener o crear el tipo de estadística
+                    var statType = _context.StatTypes.FirstOrDefault(s => s.Name == shortName);
+                    if (statType == null)
+                    {
+                        statType = new StatType { Name = shortName };
+                        statType = new StatType { Name = shortName, StatCategoryId = hittingCategoryId };
+                        _context.StatTypes.Add(statType);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    // Obtener o crear la estadística del equipo
+                    var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id);
+                    if (stat == null)
+                    {
+                        stat = new TeamStat { TeamId = team.Id, StatTypeId = statType.Id };
+                        _context.TeamStats.Add(stat);
+                    }
+
+                    stat.Total = statValue;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task<int> GetHittingCategoryIdAsync()
+        {
+            var category = _context.StatCategories.FirstOrDefault(c => c.Name == "Hitting");
+            if (category == null)
+            {
+                category = new StatCategory { Name = "Hitting" };
+                _context.StatCategories.Add(category);
+                await _context.SaveChangesAsync();
+            }
+            return category.Id;
+        }
+
+        // Método creado para convertir el String a float (empleado para parsear los datos al final)
+        private static float? Parse(string input)
+        {
+            return float.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
+        }
+
+        // Método que realiza la llamada a la API de la MLB para obtener las estadísticas 
+        private async Task<JArray> FetchTeamHittingStatsMLB()
+        {
+
+            // Esta URL es la que utiliza la página oficial de la MLB para obtener las estadísticas de los equipos (obtenida al hacer un análisis de red)
+            var url = "https://bdfed.stitch.mlbinfra.com/bdfed/stats/team?stitch_env=prod&sportId=1&gameType=R&group=hitting&stats=season&season=2025&limit=30&offset=0";
+
+            var response = await _httpClient.GetStringAsync(url);
+            var json = JObject.Parse(response);
+            var stats = (JArray)json["stats"];
+
+            if (stats == null || !stats.Any())
+            {
+                Console.WriteLine("❌ No se encontraron estadísticas.");
+                return [];
+            }
+
+            return stats;
+        }
+
         // Método que realiza scrapping para obtener estadísticas de TeamRankings
-        public async Task ImportTeamStatsTR(string statTypeName, string url)
+        public async Task ImportHittingTeamStatsTR(string statTypeName, string url)
         {
 
             // Descarga la página html y crea un documento con todo el contenido
@@ -223,136 +353,6 @@ namespace StrikeData.Services.TeamData
 
         }
 
-        // Método creado para convertir el String a float (empleado para parsear los datos al final)
-        private static float? Parse(string input)
-        {
-            return float.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
-        }
-
-        // Método que importa las estadísticas de la página oficial de la MLB y las trata para guardarlas en la BD
-        private async Task ImportTeamStatsMLB()
-        {
-            var statsArray = await FetchTeamStatsMLB();
-            var hittingCategoryId = await GetHittingCategoryIdAsync();
-
-            // Mapeo de nombres de la API (extendidos) a abreviaturas deseadas
-            var statMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "gamesPlayed", "G" },
-                { "atBats", "AB" },
-                { "runs", "R" },
-                { "hits", "H" },
-                { "homeRuns", "HR" },
-                { "doubles", "2B" },
-                { "triples", "3B" },
-                { "rbi", "RBI" },
-                { "baseOnBalls", "BB" },
-                { "strikeOuts", "SO" },
-                { "stolenBases", "SB" },
-                { "groundIntoDoublePlay", "GIDP" },
-                { "caughtStealing", "CS" },
-                { "sacBunts", "SAC" },
-                { "sacFlies", "SF" },
-                { "totalBases", "TB" },
-                { "hitByPitch", "HBP" },
-                { "atBatsPerHomeRun", "AB/HR" }
-
-            };
-
-            foreach (var statToken in statsArray)
-            {
-                if (statToken is not JObject teamStat)
-                    continue;
-
-                var teamNameRaw = teamStat["teamName"]?.ToString();
-                if (string.IsNullOrWhiteSpace(teamNameRaw))
-                {
-                    Console.WriteLine("⚠️ Nombre de equipo no encontrado o vacío.");
-                    continue;
-                }
-
-                var teamName = TeamNameNormalizer.Normalize(teamNameRaw);
-
-                var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
-                if (team == null)
-                {
-                    team = new Team { Name = teamName };
-                    _context.Teams.Add(team);
-                    await _context.SaveChangesAsync();
-                }
-
-                foreach (var mapping in statMappings)
-                {
-                    string apiField = mapping.Key;
-                    string shortName = mapping.Value;
-
-                    if (!teamStat.TryGetValue(apiField, out var token))
-                        continue;
-
-                    string rawValue = token?.ToString();
-
-                    if (string.IsNullOrWhiteSpace(rawValue))
-                        continue;
-
-                    if (shortName == "G")
-                    {
-                        if (int.TryParse(rawValue, out int games))
-                        {
-                            team.Games = games;
-                        }
-                        continue;
-                    }
-
-                    if (!float.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out float statValue))
-                    {
-                        Console.WriteLine($"⚠️ Valor inválido para {shortName} en {teamName}: '{rawValue}'");
-                        continue;
-                    }
-
-                    // Obtener o crear el tipo de estadística
-                    var statType = _context.StatTypes.FirstOrDefault(s => s.Name == shortName);
-                    if (statType == null)
-                    {
-                        statType = new StatType { Name = shortName };
-                        statType = new StatType { Name = shortName, StatCategoryId = hittingCategoryId };
-                        _context.StatTypes.Add(statType);
-                        await _context.SaveChangesAsync();
-                    }
-
-                    // Obtener o crear la estadística del equipo
-                    var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id);
-                    if (stat == null)
-                    {
-                        stat = new TeamStat { TeamId = team.Id, StatTypeId = statType.Id };
-                        _context.TeamStats.Add(stat);
-                    }
-
-                    stat.Total = statValue;
-                }
-            }
-
-            await _context.SaveChangesAsync();
-        }
-
-        // Método que realiza la llamada a la API de la MLB para obtener las estadísticas 
-        private async Task<JArray> FetchTeamStatsMLB()
-        {
-
-            // Esta URL es la que utiliza la página oficial de la MLB para obtener las estadísticas de los equipos (obtenida al hacer un análisis de red)
-            var url = "https://bdfed.stitch.mlbinfra.com/bdfed/stats/team?stitch_env=prod&sportId=1&gameType=R&group=hitting&stats=season&season=2025&limit=30&offset=0";
-
-            var response = await _httpClient.GetStringAsync(url);
-            var json = JObject.Parse(response);
-            var stats = (JArray)json["stats"];
-
-            if (stats == null || !stats.Any())
-            {
-                Console.WriteLine("❌ No se encontraron estadísticas.");
-                return [];
-            }
-
-            return stats;
-        }
         
     }
 }
