@@ -1,0 +1,86 @@
+@page
+@model StrikeData.Pages.TeamData.PitchingModel
+@{
+    ViewData["Title"] = "Pitching Stats";
+}
+
+<h2>Pitching&nbsp;Stats</h2>
+
+<!-- Botones para alternar entre vistas -->
+<div class="btn-group mb-3" role="group">
+    <button id="basicBtn" type="button" class="btn btn-primary" onclick="showTable('basic')">Basic</button>
+    <button id="advancedBtn" type="button" class="btn btn-secondary" onclick="showTable('advanced')">Advanced</button>
+</div>
+
+<!-- Tabla básica (MLB hasta AVG) -->
+<div id="basicTable">
+    <table class="table table-striped table-bordered table-sm">
+        <thead>
+            <tr>
+                <th>Team</th>
+                <th>Games</th>
+                @foreach (var statName in Model.BasicStatNames)
+                {
+                    <th>@statName</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Model.TeamPitchingStats)
+            {
+                <tr>
+                    <td>@row.TeamName</td>
+                    <td>@row.Games</td>
+                    @foreach (var statName in Model.BasicStatNames)
+                    {
+                        float? val;
+                        row.Stats.TryGetValue(statName, out val);
+                        <td>@(val.HasValue ? val.Value.ToString("0.##") : "-")</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Tabla avanzada (resto de MLB + TeamRankings) -->
+<div id="advancedTable" style="display:none;">
+    <table class="table table-striped table-bordered table-sm">
+        <thead>
+            <tr>
+                <th>Team</th>
+                <th>Games</th>
+                @foreach (var statName in Model.AdvancedStatNames)
+                {
+                    <th>@statName</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Model.TeamPitchingStats)
+            {
+                <tr>
+                    <td>@row.TeamName</td>
+                    <td>@row.Games</td>
+                    @foreach (var statName in Model.AdvancedStatNames)
+                    {
+                        float? val;
+                        row.Stats.TryGetValue(statName, out val);
+                        <td>@(val.HasValue ? val.Value.ToString("0.##") : "-")</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+<script>
+function showTable(type) {
+    document.getElementById('basicTable').style.display = (type === 'basic') ? 'block' : 'none';
+    document.getElementById('advancedTable').style.display = (type === 'advanced') ? 'block' : 'none';
+}
+// Mostrar tabla básica por defecto al cargar la página
+showTable('basic');
+</script>
+}
