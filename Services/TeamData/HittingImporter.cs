@@ -7,13 +7,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace StrikeData.Services.TeamData
 {
-    public class MainImporter
+    public class HittingImporter
     {
-        // Este importador contiene los métodos para importar las estadísticas relativas a equipos en cuanto a bateo y pitcheo.
+        // Este importador contiene los métodos para importar las estadísticas relativas a equipos en cuanto a bateo
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
 
-        public MainImporter(AppDbContext context)
+        public HittingImporter(AppDbContext context)
         {
             _context = context;
             _httpClient = new HttpClient();
@@ -344,7 +344,6 @@ namespace StrikeData.Services.TeamData
             var response = await _httpClient.GetStringAsync(url);
             var json = JObject.Parse(response);
             var stats = (JArray)json["stats"];
-            // Console.WriteLine(stats.ToString());
 
             if (stats == null || !stats.Any())
             {
@@ -354,7 +353,6 @@ namespace StrikeData.Services.TeamData
 
             return stats;
         }
-
-
+        
     }
 }

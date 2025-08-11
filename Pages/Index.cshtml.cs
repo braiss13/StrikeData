@@ -8,17 +8,17 @@ namespace StrikeData.Pages
 {
     public class IndexModel : PageModel
     {
-        private readonly MainImporter _main_importer;
+        private readonly HittingImporter _hitting_importer;
 
         public IndexModel(AppDbContext context)
         {
-            _main_importer = new MainImporter(context);
+            _hitting_importer = new HittingImporter(context);
         }
 
         public async Task OnGetAsync()
         {   
-            // await _importer.ImportWinTrendsAsync();
-            await _main_importer.ImportAllStatsAsync();
+            // TODO: Revisar lo de WinTrends -> await _importer.ImportWinTrendsAsync();
+            await _hitting_importer.ImportAllStatsAsync();
         }
     }
 }
