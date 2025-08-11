@@ -52,7 +52,7 @@ namespace StrikeData.Services.TeamData
         }
 
         // Método principal -> Contiene las llamadas a los dos métodos de obtención de datos (MLB y TeamRankings)
-        public async Task ImportAllStatsAsync()
+        public async Task ImportAllStatsAsyncH()
         {
             // 1. Primero scrapear la MLB para tener el número de Games por equipo y el valor total para cada tipo de estadística
             await ImportHittingTeamStatsMLB();

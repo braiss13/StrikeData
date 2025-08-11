@@ -22,8 +22,8 @@ namespace StrikeData.Pages
         public async Task OnGetAsync()
         {
             // TODO: Revisar lo de WinTrends -> await _importer.ImportWinTrendsAsync();
-            await _hitting_importer.ImportAllStatsAsync();
-            await _pitching_importer.ImportAllStatsAsync();
+            await _hitting_importer.ImportAllStatsAsyncH();
+            await _pitching_importer.ImportAllStatsAsyncP();
         }
     }
 }

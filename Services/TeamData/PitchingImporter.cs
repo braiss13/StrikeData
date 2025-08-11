@@ -19,7 +19,7 @@ namespace StrikeData.Services.TeamData
         }
 
         // Método principal que llama a MLB y luego a TR.
-        public async Task ImportAllStatsAsync()
+        public async Task ImportAllStatsAsyncP()
         {
             // Primero obtenemos los totales de la MLB (ya implementado).
             await ImportTeamPitchingStatsMLB();
