@@ -36,7 +36,7 @@ namespace StrikeData.Services.TeamData
 
             foreach (var stat in _trPMap)
             {
-                await ImportTeamStatTRAsync(stat.Key, stat.Value);
+                await ImportPitchingTeamStatTR(stat.Key, stat.Value);
             }
         }
 
@@ -116,7 +116,8 @@ namespace StrikeData.Services.TeamData
                     }
 
                     // Busca o crea el tipo de estadística.
-                    var statType = _context.StatTypes.FirstOrDefault(s => s.Name == shortName);
+                    var statType = _context.StatTypes.FirstOrDefault(s => s.Name == shortName && s.StatCategoryId == pitchingCategoryId);
+
                     if (statType == null)
                     {
                         statType = new StatType { Name = shortName, StatCategoryId = pitchingCategoryId };
@@ -167,7 +168,7 @@ namespace StrikeData.Services.TeamData
         }
 
         // Importa una estadística concreta desde TeamRankings (sólo columna 2025).
-        private async Task ImportTeamStatTRAsync(string statTypeName, string url)
+        private async Task ImportPitchingTeamStatTR(string statTypeName, string url)
         {
             var response = await _httpClient.GetStringAsync(url);
             var doc = new HtmlDocument();
@@ -196,10 +197,14 @@ namespace StrikeData.Services.TeamData
             }
 
             // Busca o crea el tipo de estadística y lo asocia a la categoría Pitching.
-            var statType = _context.StatTypes.FirstOrDefault(s => s.Name == statTypeName);
+            // Obtener el Id de la categoría pitching (sólo una vez al principio del método)
+            int categoryId = await GetPitchingCategoryIdAsync();
+
+            // Buscar el StatType por nombre y por categoría
+            var statType = _context.StatTypes.FirstOrDefault(s => s.Name == statTypeName && s.StatCategoryId == categoryId);
+
             if (statType == null)
             {
-                int categoryId = await GetPitchingCategoryIdAsync();
                 statType = new StatType { Name = statTypeName, StatCategoryId = categoryId };
                 _context.StatTypes.Add(statType);
                 await _context.SaveChangesAsync();
