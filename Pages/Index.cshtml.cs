@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using StrikeData.Services;
-using System.Threading.Tasks;
 using StrikeData.Data;
 using StrikeData.Services.TeamData;
-using System.Net.Http;
 
 namespace StrikeData.Pages
 {

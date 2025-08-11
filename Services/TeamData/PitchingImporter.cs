@@ -3,7 +3,6 @@ using StrikeData.Data;
 using StrikeData.Models;
 using System.Globalization;
 using Newtonsoft.Json.Linq;
-using Microsoft.EntityFrameworkCore;
 
 namespace StrikeData.Services.TeamData
 {
@@ -11,6 +10,17 @@ namespace StrikeData.Services.TeamData
     {
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
+
+        // Mapa de abreviaturas y URLs de TeamRankings para pitching.
+        private static readonly Dictionary<string, string> _trPMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "OP/G", "https://www.teamrankings.com/mlb/stat/outs-pitched-per-game" },
+            { "ER/G", "https://www.teamrankings.com/mlb/stat/outs-pitched-per-game" },
+            { "SO/9", "https://www.teamrankings.com/mlb/stat/strikeouts-per-9" },
+            { "H/9",  "https://www.teamrankings.com/mlb/stat/home-runs-per-9" },
+            { "HR/9", "https://www.teamrankings.com/mlb/stat/walks-per-9" },
+            { "W/9",  "https://www.teamrankings.com/mlb/stat/walks-per-9" }
+        };
 
         public PitchingImporter(AppDbContext context, HttpClient httpClient)
         {
@@ -24,18 +34,7 @@ namespace StrikeData.Services.TeamData
             // Primero obtenemos los totales de la MLB (ya implementado).
             await ImportTeamPitchingStatsMLB();
 
-            // Después obtenemos los valores de TeamRankings (sólo 2025).
-            var stats = new Dictionary<string, string>
-            {
-                { "OP/G", "https://www.teamrankings.com/mlb/stat/outs-pitched-per-game" },
-                { "ER/G", "https://www.teamrankings.com/mlb/stat/outs-pitched-per-game" },
-                { "SO/9", "https://www.teamrankings.com/mlb/stat/strikeouts-per-9" },
-                { "H/9",  "https://www.teamrankings.com/mlb/stat/home-runs-per-9" },
-                { "HR/9", "https://www.teamrankings.com/mlb/stat/walks-per-9" },
-                { "W/9",  "https://www.teamrankings.com/mlb/stat/walks-per-9" }
-            };
-
-            foreach (var stat in stats)
+            foreach (var stat in _trPMap)
             {
                 await ImportTeamStatTRAsync(stat.Key, stat.Value);
             }
