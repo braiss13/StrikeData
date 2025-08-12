@@ -3,9 +3,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
 using StrikeData.Models;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace StrikeData.Pages.TeamData
 {
@@ -26,23 +23,32 @@ namespace StrikeData.Pages.TeamData
 
         public async Task OnGetAsync()
         {
-            StatTypes = await _context.StatTypes.ToListAsync();
+            // Cargar solo los tipos de estadística de la categoría Hitting
+            StatTypes = await _context.StatTypes
+                .Include(st => st.StatCategory)
+                .Where(st => st.StatCategory != null && st.StatCategory.Name == "Hitting")
+                .ToListAsync();
 
+            // Construir la consulta inicial de TeamStats únicamente para la categoría Hitting
             var query = _context.TeamStats
                 .Include(ts => ts.Team)
                 .Include(ts => ts.StatType)
+                .Where(ts => ts.StatType.StatCategory != null && ts.StatType.StatCategory.Name == "Hitting")
                 .AsQueryable();
 
+            // Si el usuario ha seleccionado un tipo concreto, filtramos por su Id
             if (SelectedStatTypeId.HasValue)
             {
                 query = query.Where(ts => ts.StatTypeId == SelectedStatTypeId.Value);
             }
 
+            // Ordenamos y materializamos la lista de estadísticas
             TeamStats = await query
-                .OrderByDescending(ts => ts.CurrentSeason)
+                .OrderByDescending(ts => ts.CurrentSeason) // o Total, según desees
                 .ThenBy(ts => ts.Team.Name)
                 .ToListAsync();
         }
+
 
     }
 }

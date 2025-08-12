@@ -27,6 +27,7 @@
     <table class="table table-striped table-bordered table-sm">
         <thead>
             <tr>
+                <th>#</th>
                 <th>Team</th>
                 <th>Games</th>
                 @foreach (var statName in Model.BasicStatNames)
@@ -36,9 +37,12 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var row in Model.TeamPitchingStats)
-            {
+            @{
+                var index_basic = 1;
+                foreach (var row in Model.TeamPitchingStats)
+                {
                 <tr>
+                    <td>@index_basic</td>
                     <td>@row.TeamName</td>
                     <td>@row.Games</td>
                     @foreach (var statName in Model.BasicStatNames)
@@ -48,6 +52,8 @@
                         <td>@(val.HasValue ? val.Value.ToString("0.##") : "-")</td>
                     }
                 </tr>
+                index_basic++;
+                }
             }
         </tbody>
     </table>
@@ -58,6 +64,7 @@
     <table class="table table-striped table-bordered table-sm pitching-table">
         <thead>
             <tr>
+                <th>#</th>
                 <th>Team</th>
                 <th>Games</th>
                 @foreach (var statName in Model.AdvancedStatNames)
@@ -67,18 +74,23 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var row in Model.TeamPitchingStats)
-            {
-                <tr>
-                    <td>@row.TeamName</td>
-                    <td>@row.Games</td>
-                    @foreach (var statName in Model.AdvancedStatNames)
-                    {
-                        float? val;
-                        row.Stats.TryGetValue(statName, out val);
-                        <td>@(val.HasValue ? val.Value.ToString("0.##") : "-")</td>
-                    }
-                </tr>
+            @{
+                var index_advanced = 1;
+                foreach (var row in Model.TeamPitchingStats)
+                {
+                    <tr>
+                        <td>@index_advanced</td>
+                        <td>@row.TeamName</td>
+                        <td>@row.Games</td>
+                        @foreach (var statName in Model.AdvancedStatNames)
+                        {
+                            float? val;
+                            row.Stats.TryGetValue(statName, out val);
+                            <td>@(val.HasValue ? val.Value.ToString("0.##") : "-")</td>
+                        }
+                    </tr>
+                    index_advanced++;
+                }
             }
         </tbody>
     </table>
