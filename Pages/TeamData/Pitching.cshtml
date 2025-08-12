@@ -4,12 +4,22 @@
     ViewData["Title"] = "Pitching Stats";
 }
 
-<h2 class="text-center">Pitching Stats</h2>
+<h2 class="section-title">Pitching Stats</h2>
 
 <!-- Botones para alternar entre vistas -->
-<div class="btn-group mb-3 " role="group">
-    <button id="basicBtn" type="button" class="btn-stat-toggle" onclick="showTable('basic')">Basic</button>
-    <button id="advancedBtn" type="button" class="btn-stat-toggle inactive" onclick="showTable('advanced')">Advanced</button>
+<div class="table-selector">
+    <button id="basicBtn"
+            type="button"
+            class="btn-stat-toggle"
+            onclick="showTable('basic')">
+        Basic
+    </button>
+    <button id="advancedBtn"
+            type="button"
+            class="btn-stat-toggle inactive"
+            onclick="showTable('advanced')">
+        Advanced
+    </button>
 </div>
 
 <!-- Tabla básica (MLB hasta AVG) -->
@@ -78,10 +88,11 @@
 <script>
 
 function showTable(type) {
+    // alternar tablas
     document.getElementById('basicTable').style.display = (type === 'basic') ? 'block' : 'none';
     document.getElementById('advancedTable').style.display = (type === 'advanced') ? 'block' : 'none';
 
-    // resaltar botón activo
+    // resaltar botón activo/desactivo
     const basicBtn = document.getElementById('basicBtn');
     const advancedBtn = document.getElementById('advancedBtn');
     if (type === 'basic') {
