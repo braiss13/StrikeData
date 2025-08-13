@@ -8,19 +8,23 @@ namespace StrikeData.Pages
     {
         private readonly HittingImporter _hitting_importer;
         private readonly PitchingImporter _pitching_importer;
+        private readonly FieldingImporter _fielding_importer;
 
         public IndexModel(AppDbContext context)
         {
             _hitting_importer = new HittingImporter(context);
+
             // Para PitchingImporter necesitamos un HttpClient adicional
-            _pitching_importer = new PitchingImporter(context, new HttpClient());
+            _pitching_importer = new PitchingImporter(context);
+
+            _fielding_importer = new FieldingImporter(context);
         }
 
         public async Task OnGetAsync()
         {
-            // TODO: Revisar lo de WinTrends -> await _importer.ImportWinTrendsAsync();
             await _hitting_importer.ImportAllStatsAsyncH();
             await _pitching_importer.ImportAllStatsAsyncP();
+            await _fielding_importer.ImportAllStatsAsyncF();
         }
     }
 }

@@ -6,11 +6,11 @@ using StrikeData.Models;
 
 namespace StrikeData.Pages.TeamData
 {
-    public class HittingModel : PageModel
+    public class FieldingModel : PageModel
     {
         private readonly AppDbContext _context;
 
-        public HittingModel(AppDbContext context)
+        public FieldingModel(AppDbContext context)
         {
             _context = context;
         }
@@ -23,17 +23,17 @@ namespace StrikeData.Pages.TeamData
 
         public async Task OnGetAsync()
         {
-            // Cargar solo los tipos de estadística de la categoría Hitting
+            // Cargar solo los tipos de estadística de la categoría Fielding
             StatTypes = await _context.StatTypes
                 .Include(st => st.StatCategory)
-                .Where(st => st.StatCategory != null && st.StatCategory.Name == "Hitting")
+                .Where(st => st.StatCategory != null && st.StatCategory.Name == "Fielding")
                 .ToListAsync();
 
-            // Construir la consulta inicial de TeamStats únicamente para la categoría Hitting
+            // Construir la consulta inicial de TeamStats únicamente para la categoría Fielding
             var query = _context.TeamStats
                 .Include(ts => ts.Team)
                 .Include(ts => ts.StatType)
-                .Where(ts => ts.StatType.StatCategory != null && ts.StatType.StatCategory.Name == "Hitting")
+                .Where(ts => ts.StatType.StatCategory != null && ts.StatType.StatCategory.Name == "Fielding")
                 .AsQueryable();
 
             // Si el usuario ha seleccionado un tipo concreto, filtramos por su Id
@@ -44,7 +44,7 @@ namespace StrikeData.Pages.TeamData
 
             // Ordenamos y materializamos la lista de estadísticas
             TeamStats = await query
-                .OrderByDescending(ts => ts.CurrentSeason) // o Total, según desees
+                .OrderByDescending(ts => ts.CurrentSeason) 
                 .ThenBy(ts => ts.Team.Name)
                 .ToListAsync();
         }

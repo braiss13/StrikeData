@@ -22,10 +22,10 @@ namespace StrikeData.Services.TeamData
             { "W/9",  "https://www.teamrankings.com/mlb/stat/walks-per-9" }
         };
 
-        public PitchingImporter(AppDbContext context, HttpClient httpClient)
+        public PitchingImporter(AppDbContext context)
         {
             _context = context;
-            _httpClient = httpClient;
+            _httpClient = new HttpClient();
         }
 
         // Método principal que llama a MLB y luego a TR.
@@ -250,25 +250,9 @@ namespace StrikeData.Services.TeamData
                 }
 
                 stat.CurrentSeason = currentSeason;
-                CalculateTotal(team, stat);  // Calcula Total = Games * CurrentSeason
             }
 
             await _context.SaveChangesAsync();
-        }
-
-        // Calcula el Total como Games * CurrentSeason para estadísticas de TR.
-        private static void CalculateTotal(Team team, TeamStat stat)
-        {
-            // Si el equipo no tiene juegos registrados, no se puede calcular el total.
-            if (team.Games < 1 || !stat.CurrentSeason.HasValue)
-            {
-                return;
-            }
-
-            // Total = Juegos * Valor de la temporada actual (2025).
-            float currentSeasonValue = stat.CurrentSeason ?? 0f;
-            double rawTotal = (double)team.Games * currentSeasonValue;
-            stat.Total = (float)Math.Round(rawTotal, 2);
         }
 
     }

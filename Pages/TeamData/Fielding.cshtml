@@ -1,10 +1,10 @@
 @page
-@model StrikeData.Pages.TeamData.HittingModel
+@model StrikeData.Pages.TeamData.FieldingModel
 @{
-    ViewData["Title"] = "Hitting Stats";
+    ViewData["Title"] = "Fielding Stats";
 }
 
-<h1 class="page-title">Hitting Stats</h1>
+<h1 class="page-title">Fielding Stats</h1>
 
 <!-- Selector desplegable para filtrar por tipo de estadística -->
 <form method="get" class="table-selector">
@@ -28,7 +28,6 @@
             <th>#</th>
             <th>Team</th>
             <th>Games</th>
-            <th>Total</th>
             <th>Season</th>
             <th>Last 3</th>
             <th>Last 1</th>
@@ -46,7 +45,6 @@
                     <td>@index</td>
                     <td>@stat.Team.Name</td>
                     <td>@(stat.Team.Games ?? 0)</td>
-                    <td>@(stat.Total ?? 0)</td>
                     <td>@stat.CurrentSeason</td>
                     <td>@(stat.Last3Games ?? 0)</td>
                     <td>@(stat.LastGame ?? 0)</td>
@@ -59,4 +57,3 @@
         }
     </tbody>
 </table>
-

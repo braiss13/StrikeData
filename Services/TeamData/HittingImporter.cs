@@ -44,6 +44,8 @@ namespace StrikeData.Services.TeamData
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
 
+        #region MLB
+
         // Mapa de abreviaturas y URLs de TeamRankings para hitting.
         private static readonly Dictionary<string, string> _trHMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -238,6 +240,13 @@ namespace StrikeData.Services.TeamData
             return stats;
         }
 
+        #endregion
+
+        // ================================================================
+        // ========== SECCIÓN: ESTADÍSTICAS TEAM RANKINGS =================
+        // ================================================================
+
+
         // Método que realiza scrapping para obtener estadísticas de TeamRankings
         public async Task ImportHittingTeamStatsTR(string statTypeName, string url)
         {
@@ -325,9 +334,11 @@ namespace StrikeData.Services.TeamData
             await _context.SaveChangesAsync();
         }
 
+        // Este método calcula para los campos que no están en la página de la MLB, se calcula el "Total" como Games * CurrentSeason
+        // OJO: Se le ponen IFs puesto que en ese caso solo quiero calcular el Total de las que están en TR y no MLB; si no pusiera los ifs, se calcularían para todo el _trHMap
         private static void CalculateTotal(string statTypeName, Team team, TeamStat stat)
         {
-            // Para los campos que no están en la página de la MLB, se calcula el "Total" como Games * CurrentSeason
+
             if (statTypeName == "S" || statTypeName == "SBA" || statTypeName == "LOB" || statTypeName == "TLOB" || statTypeName == "RLSP")
             {
                 if (team.Games < 1)

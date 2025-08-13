@@ -94,11 +94,13 @@ namespace StrikeData.Pages.TeamData
                 TeamPitchingStats.Add(vm);
             }
 
+            /*
             // Ordenar por ERA ascendente y luego por nombre de equipo para mayor legibilidad
             TeamPitchingStats = TeamPitchingStats
                 .OrderBy(vm => vm.Stats.ContainsKey("ERA") ? vm.Stats["ERA"] ?? float.MaxValue : float.MaxValue)
                 .ThenBy(vm => vm.TeamName)
                 .ToList();
+            */
         }
     }
 }
