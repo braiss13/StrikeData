@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("StrikeData")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e17552c0da621ae99c73ad063480e9dbf616e5f9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5ee9a8f8c12a439f42aeb5056d4698859a012f53")]
 [assembly: System.Reflection.AssemblyProductAttribute("StrikeData")]
 [assembly: System.Reflection.AssemblyTitleAttribute("StrikeData")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
