@@ -16,7 +16,9 @@ var app = builder.Build();
 // --- Bloque de prueba temporal para el scraper ---
 // Solo se ejecutará una vez al arrancar la aplicación.
 // Puedes eliminarlo o comentarlo cuando hayas validado los resultados.
+
 // --- BLOQUE TEMPORAL DE TEST: imprimir TODO y validar coherencia ---
+/*
 {
     using var httpClient = new HttpClient();
     var scraper = new TeamScheduleScraper(httpClient);
@@ -73,6 +75,7 @@ var app = builder.Build();
     Console.WriteLine("== FIN TEST ==");
 }
 // --- FIN BLOQUE TEMPORAL DE TEST ---
+*/
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
