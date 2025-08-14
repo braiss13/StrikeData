@@ -23,12 +23,17 @@ namespace StrikeData.Models
         [MaxLength(20)]
         public string? OverallRecord { get; set; }
 
-        public int? Games { get; set; } 
+        public int? Games { get; set; }
 
         // Relaciones
         public ICollection<Player> Players { get; set; }
         public ICollection<Match> HomeMatches { get; set; }
         public ICollection<Match> AwayMatches { get; set; }
         public ICollection<TeamStat> TeamStats { get; set; }
+
+        public ICollection<TeamGame> TeamGames { get; set; }
+        public ICollection<TeamMonthlySplit> TeamMonthlySplits { get; set; }
+        public ICollection<TeamOpponentSplit> TeamOpponentSplits { get; set; }
+
     }
 }

@@ -22,9 +22,9 @@ namespace StrikeData.Pages
 
         public async Task OnGetAsync()
         {
-            // await _hitting_importer.ImportAllStatsAsyncH();
-            // await _pitching_importer.ImportAllStatsAsyncP();
-            // await _fielding_importer.ImportAllStatsAsyncF();
+            await _hitting_importer.ImportAllStatsAsyncH();
+            await _pitching_importer.ImportAllStatsAsyncP();
+            await _fielding_importer.ImportAllStatsAsyncF();
         }
     }
 }
