@@ -16,39 +16,63 @@ var app = builder.Build();
 // --- Bloque de prueba temporal para el scraper ---
 // Solo se ejecutará una vez al arrancar la aplicación.
 // Puedes eliminarlo o comentarlo cuando hayas validado los resultados.
+// --- BLOQUE TEMPORAL DE TEST: imprimir TODO y validar coherencia ---
 {
     using var httpClient = new HttpClient();
     var scraper = new TeamScheduleScraper(httpClient);
 
-    try
-    {
-        // Cambia "BAL" y 2024 por el equipo y año que desees probar
-        var result = await scraper.GetTeamScheduleAndSplitsAsync("TOR", 2024);
+    var team = "TOR";
+    var year = 2025;
 
-        Console.WriteLine("Primeros 5 partidos del calendario:");
-        foreach (var game in result.Schedule.Take(5))
-        {
-            Console.WriteLine($"{game.GameNumber}. {game.Date:yyyy-MM-dd} vs {game.Opponent} " + $"{game.Score} ({game.Decision}) Record: {game.Record}");
-        }
+    var r = await scraper.GetTeamScheduleAndSplitsAsync(team, year);
 
-        Console.WriteLine("\nSplits mensuales:");
-        foreach (var ms in result.MonthlySplits)
-        {
-            Console.WriteLine($"{ms.Month}: {ms.Games} juegos, {ms.Won}-{ms.Lost}, WP {ms.WinPercentage}");
-        }
+    // 1) RESUMEN
+    Console.WriteLine($"== {team} {year} ==");
+    Console.WriteLine($"Schedule: {r.Schedule.Count} juegos");
+    Console.WriteLine($"MonthlySplits: {r.MonthlySplits.Count} filas");
+    Console.WriteLine($"TeamSplits: {r.TeamSplits.Count} filas");
+    Console.WriteLine();
 
-        Console.WriteLine("\nTeam vs Team (primeros 5):");
-        foreach (var vs in result.TeamSplits.Take(5))
-        {
-            Console.WriteLine($"{vs.Opponent}: {vs.Games} juegos, {vs.Won}-{vs.Lost}, WP {vs.WinPercentage}");
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("Error al ejecutar el scraper: " + ex.Message);
-    }
+    // 2) IMPRIMIR TODO: SCHEDULE COMPLETO
+    Console.WriteLine("== SCHEDULE (TODOS) ==");
+    foreach (var g in r.Schedule.OrderBy(x => x.GameNumber))
+        Console.WriteLine($"{g.GameNumber,3}. {g.Date:yyyy-MM-dd} {g.Opponent}  {g.Score} ({g.Decision})  Record: {g.Record}");
+    Console.WriteLine();
+
+    // 3) IMPRIMIR TODO: MONTHLY SPLITS
+    Console.WriteLine("== MONTHLY SPLITS (TODOS) ==");
+    foreach (var m in r.MonthlySplits)
+        Console.WriteLine($"{m.Month,-10}  {m.Games,2} juegos  {m.Won}-{m.Lost}  WP {m.WinPercentage.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+    Console.WriteLine();
+
+    // 4) IMPRIMIR TODO: TEAM vs TEAM SPLITS
+    Console.WriteLine("== TEAM vs TEAM SPLITS (TODOS) ==");
+    foreach (var t in r.TeamSplits.OrderBy(x => x.Opponent))
+        Console.WriteLine($"{t.Opponent,-22}  {t.Games,2} juegos  {t.Won}-{t.Lost}  WP {t.WinPercentage.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+    Console.WriteLine();
+
+    // 5) CHECKS DE COHERENCIA ÚTILES
+    int scheduleGames = r.Schedule.Count;
+
+    int monthlyGames = r.MonthlySplits.Sum(x => x.Games);
+    Console.WriteLine($"[CHECK] Suma Monthly (={monthlyGames}) {(monthlyGames == scheduleGames ? "==" : "!=")} Schedule ({scheduleGames})");
+
+    int teamGames = r.TeamSplits.Sum(x => x.Games);
+    Console.WriteLine($"[CHECK] Suma Team vs Team (={teamGames}) {(teamGames == scheduleGames ? "==" : "!=")} Schedule ({scheduleGames})");
+
+    // Duplicados en TeamSplits
+    var dupOpp = r.TeamSplits.GroupBy(x => x.Opponent).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+    if (dupOpp.Count > 0)
+        Console.WriteLine("[WARN] Oponentes duplicados: " + string.Join(", ", dupOpp));
+
+    // Meses inválidos o incoherentes
+    var badMonths = r.MonthlySplits.Where(x => x.Won + x.Lost != x.Games).ToList();
+    if (badMonths.Count > 0)
+        Console.WriteLine("[WARN] Filas mensuales incoherentes: " + string.Join(", ", badMonths.Select(x => x.Month)));
+
+    Console.WriteLine("== FIN TEST ==");
 }
-// --- Fin del bloque de prueba temporal ---
+// --- FIN BLOQUE TEMPORAL DE TEST ---
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
