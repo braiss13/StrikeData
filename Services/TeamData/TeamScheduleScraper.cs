@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
 
@@ -151,121 +153,298 @@ namespace StrikeData.Services.TeamData
             }
         }
 
-        // Extrae la tabla de splits mensuales (Monthly Splits)
+        /// <summary>
+        /// Extrae los splits mensuales de una página de Baseball Almanac.
+        /// Intenta primero parsear una tabla; si no existe, recurre a texto libre.
+        /// </summary>
         private static void ParseMonthlySplits(HtmlDocument doc, TeamScheduleResult result)
         {
-            var header = doc.DocumentNode.SelectSingleNode("//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'monthly splits')]");
+            // Localiza el encabezado "Monthly Splits" sin distinguir mayúsculas/minúsculas.
+            var headerNode = doc.DocumentNode.SelectSingleNode(
+                "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'monthly splits')]"
+            );
 
-            if (header == null)
-            {
-                Console.WriteLine("No se encontró la sección de Monthly Splits.");
+            Console.WriteLine("Monthly header found: " + (headerNode != null));
+
+            if (headerNode == null)
                 return;
+
+            // 1) Intentar parsear una tabla inmediatamente después del encabezado
+            var table = headerNode.SelectSingleNode("following::table[1]");
+            Console.WriteLine("Monthly table found: " + (table != null));
+
+            if (table != null)
+            {
+                var rows = table.SelectNodes(".//tr");
+                if (rows != null)
+                {
+                    bool headerSkipped = false;
+                    foreach (var row in rows)
+                    {
+                        var cells = row.SelectNodes("th|td");
+                        if (cells == null || cells.Count < 4)
+                            continue;
+                        // Omitir cabecera
+                        if (!headerSkipped)
+                        {
+                            headerSkipped = true;
+                            continue;
+                        }
+                        try
+                        {
+                            var label = cells[0].InnerText.Trim();
+                            string monthName = label;
+                            int gamesCount = 0;
+                            int parenStart = label.IndexOf('(');
+                            int parenEnd = label.IndexOf(')');
+                            if (parenStart >= 0 && parenEnd > parenStart)
+                            {
+                                monthName = label.Substring(0, parenStart).Trim();
+                                var gamesStr = label.Substring(parenStart + 1, parenEnd - parenStart - 1);
+                                int.TryParse(gamesStr, out gamesCount);
+                            }
+                            int won = int.TryParse(cells[1].InnerText.Trim(), out var w) ? w : 0;
+                            int lost = int.TryParse(cells[2].InnerText.Trim(), out var l) ? l : 0;
+                            float wp = float.TryParse(cells[3].InnerText.Trim(), NumberStyles.Float,
+                                                      CultureInfo.InvariantCulture, out var wpVal) ? wpVal : 0f;
+
+                            result.MonthlySplits.Add(new MonthlySplit
+                            {
+                                Month = monthName,
+                                Games = gamesCount,
+                                Won = won,
+                                Lost = lost,
+                                WinPercentage = wp
+                            });
+                        }
+                        catch
+                        {
+                            continue;
+                        }
+                    }
+                    if (result.MonthlySplits.Count > 0)
+                        return;
+                }
             }
 
-            var table = header.SelectSingleNode("following::table[1]");
-            if (table == null) return;
-            var rows = table.SelectNodes(".//tr");
-            if (rows == null) return;
-
-            bool headerSkipped = false;
-            foreach (var row in rows)
+            // 2) Si no hay tabla, reunir el texto entre "Monthly Splits" y el siguiente encabezado relevante
+            var sb = new StringBuilder();
+            var node = headerNode.NextSibling;
+            while (node != null)
             {
-                var cells = row.SelectNodes("th|td");
-                if (cells == null || cells.Count < 4) continue;
-
-                if (!headerSkipped)
+                var text = node.InnerText?.Trim();
+                if (!string.IsNullOrWhiteSpace(text))
                 {
-                    headerSkipped = true;
-                    continue;
+                    var lower = text.ToLowerInvariant();
+                    // Cortar en cuanto aparece la siguiente sección
+                    if (lower.Contains("team vs team splits") || lower.Contains("score related"))
+                        break;
+
+                    sb.AppendLine(HtmlEntity.DeEntitize(text));
                 }
+                node = node.NextSibling;
+            }
+            var sectionText = sb.ToString();
+            Console.WriteLine("Monthly section text:\n" + sectionText);
 
-                try
+            if (string.IsNullOrWhiteSpace(sectionText))
+            {
+                // Buscamos "April (26) 17 9 0.654", etc., en todo el texto de la página.
+                var plainTextFallback = HtmlEntity.DeEntitize(doc.DocumentNode.InnerText);
+                var fallbackMatches = new Regex(
+                    @"(?<month>January|February|March|April|May|June|July|August|September|October|November|December)\s*\((?<games>\d+)\)\s*(?<won>\d+)\s*(?<lost>\d+)\s*(?<wp>[0-9\.]+)",
+                    RegexOptions.Multiline | RegexOptions.IgnoreCase
+                ).Matches(plainTextFallback);
+
+                foreach (Match m in fallbackMatches)
                 {
-                    var label = cells[0].InnerText.Trim();
-                    var monthName = label;
-                    int gamesCount = 0;
-                    var parenStart = label.IndexOf('(');
-                    var parenEnd = label.IndexOf(')');
-                    if (parenStart >= 0 && parenEnd > parenStart)
-                    {
-                        monthName = label.Substring(0, parenStart).Trim();
-                        var gamesStr = label.Substring(parenStart + 1, parenEnd - parenStart - 1);
-                        int.TryParse(gamesStr, out gamesCount);
-                    }
-
-                    var won = int.TryParse(cells[1].InnerText.Trim(), out var w) ? w : 0;
-                    var lost = int.TryParse(cells[2].InnerText.Trim(), out var l) ? l : 0;
-                    var wp = float.TryParse(cells[3].InnerText.Trim(), NumberStyles.Float,
-                                            CultureInfo.InvariantCulture, out var wpVal) ? wpVal : 0f;
+                    var month = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(m.Groups["month"].Value.ToLower());
+                    int games = int.Parse(m.Groups["games"].Value);
+                    int won = int.Parse(m.Groups["won"].Value);
+                    int lost = int.Parse(m.Groups["lost"].Value);
+                    float wp = float.Parse(m.Groups["wp"].Value, CultureInfo.InvariantCulture);
 
                     result.MonthlySplits.Add(new MonthlySplit
                     {
-                        Month = monthName,
-                        Games = gamesCount,
-                        Won = won,
-                        Lost = lost,
-                        WinPercentage = wp
-                    });
-                }
-                catch { }
-            }
-        }
-
-        // Extrae la tabla de splits por rival (Team vs Team Splits)
-        private static void ParseTeamSplits(HtmlDocument doc, TeamScheduleResult result)
-        {
-            var header = doc.DocumentNode
-                .SelectSingleNode("//*[contains(text(), 'Team vs Team Splits')]");
-            if (header == null) return;
-
-            var table = header.SelectSingleNode("following::table[1]");
-            if (table == null) return;
-
-            var rows = table.SelectNodes(".//tr");
-            if (rows == null) return;
-
-            bool headerSkipped = false;
-            foreach (var row in rows)
-            {
-                var cells = row.SelectNodes("th|td");
-                if (cells == null || cells.Count < 4) continue;
-
-                if (!headerSkipped)
-                {
-                    headerSkipped = true;
-                    continue;
-                }
-
-                try
-                {
-                    var label = cells[0].InnerText.Trim();
-                    var opponentName = label;
-                    int games = 0;
-                    var parenStart = label.IndexOf('(');
-                    var parenEnd = label.IndexOf(')');
-                    if (parenStart >= 0 && parenEnd > parenStart)
-                    {
-                        opponentName = label.Substring(0, parenStart).Trim();
-                        var gamesStr = label.Substring(parenStart + 1, parenEnd - parenStart - 1);
-                        int.TryParse(gamesStr, out games);
-                    }
-
-                    var won = int.TryParse(cells[1].InnerText.Trim(), out var w) ? w : 0;
-                    var lost = int.TryParse(cells[2].InnerText.Trim(), out var l) ? l : 0;
-                    var wp = float.TryParse(cells[3].InnerText.Trim(), NumberStyles.Float,
-                                            CultureInfo.InvariantCulture, out var wpVal) ? wpVal : 0f;
-
-                    result.TeamSplits.Add(new TeamSplit
-                    {
-                        Opponent = opponentName,
+                        Month = month,
                         Games = games,
                         Won = won,
                         Lost = lost,
                         WinPercentage = wp
                     });
                 }
-                catch { }
+                return;
+            }
+
+
+            // Expresión regular para líneas de FastFacts tipo "April (26) 17 9 0.654"
+            var pattern = new System.Text.RegularExpressions.Regex(
+                @"(?<month>[A-Za-z]+)\s*\((?<games>\d+)\)\s*(?<won>\d+)\s*(?<lost>\d+)\s*(?<wp>[0-9\.]+)",
+                System.Text.RegularExpressions.RegexOptions.Multiline
+            );
+            var matches = pattern.Matches(sectionText);
+            foreach (System.Text.RegularExpressions.Match m in matches)
+            {
+                var month = m.Groups["month"].Value;
+                int games = int.TryParse(m.Groups["games"].Value, out var g) ? g : 0;
+                int won = int.TryParse(m.Groups["won"].Value, out var w) ? w : 0;
+                int lost = int.TryParse(m.Groups["lost"].Value, out var l) ? l : 0;
+                float wp = float.TryParse(m.Groups["wp"].Value, NumberStyles.Float,
+                                           CultureInfo.InvariantCulture, out var wpVal) ? wpVal : 0f;
+
+                result.MonthlySplits.Add(new MonthlySplit
+                {
+                    Month = month,
+                    Games = games,
+                    Won = won,
+                    Lost = lost,
+                    WinPercentage = wp
+                });
             }
         }
+
+        /// <summary>
+        /// Extrae los splits contra rivales (Team vs Team) de una página de Baseball Almanac.
+        /// Intenta primero parsear una tabla; si no existe, recurre a texto libre.
+        /// </summary>
+        private static void ParseTeamSplits(HtmlDocument doc, TeamScheduleResult result)
+        {
+            var headerNode = doc.DocumentNode.SelectSingleNode(
+                "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'team vs team splits')]"
+            );
+            if (headerNode == null)
+                return;
+
+            // 1) Intentar leer una tabla
+            var table = headerNode.SelectSingleNode("following::table[1]");
+            if (table != null)
+            {
+                var rows = table.SelectNodes(".//tr");
+                if (rows != null)
+                {
+                    bool headerSkipped = false;
+                    foreach (var row in rows)
+                    {
+                        var cells = row.SelectNodes("th|td");
+                        if (cells == null || cells.Count < 4)
+                            continue;
+                        if (!headerSkipped)
+                        {
+                            headerSkipped = true;
+                            continue;
+                        }
+                        try
+                        {
+                            var label = cells[0].InnerText.Trim();
+                            var opponent = label;
+                            int games = 0;
+                            int parenStart = label.IndexOf('(');
+                            int parenEnd = label.IndexOf(')');
+                            if (parenStart >= 0 && parenEnd > parenStart)
+                            {
+                                opponent = label.Substring(0, parenStart).Trim();
+                                var gamesStr = label.Substring(parenStart + 1, parenEnd - parenStart - 1);
+                                int.TryParse(gamesStr, out games);
+                            }
+                            int won = int.TryParse(cells[1].InnerText.Trim(), out var w) ? w : 0;
+                            int lost = int.TryParse(cells[2].InnerText.Trim(), out var l) ? l : 0;
+                            float wp = float.TryParse(cells[3].InnerText.Trim(), NumberStyles.Float,
+                                                       CultureInfo.InvariantCulture, out var wpVal) ? wpVal : 0f;
+
+                            result.TeamSplits.Add(new TeamSplit
+                            {
+                                Opponent = opponent,
+                                Games = games,
+                                Won = won,
+                                Lost = lost,
+                                WinPercentage = wp
+                            });
+                        }
+                        catch
+                        {
+                            continue;
+                        }
+                    }
+                    if (result.TeamSplits.Count > 0)
+                        return;
+                }
+            }
+
+            // 2) Si no hay tabla, reunir texto hasta el siguiente encabezado significativo
+            var sb = new StringBuilder();
+            var node = headerNode.NextSibling;
+            while (node != null)
+            {
+                var text = node.InnerText?.Trim();
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    var lower = text.ToLowerInvariant();
+                    if (lower.Contains("score related") || lower.Contains("during the regular"))
+                        break;
+
+                    sb.AppendLine(HtmlEntity.DeEntitize(text));
+                }
+                node = node.NextSibling;
+            }
+            var sectionText = sb.ToString();
+            if (string.IsNullOrWhiteSpace(sectionText))
+            {
+                var plainTextFallback = HtmlEntity.DeEntitize(doc.DocumentNode.InnerText);
+                var fallbackRegex = new Regex(
+                    @"(?<opp>[^\(\n]+)\s*\((?<games>\d+)\)\s*(?<won>\d+)\s*(?<lost>\d+)\s*(?<wp>[0-9\.]+)",
+                    RegexOptions.Multiline
+                );
+
+                var monthNames = new[] { "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december" };
+                foreach (Match m in fallbackRegex.Matches(plainTextFallback))
+                {
+                    var opponentCandidate = m.Groups["opp"].Value.Trim();
+                    if (monthNames.Contains(opponentCandidate.ToLower()))
+                        continue; // descartar líneas de Monthly Splits
+
+                    int games = int.Parse(m.Groups["games"].Value);
+                    int won = int.Parse(m.Groups["won"].Value);
+                    int lost = int.Parse(m.Groups["lost"].Value);
+                    float wp = float.Parse(m.Groups["wp"].Value, CultureInfo.InvariantCulture);
+
+                    result.TeamSplits.Add(new TeamSplit
+                    {
+                        Opponent = opponentCandidate,
+                        Games = games,
+                        Won = won,
+                        Lost = lost,
+                        WinPercentage = wp
+                    });
+                }
+                return;
+            }
+
+
+            // Expresión regular para líneas tipo "New York Yankees (13) 8 5 0.615"
+            var pattern2 = new System.Text.RegularExpressions.Regex(
+                @"(?<opponent>[^\(\n]+)\s*\((?<games>\d+)\)\s*(?<won>\d+)\s*(?<lost>\d+)\s*(?<wp>[0-9\.]+)",
+                System.Text.RegularExpressions.RegexOptions.Multiline
+            );
+            var matches2 = pattern2.Matches(sectionText);
+            foreach (System.Text.RegularExpressions.Match m in matches2)
+            {
+                var opponent = m.Groups["opponent"].Value.Trim();
+                int games = int.TryParse(m.Groups["games"].Value, out var g) ? g : 0;
+                int won = int.TryParse(m.Groups["won"].Value, out var w) ? w : 0;
+                int lost = int.TryParse(m.Groups["lost"].Value, out var l) ? l : 0;
+                float wp = float.TryParse(m.Groups["wp"].Value, NumberStyles.Float,
+                                              CultureInfo.InvariantCulture, out var wpVal) ? wpVal : 0f;
+
+                result.TeamSplits.Add(new TeamSplit
+                {
+                    Opponent = opponent,
+                    Games = games,
+                    Won = won,
+                    Lost = lost,
+                    WinPercentage = wp
+                });
+            }
+        }
+
     }
 }
