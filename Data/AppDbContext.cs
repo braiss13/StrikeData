@@ -126,6 +126,18 @@ namespace StrikeData.Data
                 .HasIndex(ts => new { ts.TeamId, ts.Season, ts.OpponentName })
                 .IsUnique();
 
+            modelBuilder.Entity<TeamStat>(e =>
+            {
+                // mapear enum a tinyint/byte
+                e.Property(ts => ts.Perspective)
+                .HasConversion<byte>();
+
+                // índice único por equipo + tipo + perspectiva
+                e.HasIndex(ts => new { ts.TeamId, ts.StatTypeId, ts.Perspective })
+                .IsUnique()
+                .HasDatabaseName("UX_TeamStat_Team_Type_Persp");
+            });
+
         }
     }
 }

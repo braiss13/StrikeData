@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+using StrikeData.Models.Enums;
 
 namespace StrikeData.Models
 {
@@ -15,6 +15,9 @@ namespace StrikeData.Models
         [Required]
         public int StatTypeId { get; set; }
         public StatType StatType { get; set; }
+
+         // Enumerado para distinguir Team vs Opponent
+        public StatPerspective Perspective { get; set; } = StatPerspective.Team;
 
         public float? CurrentSeason { get; set; }
         public float? Total { get; set; }

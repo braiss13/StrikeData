@@ -1,8 +1,6 @@
 using HtmlAgilityPack;
 using StrikeData.Data;
 using StrikeData.Models;
-using System.Globalization;
-using Newtonsoft.Json.Linq;
 
 namespace StrikeData.Services.TeamData
 {
@@ -106,12 +104,12 @@ namespace StrikeData.Services.TeamData
                 }
 
                 // Se guarda cada valor en la propiedad correspondiente de TeamStat
-                stat.CurrentSeason = Parse(cells[2].InnerText);
-                stat.Last3Games = Parse(cells[3].InnerText);
-                stat.LastGame = Parse(cells[4].InnerText);
-                stat.Home = Parse(cells[5].InnerText);
-                stat.Away = Parse(cells[6].InnerText);
-                stat.PrevSeason = Parse(cells[7].InnerText);
+                stat.CurrentSeason = Utilites.Parse(cells[2].InnerText);
+                stat.Last3Games = Utilites.Parse(cells[3].InnerText);
+                stat.LastGame = Utilites.Parse(cells[4].InnerText);
+                stat.Home = Utilites.Parse(cells[5].InnerText);
+                stat.Away = Utilites.Parse(cells[6].InnerText);
+                stat.PrevSeason = Utilites.Parse(cells[7].InnerText);
 
             }
 
@@ -129,12 +127,6 @@ namespace StrikeData.Services.TeamData
                 await _context.SaveChangesAsync();
             }
             return category.Id;
-        }
-
-        // Método creado para convertir el String a float (empleado para parsear los datos al final)
-        private static float? Parse(string input)
-        {
-            return float.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
         }
 
     }
