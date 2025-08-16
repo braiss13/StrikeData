@@ -30,12 +30,16 @@ namespace StrikeData.Pages
 
         public async Task OnGetAsync()
         {
+            /*
+            // Importador de estadísticas para batting de equipos
             await _hitting_importer.ImportAllStatsAsyncH();
+            // Importador de estadísticas para pitching de equipos
             await _pitching_importer.ImportAllStatsAsyncP();
+            // Importador de estadísticas para fielding de equipos
             await _fielding_importer.ImportAllStatsAsyncF();
-
-            // NUEVO: importar calendarios y splits de todos los equipos de 2025
+            // Iportador de estadístcas de resultados de equipos (para el año que se pasa por parámetro)
             await _schedule_importer.ImportAllTeamsScheduleAsync(2025);
+            */
         }
     }
 }
