@@ -53,7 +53,7 @@ namespace StrikeData.Services.TeamData
             _scraper = scraper;
         }
 
-        public async Task ImportAllTeamsScheduleAsync(int season = 2025)
+        public async Task ImportAllTeamsScheduleAsync(int season)
         {
             foreach (var kvp in TeamCodeToName)
             {
@@ -74,8 +74,12 @@ namespace StrikeData.Services.TeamData
                     // La página puede no existir para ese equipo/año.
                     continue;
                 }
-                if (result == null)
-                    continue;
+
+                if (result == null) { continue; }
+
+                Console.WriteLine($"{name}: {result.Schedule.Count} juegos, " +
+                                  $"{result.MonthlySplits.Count} splits mensuales, " +
+                                  $"{result.TeamSplits.Count} splits por rival");
 
                 // Partidos del calendario
                 foreach (var gameDto in result.Schedule)
@@ -99,7 +103,7 @@ namespace StrikeData.Services.TeamData
                     string normalized = TeamNameNormalizer.Normalize(oppName);
                     var opponentTeam = _context.Teams.FirstOrDefault(t => t.Name == normalized);
                     int? oppId = opponentTeam?.Id;
-
+    
                     var existing = _context.TeamGames
                         .FirstOrDefault(x => x.TeamId == team.Id && x.Season == season && x.GameNumber == gameDto.GameNumber);
                     if (existing == null)
@@ -111,7 +115,8 @@ namespace StrikeData.Services.TeamData
                     existing.TeamId = team.Id;
                     existing.Season = season;
                     existing.GameNumber = gameDto.GameNumber;
-                    existing.Date = gameDto.Date;
+                    // Convierte la fecha “sin Kind” a UTC para cumplir con PostgreSQL
+                    existing.Date = DateTime.SpecifyKind(gameDto.Date, DateTimeKind.Utc);
                     existing.IsHome = isHome;
                     existing.OpponentTeamId = oppId;
                     existing.OpponentName = normalized;
