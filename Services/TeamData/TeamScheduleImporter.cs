@@ -77,10 +77,6 @@ namespace StrikeData.Services.TeamData
 
                 if (result == null) { continue; }
 
-                Console.WriteLine($"{name}: {result.Schedule.Count} juegos, " +
-                                  $"{result.MonthlySplits.Count} splits mensuales, " +
-                                  $"{result.TeamSplits.Count} splits por rival");
-
                 // Partidos del calendario
                 foreach (var gameDto in result.Schedule)
                 {

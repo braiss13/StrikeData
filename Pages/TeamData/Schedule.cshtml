@@ -1,0 +1,119 @@
+@page
+@model StrikeData.Pages.TeamData.ScheduleModel
+
+@{
+    ViewData["Title"] = "Team Schedule";
+}
+
+<h2 class="section-title">Team Schedule</h2>
+
+<form method="get">
+    <div class="mb-2">
+        <!-- Desplegable para elegir el equipo -->
+        <select asp-for="SelectedTeamId"
+                asp-items="Model.TeamOptions"
+                onchange="this.form.submit()"
+                class="form-select">
+        </select>
+    </div>
+
+    <div class="btn-group mb-3 table-selector">
+        <!-- Selector expanded / summarized -->
+        <button type="submit"
+                name="ViewMode"
+                value="expanded"
+                class="btn-stat-toggle @(Model.ViewMode == "expanded" ? "" : "inactive")">
+            Expanded
+        </button>
+        <button type="submit"
+                name="ViewMode"
+                value="summarized"
+                class="btn-stat-toggle @(Model.ViewMode == "summarized" ? "" : "inactive")">
+            Summarized
+        </button>
+    </div>
+</form>
+
+<!-- Vista expanded: tabla de calendario -->
+@if (Model.ViewMode == "expanded")
+{
+    <table class="table table-striped table-bordered table-sm pitching-table">
+        <thead>
+            <tr>
+                <th>Game</th>
+                <th>Date</th>
+                <th>Opponent</th>
+                <th>Score</th>
+                <th>Decision</th>
+                <th>Record</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var game in Model.Schedule)
+        {
+            <tr>
+                <td>@game.GameNumber</td>
+                <td>@game.Date.ToString("yyyy-MM-dd")</td>
+                <td>@($"{(game.IsHome ? "vs" : "at")} {game.OpponentName}")</td>
+                <td>@game.Score</td>
+                <td>@game.Decision</td>
+                <td>@game.Record</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <!-- Vista summarized: Monthly Splits -->
+    <h4>Monthly Splits</h4>
+    <table class="table table-striped table-bordered table-sm pitching-table">
+        <thead>
+            <tr>
+                <th>Month</th>
+                <th>Games</th>
+                <th>Wins</th>
+                <th>Losses</th>
+                <th>Win %</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var ms in Model.MonthlySplits)
+        {
+            <tr>
+                <td>@ms.Month</td>
+                <td>@ms.Games</td>
+                <td>@ms.Wins</td>
+                <td>@ms.Losses</td>
+                <td>@ms.WinPercentage.ToString("0.000")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    <!-- Team vs Team Splits -->
+    <h4>Team vs Team Splits</h4>
+    <table class="table table-striped table-bordered table-sm pitching-table">
+        <thead>
+            <tr>
+                <th>Opponent</th>
+                <th>Games</th>
+                <th>Wins</th>
+                <th>Losses</th>
+                <th>Win %</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var ts in Model.TeamSplits)
+        {
+            <tr>
+                <td>@ts.OpponentName</td>
+                <td>@ts.Games</td>
+                <td>@ts.Wins</td>
+                <td>@ts.Losses</td>
+                <td>@ts.WinPercentage.ToString("0.000")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
