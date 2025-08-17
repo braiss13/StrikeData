@@ -1,29 +1,53 @@
 @page
 @model StrikeData.Pages.TeamData.WinTrendsModel
+
 @{
     ViewData["Title"] = "Win Trends";
 }
 
-<h1 class="page-title">Win Trends</h1>
-<p class="lead">This page displays the win trends of teams in the league.</p>
+<h2 class="section-title">Win Trends</h2>
 
-@* 
-<table class="table">
+<form method="get">
+    <!-- Desplegable del tipo de estadística -->
+    <div class="table-selector">
+        <select asp-for="SelectedStatType"
+                asp-items="Model.StatTypeOptions"
+                class="form-select w-auto d-inline-block"
+                style="background-color:#1e3a8a; 
+                       color:#ffffff; 
+                       border:1px solid #2563eb; 
+                       border-radius:0.25rem; 
+                       padding:0.4rem 0.8rem;
+                       margin-bottom: 1rem;"
+                onchange="this.form.submit()">
+        </select>
+    </div>
+</form>
+
+<!-- Tabla de resultados -->
+<table class="table table-striped table-bordered table-sm pitching-table"
+       style="margin: 1 auto;">
     <thead>
         <tr>
+            <th>#</th>
             <th>Team</th>
-            <th>Record</th>
+            <th>Win-Loss Record</th>
             <th>Win %</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var team in Model.Teams)
+    @{
+        var index = 1;
+        foreach (var r in Model.Rows)
         {
             <tr>
-                <td>@team.Name</td>
-                <td>@team.OverallRecord</td>
-                <td>@team.WinPercentage?.ToString("P2")</td>
+                <td>@index</td>
+                <td>@r.TeamName</td>
+                <td>@r.WinLossRecord</td>
+                <td>@(r.WinPct.HasValue ? r.WinPct.Value.ToString("0.00") + "%" : "-")</td>
             </tr>
+            index++;
         }
+    }
     </tbody>
-</table> *@
+</table>

@@ -138,6 +138,10 @@ namespace StrikeData.Data
                 .HasDatabaseName("UX_TeamStat_Team_Type_Persp");
             });
 
+            // StatType -> TeamStatTypes
+            modelBuilder.Entity<StatType>()
+                .ToTable("TeamStatTypes");
+
         }
     }
 }

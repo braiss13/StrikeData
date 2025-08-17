@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using StrikeData.Data;
@@ -11,9 +12,11 @@ using StrikeData.Data;
 namespace StrikeData.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250817114540_AddWinTrends_ColumnsAndCleanup")]
+    partial class AddWinTrends_ColumnsAndCleanup
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -154,7 +157,7 @@ namespace StrikeData.Migrations
 
                     b.HasIndex("StatCategoryId");
 
-                    b.ToTable("TeamStatTypes", (string)null);
+                    b.ToTable("StatTypes");
                 });
 
             modelBuilder.Entity("StrikeData.Models.Team", b =>

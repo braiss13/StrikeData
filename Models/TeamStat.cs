@@ -16,7 +16,7 @@ namespace StrikeData.Models
         public int StatTypeId { get; set; }
         public StatType StatType { get; set; }
 
-         // Enumerado para distinguir Team vs Opponent
+        // Enumerado para distinguir Team vs Opponent
         public StatPerspective Perspective { get; set; } = StatPerspective.Team;
 
         public float? CurrentSeason { get; set; }
@@ -26,5 +26,10 @@ namespace StrikeData.Models
         public float? Home { get; set; }
         public float? Away { get; set; }
         public float? PrevSeason { get; set; }
+        
+        [MaxLength(20)]
+        public string? WinLossRecord { get; set; }   
+
+        public float? WinPct { get; set; }
     }
 }

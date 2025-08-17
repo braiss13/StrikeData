@@ -170,12 +170,11 @@ namespace StrikeData.Services.TeamData
 
         // --- helpers ---
 
-        // Limpia "%", entidades HTML y delega en tu Utilites.Parse
         private static float? ParseCell(IList<HtmlNode> cells, int index)
         {
             if (index >= cells.Count) return null;
 
-            var txt = cells[index].InnerText?.Trim();
+            var txt = Utilites.CleanText(cells[index].InnerText);
             if (string.IsNullOrWhiteSpace(txt)) return null;
 
             // Quitar símbolo de porcentaje (YRFI/NRFI) y normalizar

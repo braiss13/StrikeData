@@ -8,38 +8,6 @@ namespace StrikeData.Services.TeamData
 {
     public class HittingImporter
     {
-        /*
-       public async Task ImportWinTrendsAsync()
-       {
-
-           var url = "https://www.teamrankings.com/mlb/trends/win_trends";
-           var rows = await ScrapeTable(url);
-
-           foreach (var row in rows)
-           {
-               if (row.Count < 3) continue;
-
-               string name = row[0];
-               string record = row[1];
-               if (!float.TryParse(row[2].TrimEnd('%'), out float winPct))
-                   continue;
-
-               var team = _context.Teams.FirstOrDefault(t => t.Name == name);
-               if (team == null)
-               {
-                   team = new Team { Name = name, SeasonYear = 2025 };
-                   _context.Teams.Add(team);
-               }
-
-               team.OverallRecord = record;
-               team.WinPercentage = winPct / 100f;
-           }
-
-           await _context.SaveChangesAsync();
-
-       }
-       */
-
         // Este importador contiene los métodos para importar las estadísticas relativas a equipos en cuanto a bateo
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
@@ -77,6 +45,7 @@ namespace StrikeData.Services.TeamData
             { "OPS", "https://www.teamrankings.com/mlb/stat/on-base-plus-slugging-pct" },
             { "AB/HR", "https://www.teamrankings.com/mlb/stat/at-bats-per-home-run" }
         };
+
 
         public HittingImporter(AppDbContext context)
         {

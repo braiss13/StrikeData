@@ -11,18 +11,6 @@ namespace StrikeData.Models
         [Required, MaxLength(100)]
         public string Name { get; set; }
 
-        // Campos antes en WinTrends:
-        public float? WinPercentage { get; set; }
-
-        [MaxLength(20)]
-        public string? AwayRecord { get; set; }
-
-        [MaxLength(20)]
-        public string? HomeRecord { get; set; }
-
-        [MaxLength(20)]
-        public string? OverallRecord { get; set; }
-
         public int? Games { get; set; }
 
         // Relaciones

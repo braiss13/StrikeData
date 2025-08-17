@@ -11,6 +11,7 @@ namespace StrikeData.Pages
         private readonly FieldingImporter _fielding_importer;
         private readonly TeamScheduleImporter _schedule_importer;
         private readonly CuriousFactsImporter _curious_importer;
+        private readonly WinTrendsImporter _wintrends_importer;
 
         public IndexModel(AppDbContext context)
         {
@@ -26,21 +27,30 @@ namespace StrikeData.Pages
             _schedule_importer = new TeamScheduleImporter(context, scraper);
 
             _curious_importer = new CuriousFactsImporter(context);
+
+            _wintrends_importer = new WinTrendsImporter(context);
         }
 
         public async Task OnGetAsync()
         {
-            
+
             // Importador de estadísticas para batting de equipos
             await _hitting_importer.ImportAllStatsAsyncH();
+
             // Importador de estadísticas para pitching de equipos
             await _pitching_importer.ImportAllStatsAsyncP();
+            
             // Importador de estadísticas para fielding de equipos
             await _fielding_importer.ImportAllStatsAsyncF();
+
             // Iportador de estadístcas de resultados de equipos (para el año que se pasa por parámetro)
             await _schedule_importer.ImportAllTeamsScheduleAsync(2025);
+
             // Importador de estadísticas para stats de equipos más curiosas
             await _curious_importer.ImportAllStatsAsyncCF();
+            
+            // Importador de estadísticas de tendencias de victorias de equipos
+            await _wintrends_importer.ImportAllStatsAsyncWT();
             
         }
     }
