@@ -174,14 +174,14 @@ namespace StrikeData.Services.TeamData
         {
             if (index >= cells.Count) return null;
 
-            var txt = Utilites.CleanText(cells[index].InnerText);
+            var txt = Utilities.CleanText(cells[index].InnerText);
             if (string.IsNullOrWhiteSpace(txt)) return null;
 
             // Quitar símbolo de porcentaje (YRFI/NRFI) y normalizar
             txt = txt.Replace("%", "").Trim();
             txt = HtmlEntity.DeEntitize(txt);
 
-            return Utilites.Parse(txt);
+            return Utilities.Parse(txt);
         }
     }
 }

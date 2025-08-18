@@ -6,15 +6,18 @@ namespace StrikeData.Pages
 {
     public class IndexModel : PageModel
     {
+        #region Importadores de estadísticas de equipos
         private readonly HittingImporter _hitting_importer;
         private readonly PitchingImporter _pitching_importer;
         private readonly FieldingImporter _fielding_importer;
         private readonly TeamScheduleImporter _schedule_importer;
         private readonly CuriousFactsImporter _curious_importer;
         private readonly WinTrendsImporter _wintrends_importer;
+        #endregion
 
         public IndexModel(AppDbContext context)
         {
+            #region Inicialización de importadores
             _hitting_importer = new HittingImporter(context);
 
             _pitching_importer = new PitchingImporter(context);
@@ -29,17 +32,19 @@ namespace StrikeData.Pages
             _curious_importer = new CuriousFactsImporter(context);
 
             _wintrends_importer = new WinTrendsImporter(context);
+
+            #endregion
         }
 
         public async Task OnGetAsync()
         {
-
+            #region Importadores de estadísticas de equipos
             // Importador de estadísticas para batting de equipos
             await _hitting_importer.ImportAllStatsAsyncH();
 
             // Importador de estadísticas para pitching de equipos
             await _pitching_importer.ImportAllStatsAsyncP();
-            
+
             // Importador de estadísticas para fielding de equipos
             await _fielding_importer.ImportAllStatsAsyncF();
 
@@ -48,9 +53,10 @@ namespace StrikeData.Pages
 
             // Importador de estadísticas para stats de equipos más curiosas
             await _curious_importer.ImportAllStatsAsyncCF();
-            
+
             // Importador de estadísticas de tendencias de victorias de equipos
             await _wintrends_importer.ImportAllStatsAsyncWT();
+            #endregion
             
         }
     }

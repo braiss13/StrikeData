@@ -3,7 +3,7 @@ using HtmlAgilityPack;
 
 namespace StrikeData.Services
 {
-    public static class Utilites
+    public static class Utilities
     {
 
         // Método creado para convertir el String a float (empleado para parsear los datos al final)

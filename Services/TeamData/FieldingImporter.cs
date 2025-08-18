@@ -104,12 +104,12 @@ namespace StrikeData.Services.TeamData
                 }
 
                 // Se guarda cada valor en la propiedad correspondiente de TeamStat
-                stat.CurrentSeason = Utilites.Parse(cells[2].InnerText);
-                stat.Last3Games = Utilites.Parse(cells[3].InnerText);
-                stat.LastGame = Utilites.Parse(cells[4].InnerText);
-                stat.Home = Utilites.Parse(cells[5].InnerText);
-                stat.Away = Utilites.Parse(cells[6].InnerText);
-                stat.PrevSeason = Utilites.Parse(cells[7].InnerText);
+                stat.CurrentSeason = Utilities.Parse(cells[2].InnerText);
+                stat.Last3Games = Utilities.Parse(cells[3].InnerText);
+                stat.LastGame = Utilities.Parse(cells[4].InnerText);
+                stat.Home = Utilities.Parse(cells[5].InnerText);
+                stat.Away = Utilities.Parse(cells[6].InnerText);
+                stat.PrevSeason = Utilities.Parse(cells[7].InnerText);
 
             }
 

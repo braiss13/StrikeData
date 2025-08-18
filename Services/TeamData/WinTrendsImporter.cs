@@ -114,10 +114,10 @@ namespace StrikeData.Services.TeamData
                     existingStats[team.Id] = stat;
                 }
 
-                stat.WinLossRecord = Utilites.CleanText(cells[1].InnerText);
+                stat.WinLossRecord = Utilities.CleanText(cells[1].InnerText);
 
-                var winPctText = Utilites.CleanText(cells[2].InnerText).Replace("%", "").Trim();
-                stat.WinPct = Utilites.Parse(winPctText);
+                var winPctText = Utilities.CleanText(cells[2].InnerText).Replace("%", "").Trim();
+                stat.WinPct = Utilities.Parse(winPctText);
             }
 
             await _context.SaveChangesAsync();
@@ -126,7 +126,7 @@ namespace StrikeData.Services.TeamData
         // Normaliza: limpia + mapea alias a nombre oficial
         private static string NormalizeName(string? raw)
         {
-            var cleaned = Utilites.CleanText(raw ?? "");
+            var cleaned = Utilities.CleanText(raw ?? "");
             return TeamNameNormalizer.Normalize(cleaned);
         }
 
