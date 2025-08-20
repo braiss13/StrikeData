@@ -15,7 +15,9 @@ namespace StrikeData.Models
         [Required, MaxLength(100)]
         public string Name { get; set; }
 
-        // --- NUEVO ---
+        [MaxLength(50)]
+        public string Position { get; set; }
+
         // Id oficial de MLB. Suele caber en int, pero usamos long? por seguridad.
         public long? MLB_Player_Id { get; set; }
 

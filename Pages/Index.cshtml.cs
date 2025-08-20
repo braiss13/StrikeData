@@ -15,6 +15,8 @@ namespace StrikeData.Pages
         private readonly WinTrendsImporter _wintrends_importer;
         #endregion
 
+        private readonly PlayerRosterImporter _playerRosterImporter;
+
         public IndexModel(AppDbContext context)
         {
             #region Inicialización de importadores
@@ -34,6 +36,9 @@ namespace StrikeData.Pages
             _wintrends_importer = new WinTrendsImporter(context);
 
             #endregion
+
+            _playerRosterImporter = new PlayerRosterImporter(context);
+
         }
 
         public async Task OnGetAsync()
@@ -57,7 +62,9 @@ namespace StrikeData.Pages
             // Importador de estadísticas de tendencias de victorias de equipos
             await _wintrends_importer.ImportAllStatsAsyncWT();
             #endregion
-            
+
+            await _playerRosterImporter.ImportAllPlayersAsync();
+
         }
     }
 }
