@@ -33,6 +33,10 @@
       "PackagePath": "staticwebassets\\images\\bating.jpg"
     },
     {
+      "Id": "C:\\Users\\bsamp\\OneDrive\\Documenti\\TFG\\StrikeData\\wwwroot\\images\\player.jpg",
+      "PackagePath": "staticwebassets\\images\\player.jpg"
+    },
+    {
       "Id": "C:\\Users\\bsamp\\OneDrive\\Documenti\\TFG\\StrikeData\\wwwroot\\js\\site.js",
       "PackagePath": "staticwebassets\\js\\site.js"
     },

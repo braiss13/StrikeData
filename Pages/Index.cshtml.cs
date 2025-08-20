@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using StrikeData.Data;
+using StrikeData.Services.PlayerData;
 using StrikeData.Services.TeamData;
 
 namespace StrikeData.Pages
@@ -15,7 +16,7 @@ namespace StrikeData.Pages
         private readonly WinTrendsImporter _wintrends_importer;
         #endregion
 
-        private readonly PlayerRosterImporter _playerRosterImporter;
+        private readonly PlayerStatsImporter _playerStatsImporter;
 
         public IndexModel(AppDbContext context)
         {
@@ -37,12 +38,13 @@ namespace StrikeData.Pages
 
             #endregion
 
-            _playerRosterImporter = new PlayerRosterImporter(context);
+             _playerStatsImporter = new PlayerStatsImporter(context);
 
         }
 
         public async Task OnGetAsync()
         {
+            /*
             #region Importadores de estadísticas de equipos
             // Importador de estadísticas para batting de equipos
             await _hitting_importer.ImportAllStatsAsyncH();
@@ -63,7 +65,8 @@ namespace StrikeData.Pages
             await _wintrends_importer.ImportAllStatsAsyncWT();
             #endregion
 
-            await _playerRosterImporter.ImportAllPlayersAsync();
+            // Importador de estadísticas de jugadores (roster, hitting y pitching)
+            await _playerStatsImporter.ImportAllPlayersAndStatsAsync(2025);*/
 
         }
     }

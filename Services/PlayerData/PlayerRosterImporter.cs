@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
 using StrikeData.Models;
 
-namespace StrikeData.Services.TeamData
+namespace StrikeData.Services.PlayerData
 {
     public class PlayerRosterImporter
     {
@@ -51,9 +51,7 @@ namespace StrikeData.Services.TeamData
             _httpClient = new HttpClient();
         }
 
-        /// <summary>
         /// Importa el 40-man roster de los 30 equipos (temporada 2025) y hace upsert de Players.
-        /// </summary>
         public async Task ImportAllPlayersAsync()
         {
             // Cache de Teams por nombre (case-insensitive)
