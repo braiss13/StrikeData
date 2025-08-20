@@ -46,7 +46,6 @@ namespace StrikeData.Services.TeamData
             { "AB/HR", "https://www.teamrankings.com/mlb/stat/at-bats-per-home-run" }
         };
 
-
         public HittingImporter(AppDbContext context)
         {
             _context = context;

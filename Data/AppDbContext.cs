@@ -12,7 +12,6 @@ namespace StrikeData.Data
 
         // Entidades nuevas
         public DbSet<Team> Teams { get; set; }
-        public DbSet<Player> Players { get; set; }
         public DbSet<Match> Matches { get; set; }
         public DbSet<StatType> StatTypes { get; set; }
         public DbSet<StatCategory> StatCategories { get; set; }
@@ -20,6 +19,10 @@ namespace StrikeData.Data
         public DbSet<TeamGame> TeamGames { get; set; }
         public DbSet<TeamMonthlySplit> TeamMonthlySplits { get; set; }
         public DbSet<TeamOpponentSplit> TeamOpponentSplits { get; set; }
+
+        public DbSet<Player> Players { get; set; }
+        public DbSet<PlayerStat> PlayerStats { get; set; }
+        public DbSet<PlayerStatType> PlayerStatTypes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -141,6 +144,38 @@ namespace StrikeData.Data
             // StatType -> TeamStatTypes
             modelBuilder.Entity<StatType>()
                 .ToTable("TeamStatTypes");
+
+            // Único por MLB_Player_Id para evitar duplicar jugadores cuando venga ese id
+            modelBuilder.Entity<Player>()
+                .HasIndex(p => p.MLB_Player_Id)
+                .IsUnique();
+
+            // PlayerStat -> Player (1:N)
+            modelBuilder.Entity<PlayerStat>()
+                .HasOne(ps => ps.Player)
+                .WithMany(p => p.PlayerStats)
+                .HasForeignKey(ps => ps.PlayerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // PlayerStat -> PlayerStatType (1:N)
+            modelBuilder.Entity<PlayerStat>()
+                .HasOne(ps => ps.PlayerStatType)
+                .WithMany(pst => pst.PlayerStats)
+                .HasForeignKey(ps => ps.PlayerStatTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Evita duplicar la misma métrica para un jugador
+            modelBuilder.Entity<PlayerStat>()
+                .HasIndex(ps => new { ps.PlayerId, ps.PlayerStatTypeId })
+                .IsUnique()
+                .HasDatabaseName("UX_PlayerStat_Player_Type");
+
+            // PlayerStatType -> StatCategory (1:N)
+            modelBuilder.Entity<PlayerStatType>()
+                .HasOne(pst => pst.StatCategory)
+                .WithMany() // no necesitas colección inversa nueva
+                .HasForeignKey(pst => pst.StatCategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
 
         }
     }

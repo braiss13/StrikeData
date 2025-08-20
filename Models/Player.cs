@@ -10,20 +10,23 @@ namespace StrikeData.Models
 
         [Required, ForeignKey("Team")]
         public int TeamId { get; set; }
-        public Team Team { get; set; }   // Propiedad de navegación, por recomendación de EF Core se usa para acceder más fácil al objeto
+        public Team Team { get; set; }
 
         [Required, MaxLength(100)]
         public string Name { get; set; }
 
-        [MaxLength(50)]
-        public string Position { get; set; }
+        // --- NUEVO ---
+        // Id oficial de MLB. Suele caber en int, pero usamos long? por seguridad.
+        public long? MLB_Player_Id { get; set; }
 
-        public float? BattingAverage { get; set; }
-        public int? HomeRuns { get; set; }
-        public int? RunsBattedIn { get; set; }
-        public int? GamesPlayed { get; set; }
-        public int? StolenBases { get; set; }
-        public float? OnBasePercentage { get; set; }
-        public float? SluggingPercentage { get; set; }
+        // Dorsal (0..99 normalmente). Lo dejamos nullable por si una fuente no lo trae.
+        public int? Number { get; set; }
+
+        // Estado del jugador (ej.: "Active", "Injured"). Texto corto.
+        [MaxLength(30)]
+        public string? Status { get; set; }
+
+        // Navegación (opcional) a stats de jugador
+        public ICollection<PlayerStat> PlayerStats { get; set; }
     }
 }
