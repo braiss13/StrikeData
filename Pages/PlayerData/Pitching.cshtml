@@ -1,0 +1,79 @@
+@page
+@model StrikeData.Pages.PlayerData.PitchingPlayerModel
+
+@{
+    ViewData["Title"] = "Players – Pitching";
+}
+
+<h2 class="section-title">Pitching</h2>
+
+<form method="get">
+    <!-- Team dropdown -->
+    <div class="table-selector">
+        <select asp-for="SelectedTeamId" asp-items="Model.TeamOptions" class="form-select w-auto d-inline-block" style="background-color:#1e3a8a; 
+                       color:#ffffff; 
+                       border:1px solid #2563eb; 
+                       border-radius:0.25rem; 
+                       padding:0.4rem 0.8rem;
+                       margin-bottom: 1rem;" onchange="this.form.submit()">
+        </select>
+    </div>
+
+    <!-- Basic / Advanced -->
+    <div class="table-selector mb-3">
+        <button type="submit" name="ViewMode" value="basic"
+            class="btn-stat-toggle @(Model.ViewMode == "basic" ? "" : "inactive")">
+            Basic
+        </button>
+        <button type="submit" name="ViewMode" value="advanced"
+            class="btn-stat-toggle @(Model.ViewMode == "advanced" ? "" : "inactive")">
+            Advanced
+        </button>
+    </div>
+</form>
+
+<table class="table table-striped table-bordered table-sm pitching-table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th>Pos</th>
+            @if (Model.ViewMode == "basic")
+            {
+                <th>Status</th>
+            }
+            @foreach (var col in Model.VisibleColumns)
+            {
+                <th>@col</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model.Rows)
+        {
+            <tr>
+                <td>@(r.Number?.ToString() ?? "-")</td>
+                <td>@r.Name</td>
+                <td>@(string.IsNullOrWhiteSpace(r.Position) ? "-" : r.Position)</td>
+                @if (Model.ViewMode == "basic")
+                {
+                    <td>@(string.IsNullOrWhiteSpace(r.Status) ? "-" : r.Status)</td>
+                }
+                @foreach (var col in Model.VisibleColumns)
+                {
+                    var val = r.Values.TryGetValue(col, out var v) ? v : (float?)null;
+                    if (val.HasValue)
+                    {
+                        var show3 = col is "ERA" or "WHIP" or "AVG" or "GO/AO" or "SO/9" or "BB/9" or "H/9" or "K/BB" or "P/IP";
+                        <td>@(show3 ? val.Value.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)
+                                : val.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))</td>
+                    }
+                    else
+                    {
+                        <td>-</td>
+                    }
+                }
+            </tr>
+        }
+    </tbody>
+</table>

@@ -44,7 +44,7 @@ namespace StrikeData.Pages
 
         public async Task OnGetAsync()
         {
-            /*
+            
             #region Importadores de estadísticas de equipos
             // Importador de estadísticas para batting de equipos
             await _hitting_importer.ImportAllStatsAsyncH();
@@ -66,7 +66,7 @@ namespace StrikeData.Pages
             #endregion
 
             // Importador de estadísticas de jugadores (roster, hitting y pitching)
-            await _playerStatsImporter.ImportAllPlayersAndStatsAsync(2025);*/
+            await _playerStatsImporter.ImportAllPlayersAndStatsAsync(2025);
 
         }
     }

@@ -19,7 +19,7 @@ namespace StrikeData.Services.TeamData
             { "NY Mets", "New York Mets" },
             { "Tampa Bay", "Tampa Bay Rays" },
             { "San Diego", "San Diego Padres" },
-            { "Sacramento", "Athletics" }, // Asumido, ya que no hay Sacramento en MLB; posiblemente Oakland Athletics
+            { "Sacramento", "Athletics" },
             { "Toronto", "Toronto Blue Jays" },
             { "SF Giants", "San Francisco Giants" },
             { "Miami", "Miami Marlins" },

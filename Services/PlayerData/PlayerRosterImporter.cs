@@ -28,7 +28,7 @@ namespace StrikeData.Services.PlayerData
             { 121, "New York Mets" },
             { 139, "Tampa Bay Rays" },
             { 135, "San Diego Padres" },
-            { 133, "Oakland Athletics" },
+            { 133, "Athletics" },
             { 141, "Toronto Blue Jays" },
             { 137, "San Francisco Giants" },
             { 146, "Miami Marlins" },
