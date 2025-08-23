@@ -28,6 +28,23 @@ namespace StrikeData.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // Unicidad GamePk
+            modelBuilder.Entity<Match>()
+                .HasIndex(m => m.GamePk)
+                .IsUnique();
+
+            // Relación Match ↔ MatchInning
+            modelBuilder.Entity<Match>()
+                .HasMany(m => m.Innings)
+                .WithOne(mi => mi.Match)
+                .HasForeignKey(mi => mi.MatchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Evitar duplicados por entrada
+            modelBuilder.Entity<MatchInning>()
+                .HasIndex(mi => new { mi.MatchId, mi.InningNumber })
+                .IsUnique();
+
             // Unicidad en el nombre del equipo
             modelBuilder.Entity<Team>()
                 .HasIndex(t => t.Name)
