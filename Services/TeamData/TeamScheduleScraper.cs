@@ -1,42 +1,29 @@
 using System.Globalization;
 using HtmlAgilityPack;
-using StrikeData.Models.Scraping; 
+using StrikeData.Models.Scraping;
+using StrikeData.Services.Common;
 
 namespace StrikeData.Services.TeamData
 {
-    /// Servicio de scraping para la página "Baseball-Almanac". Descarga la página de calendario de un equipo y año concretos,
-    /// y extrae el calendario completo, los splits mensuales y los splits por rival (Fast Facts).
-    public class TeamScheduleScraper
+    /// <summary>
+    /// Scraper de Baseball-Almanac para calendario y splits de equipo.
+    /// Hereda utilidades comunes de BaseballAlmanacScraperBase.
+    /// </summary>
+    public class TeamScheduleScraper : BaseballAlmanacScraperBase
     {
-        private readonly HttpClient _httpClient;
+        public TeamScheduleScraper(HttpClient httpClient) : base(httpClient) { }
 
-        public TeamScheduleScraper(HttpClient httpClient)
-        {
-            _httpClient = httpClient;
-        }
-
+        /// <summary>
         /// Descarga y analiza la página de calendario de un equipo (por abreviatura) en un año concreto.
         /// Devuelve DTOs de scraping (no entidades EF).
+        /// </summary>
         public async Task<TeamScheduleResultDto> GetTeamScheduleAndSplitsAsync(string teamCode, int year)
         {
             if (string.IsNullOrWhiteSpace(teamCode))
                 throw new ArgumentException("Team code must be specified", nameof(teamCode));
 
             var url = $"https://www.baseball-almanac.com/teamstats/schedule.php?y={year}&t={teamCode.ToUpperInvariant()}";
-
-            using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:100.0) Gecko/20100101 Firefox/100.0");
-            request.Headers.Referrer = new Uri("https://www.baseball-almanac.com/teammenu.shtml");
-
-            var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var html = await response.Content.ReadAsStringAsync();
-            if (html.Length < 1000)
-                throw new InvalidOperationException($"Unexpected response length ({html.Length} characters). The page may not exist.");
-
-            var doc = new HtmlDocument();
-            doc.LoadHtml(html);
+            var doc = await LoadDocumentAsync(url);
 
             var result = new TeamScheduleResultDto();
             ParseScheduleTable(doc, result);
@@ -103,7 +90,7 @@ namespace StrikeData.Services.TeamData
         // - Monthly Splits (meses)
         // - Team vs Team Splits (rivales)
         // Excluye Score Related Splits (Shutouts, 1-Run Games, Blowouts).
-        public static void ParseFastFacts(HtmlDocument doc, TeamScheduleResultDto result)
+        private static void ParseFastFacts(HtmlDocument doc, TeamScheduleResultDto result)
         {
             var fastFactsDiv = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'fast-facts')]");
             if (fastFactsDiv == null) return;
@@ -159,16 +146,11 @@ namespace StrikeData.Services.TeamData
                     if (!int.TryParse(cells[1].InnerText.Trim(), out var wins)) continue;
                     if (!int.TryParse(cells[2].InnerText.Trim(), out var losses)) continue;
 
-                    // Si tus DTOs usan DECIMAL:
                     if (!decimal.TryParse(cells[3].InnerText.Trim(), NumberStyles.Float,
                                           CultureInfo.InvariantCulture, out var wpDec))
                     {
                         wpDec = 0m;
                     }
-
-                    // Si tus DTOs usan FLOAT en vez de DECIMAL, cambia por:
-                    // if (!float.TryParse(cells[3].InnerText.Trim(), NumberStyles.Float,
-                    //                     CultureInfo.InvariantCulture, out var wpFloat)) { wpFloat = 0f; }
 
                     // Clasificación: mes -> Monthly; si no -> Team
                     if (monthNames.Contains(baseKey))
@@ -179,7 +161,7 @@ namespace StrikeData.Services.TeamData
                             Games = games,
                             Won = wins,
                             Lost = losses,
-                            WinPercentage = wpDec // o wpFloat si tu DTO usa float
+                            WinPercentage = wpDec
                         });
                     }
                     else
@@ -190,12 +172,11 @@ namespace StrikeData.Services.TeamData
                             Games = games,
                             Won = wins,
                             Lost = losses,
-                            WinPercentage = wpDec // o wpFloat si tu DTO usa float
+                            WinPercentage = wpDec
                         });
                     }
                 }
             }
         }
-        
     }
 }

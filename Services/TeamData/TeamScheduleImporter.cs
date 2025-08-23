@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using StrikeData.Data;
 using StrikeData.Models;
 using StrikeData.Models.Scraping;
+using StrikeData.Services.Common;
 
 namespace StrikeData.Services.TeamData
 {
@@ -12,40 +9,6 @@ namespace StrikeData.Services.TeamData
     {
         private readonly AppDbContext _context;
         private readonly TeamScheduleScraper _scraper;
-
-        private static readonly Dictionary<string, string> TeamCodeToName = new()
-        {
-            ["TOR"] = "Toronto Blue Jays",
-            ["BOS"] = "Boston Red Sox",
-            ["NYA"] = "New York Yankees",
-            ["TBR"] = "Tampa Bay Rays",
-            ["BAL"] = "Baltimore Orioles",
-            ["DET"] = "Detroit Tigers",
-            ["CLG"] = "Cleveland Guardians",
-            ["KCA"] = "Kansas City Royals",
-            ["MIN"] = "Minnesota Twins",
-            ["CHA"] = "Chicago White Sox",
-            ["HOA"] = "Houston Astros",
-            ["SEA"] = "Seattle Mariners",
-            ["TEX"] = "Texas Rangers",
-            ["ANG"] = "Los Angeles Angels",
-            ["ATH"] = "Athletics",
-            ["PHI"] = "Philadelphia Phillies",
-            ["NYN"] = "New York Mets",
-            ["MIA"] = "Miami Marlins",
-            ["ATL"] = "Atlanta Braves",
-            ["WS0"] = "Washington Nationals",
-            ["ML4"] = "Milwaukee Brewers",
-            ["CHN"] = "Chicago Cubs",
-            ["CN5"] = "Cincinnati Reds",
-            ["SLN"] = "St. Louis Cardinals",
-            ["PIT"] = "Pittsburgh Pirates",
-            ["SDN"] = "San Diego Padres",
-            ["LAN"] = "Los Angeles Dodgers",
-            ["ARI"] = "Arizona Diamondbacks",
-            ["SFN"] = "San Francisco Giants",
-            ["COL"] = "Colorado Rockies"
-        };
 
         public TeamScheduleImporter(AppDbContext context, TeamScheduleScraper scraper)
         {
@@ -55,7 +18,7 @@ namespace StrikeData.Services.TeamData
 
         public async Task ImportAllTeamsScheduleAsync(int season)
         {
-            foreach (var kvp in TeamCodeToName)
+            foreach (var kvp in TeamCodeMap.CodeToName)
             {
                 var code = kvp.Key;
                 var name = kvp.Value;
@@ -99,7 +62,7 @@ namespace StrikeData.Services.TeamData
                     string normalized = TeamNameNormalizer.Normalize(oppName);
                     var opponentTeam = _context.Teams.FirstOrDefault(t => t.Name == normalized);
                     int? oppId = opponentTeam?.Id;
-    
+
                     var existing = _context.TeamGames
                         .FirstOrDefault(x => x.TeamId == team.Id && x.Season == season && x.GameNumber == gameDto.GameNumber);
                     if (existing == null)
@@ -111,7 +74,7 @@ namespace StrikeData.Services.TeamData
                     existing.TeamId = team.Id;
                     existing.Season = season;
                     existing.GameNumber = gameDto.GameNumber;
-                    // Convierte la fecha “sin Kind” a UTC para cumplir con PostgreSQL
+                    // Convertir la fecha a UTC (PostgreSQL)
                     existing.Date = DateTime.SpecifyKind(gameDto.Date, DateTimeKind.Utc);
                     existing.IsHome = isHome;
                     existing.OpponentTeamId = oppId;
