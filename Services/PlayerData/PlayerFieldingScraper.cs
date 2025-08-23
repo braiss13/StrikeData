@@ -35,7 +35,6 @@ namespace StrikeData.Services.PlayerData
         public async Task<List<PlayerFieldingRowDto>> GetTeamFieldingRowsAsync(string teamCode, int year)
         {
             var url = $"https://www.baseball-almanac.com/teamstats/fielding.php?y={year}&t={teamCode.ToUpperInvariant()}";
-            Console.WriteLine($"[FieldingScraper] GET {url}");
 
             var doc = await LoadDocumentAsync(url);
 

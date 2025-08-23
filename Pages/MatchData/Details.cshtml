@@ -1,0 +1,71 @@
+@page "{id:int}"
+@using System
+@model StrikeData.Pages.MatchData.DetailsModel
+@{
+    ViewData["Title"] = "Match Details";
+}
+
+<h2 class="section-title">Match Details</h2>
+
+@if (Model.Match == null)
+{
+    <p style="text-align:center; color:#fff;">Match not found.</p>
+}
+else
+{
+    <div class="match-details-header" style="text-align:center; margin-bottom:20px;">
+        <h3>@Model.Match.AwayTeam?.Name vs @Model.Match.HomeTeam?.Name</h3>
+        <p>
+            @{
+                var madrid = TimeZoneInfo.FindSystemTimeZoneById("Europe/Madrid");
+                var localDate = TimeZoneInfo.ConvertTimeFromUtc(Model.Match.Date, madrid);
+            }
+            @localDate.ToString("yyyy-MM-dd HH:mm") - @Model.Match.Venue
+        </p>
+        <p><strong>Final:</strong> @Model.Match.AwayRuns - @Model.Match.HomeRuns</p>
+        <p><strong>@Model.Match.AwayTeam?.Name Record:</strong> @Model.Match.AwayWins-@Model.Match.AwayLosses (@(Model.Match.AwayPct?.ToString("0.000") ?? "-"))</p>
+        <p><strong>@Model.Match.HomeTeam?.Name Record:</strong> @Model.Match.HomeWins-@Model.Match.HomeLosses (@(Model.Match.HomePct?.ToString("0.000") ?? "-"))</p>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Inning</th>
+                <th colspan="3">@Model.Match.HomeTeam?.Name</th>
+                <th colspan="3">@Model.Match.AwayTeam?.Name</th>
+            </tr>
+            <tr>
+                <th></th>
+                <th>R</th><th>H</th><th>E</th>
+                <th>R</th><th>H</th><th>E</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var row in Model.InningRows)
+        {
+            <tr>
+                <td>@row.InningNumber</td>
+                <td>@(row.HomeRuns?.ToString() ?? "-")</td>
+                <td>@(row.HomeHits?.ToString() ?? "-")</td>
+                <td>@(row.HomeErrors?.ToString() ?? "-")</td>
+                <td>@(row.AwayRuns?.ToString() ?? "-")</td>
+                <td>@(row.AwayHits?.ToString() ?? "-")</td>
+                <td>@(row.AwayErrors?.ToString() ?? "-")</td>
+            </tr>
+        }
+            <tr class="table-summary">
+                <td><strong>Total</strong></td>
+                <td>@Model.Match.HomeRuns</td>
+                <td>@Model.Match.HomeHits</td>
+                <td>@Model.Match.HomeErrors</td>
+                <td>@Model.Match.AwayRuns</td>
+                <td>@Model.Match.AwayHits</td>
+                <td>@Model.Match.AwayErrors</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div style="text-align:center; margin-top:20px;">
+        <a asp-page="./Index" class="btn-stat-toggle" style="background-color:#2563eb;color:#ffffff;">Back to Matches</a>
+    </div>
+}

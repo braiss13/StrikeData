@@ -1,0 +1,32 @@
+@page
+@model StrikeData.Pages.MatchData.IndexModel
+@{
+    ViewData["Title"] = "Matches";
+}
+
+
+<h2 class="section-title">Matches</h2>
+
+<form method="get" class="date-selector" style="text-align:center; margin-bottom:20px;">
+    <label asp-for="SelectedDate" class="dropdown-label">Select date:</label>
+    <input type="date" asp-for="SelectedDate" class="dropdown" onchange="this.form.submit()" />
+</form>
+
+@if (Model.Matches == null || !Model.Matches.Any())
+{
+    <p style="text-align:center; color:#fff;">No matches found for this date.</p>
+}
+else
+{
+    <div class="match-grid">
+    @foreach (var match in Model.Matches)
+    {
+        <div class="match-card">
+            <div class="teams">@match.AwayTeam vs @match.HomeTeam</div>
+            <div class="score">@match.AwayRuns - @match.HomeRuns</div>
+            <div class="venue">@match.Venue</div>
+            <a asp-page="Details" asp-route-id="@match.Id" class="stretched-link"></a>
+        </div>
+    }
+    </div>
+}
