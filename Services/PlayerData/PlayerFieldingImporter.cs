@@ -23,8 +23,6 @@ namespace StrikeData.Services.PlayerData
 
         public async Task ImportAllTeamsPlayerFieldingAsync(int season)
         {
-            Console.WriteLine($"[FieldingImporter] === INICIO IMPORT FIELDING (season={season}) ===");
-
             var fieldingCat = await _context.StatCategories.FirstOrDefaultAsync(c => c.Name == "Fielding")
                               ?? new StatCategory { Name = "Fielding" };
             if (fieldingCat.Id == 0) { _context.StatCategories.Add(fieldingCat); await _context.SaveChangesAsync(); }
@@ -45,11 +43,9 @@ namespace StrikeData.Services.PlayerData
                 }
             }
             if (created > 0) await _context.SaveChangesAsync();
-            Console.WriteLine($"[FieldingImporter] PlayerStatTypes creados: {created}.");
 
             // Cache jugadores por TeamId y (NombreNormalizado, Pos)
             var allPlayers = await _context.Players.Include(p => p.Team).AsNoTracking().ToListAsync();
-            Console.WriteLine($"[FieldingImporter] Players en memoria: {allPlayers.Count}.");
 
             // clave: $"{Normalize(name)}|{posUpper}"
             static string Key(string name, string? pos)
@@ -89,10 +85,7 @@ namespace StrikeData.Services.PlayerData
                 var team = await _context.Teams.FirstOrDefaultAsync(t => t.Name == teamName);
                 if (team == null) continue;
 
-                Console.WriteLine($"[FieldingImporter] Equipo: {team.Name} (Id={team.Id}) | code={code}");
-
                 var rows = await _scraper.GetTeamFieldingRowsAsync(code, season);
-                Console.WriteLine($"[FieldingImporter] Filas recibidas del scraper para {team.Name}: {rows.Count}");
 
                 if (!playersByTeam.TryGetValue(team.Id, out var byPlayerKey))
                 {
@@ -143,10 +136,8 @@ namespace StrikeData.Services.PlayerData
                 }
 
                 await _context.SaveChangesAsync();
-                Console.WriteLine($"[FieldingImporter] {team.Name}: jugadores emparejados={matchedPlayers}, upserts PlayerStats={upserts}.");
             }
 
-            Console.WriteLine("[FieldingImporter] === FIN IMPORT FIELDING ===");
         }
     }
 }

@@ -40,7 +40,6 @@ namespace StrikeData.Services.PlayerData
             var doc = await LoadDocumentAsync(url);
 
             var tables = doc.DocumentNode.SelectNodes("//table") ?? new HtmlNodeCollection(null);
-            Console.WriteLine($"[FieldingScraper] Tablas encontradas en la página: {tables.Count}");
             if (tables.Count == 0) return new List<PlayerFieldingRowDto>();
 
             var wanted = new[] { "OUTS","TC","CH","PO","A","E","DP","PB","CASB","CACS","FLD%" };
@@ -75,7 +74,6 @@ namespace StrikeData.Services.PlayerData
                     }
                 }
 
-                Console.WriteLine($"[FieldingScraper] Tabla #{tIdx}: header= [{string.Join(", ", headerCellsNorm ?? new())}]");
                 if (headerRowIndex < 0 || headerCellsNorm == null) continue;
 
                 var indexMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -108,8 +106,6 @@ namespace StrikeData.Services.PlayerData
                     }
                     if (idx >= 0) { indexMap[w] = idx; hits++; }
                 }
-
-                Console.WriteLine($"[FieldingScraper] -> columnas reconocidas: {hits} / {wanted.Length}");
 
                 if (hits > bestHits)
                 {
@@ -174,8 +170,7 @@ namespace StrikeData.Services.PlayerData
 
                 data.Add(dto);
             }
-
-            Console.WriteLine($"[FieldingScraper] Filas extraídas: {data.Count}");
+            
             return data;
         }
     }

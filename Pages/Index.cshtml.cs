@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using StrikeData.Data;
 using StrikeData.Services.PlayerData;
 using StrikeData.Services.TeamData;
+using StrikeData.Services.MatchData;
 
 namespace StrikeData.Pages
 {
@@ -20,6 +21,8 @@ namespace StrikeData.Pages
         private readonly PlayerStatsImporter _playerStatsImporter;
         private readonly PlayerFieldingImporter _playerFieldingImporter;
         #endregion
+
+        private readonly MatchImporter _matchImporter;
 
         public IndexModel(AppDbContext context)
         {
@@ -45,6 +48,9 @@ namespace StrikeData.Pages
             var playerFieldingScraper = new PlayerFieldingScraper(httpClient);
             _playerFieldingImporter   = new PlayerFieldingImporter(context, playerFieldingScraper);
             #endregion
+
+            // Importador de partidos
+            _matchImporter = new MatchImporter(context, httpClient);
         }
 
         public async Task OnGetAsync()
@@ -65,6 +71,9 @@ namespace StrikeData.Pages
             // 2) Fielding de jugadores (por equipo; sólo primera tabla; sólo si el jugador existe)
             await _playerFieldingImporter.ImportAllTeamsPlayerFieldingAsync(2025);
             #endregion
+
+            // Importador de partidos (desde 2025-03-27 hasta ayer)
+            await _matchImporter.ImportSeasonMatchesAsync();
         }
     }
 }
