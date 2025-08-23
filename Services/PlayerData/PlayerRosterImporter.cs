@@ -10,7 +10,7 @@ namespace StrikeData.Services.PlayerData
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
 
-        // MLB team_id -> nombre oficial del equipo (como lo guardas en DB)
+        // MLB team_id -> nombre oficial del equipo
         private static readonly Dictionary<int, string> _TeamIdMap = new()
         {
             { 119, "Los Angeles Dodgers" },

@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using HtmlAgilityPack;
 using StrikeData.Models.Scraping; 
 
@@ -202,40 +197,5 @@ namespace StrikeData.Services.TeamData
             }
         }
         
-        // Recorre una lista fija de códigos de equipos MLB y obtiene su calendario y splits para la temporada 2025.
-        // Devuelve un diccionario en el que la clave es el código del equipo y el valor es el resultado del scraping.
-        // Si para algún equipo se produce un error (página inexistente, datos incompletos, etc.), se guardará un null.
-        public async Task<Dictionary<string, TeamScheduleResultDto?>> GetAllTeamsScheduleAndSplitsAsync()
-        {
-            // Lista de abreviaturas según Baseball Almanac
-            var teamCodes = new List<string>
-            {
-                "TOR","BOS","NYA","TBR","BAL",
-                "DET","CLG","KCA","MIN","CHA",
-                "HOA","SEA","TEX","ANG","ATH",
-                "PHI","NYN","MIA","ATL","WS0",
-                "ML4","CHN","CN5","SLN","PIT",
-                "SDN","LAN","ARI","SFN","COL"
-            };
-
-            var results = new Dictionary<string, TeamScheduleResultDto?>();
-
-            foreach (var code in teamCodes)
-            {
-                try
-                {
-                    // Llama al scraper con el año 2025 para cada equipo.
-                    var res = await GetTeamScheduleAndSplitsAsync(code, 2025);
-                    results[code] = res;
-                }
-                catch
-                {
-                    // Si algo falla (p.ej. página no publicada), se almacena null para ese equipo.
-                    results[code] = null;
-                }
-            }
-
-            return results;
-        }
     }
 }
