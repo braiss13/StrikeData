@@ -435,3 +435,10 @@ footer {
     white-space: nowrap;
 }
 
+/* Container for the back-to-matches button on the details page. 
+   Adds extra spacing below the button so it doesn't touch the footer. */
+.back-button-container {
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 40px;
+}
