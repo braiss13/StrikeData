@@ -13,31 +13,38 @@
 }
 else
 {
-    <div class="match-details-header" style="text-align:center; margin-bottom:20px;">
-        <h3>@Model.Match.AwayTeam?.Name vs @Model.Match.HomeTeam?.Name</h3>
-        <p>
-            @{
-                var madrid = TimeZoneInfo.FindSystemTimeZoneById("Europe/Madrid");
-                var localDate = TimeZoneInfo.ConvertTimeFromUtc(Model.Match.Date, madrid);
-            }
-            @localDate.ToString("yyyy-MM-dd HH:mm") - @Model.Match.Venue
-        </p>
-        <p><strong>Final:</strong> @Model.Match.AwayRuns - @Model.Match.HomeRuns</p>
-        <p><strong>@Model.Match.AwayTeam?.Name Record:</strong> @Model.Match.AwayWins-@Model.Match.AwayLosses (@(Model.Match.AwayPct?.ToString("0.000") ?? "-"))</p>
-        <p><strong>@Model.Match.HomeTeam?.Name Record:</strong> @Model.Match.HomeWins-@Model.Match.HomeLosses (@(Model.Match.HomePct?.ToString("0.000") ?? "-"))</p>
+    <!-- Tarjeta resumen del partido -->
+    <div class="match-summary-card">
+        @{
+            var madrid = TimeZoneInfo.FindSystemTimeZoneById("Europe/Madrid");
+            var localDate = TimeZoneInfo.ConvertTimeFromUtc(Model.Match.Date, madrid);
+        }
+        <div class="summary-top">
+            <span class="team-name">@Model.Match.AwayTeam?.Name</span>
+            <span class="score-big">@Model.Match.AwayRuns - @Model.Match.HomeRuns</span>
+            <span class="team-name">@Model.Match.HomeTeam?.Name</span>
+        </div>
+        <div class="meta-row">
+            <span class="venue"><span class="location-icon">📍</span>@Model.Match.Venue</span>
+            <span class="datetime">@localDate.ToString("yyyy-MM-dd HH:mm")</span>
+        </div>
+        <div class="records-row">
+            <span class="record"><strong>@Model.Match.AwayTeam?.Name Record</strong>: @Model.Match.AwayWins-@Model.Match.AwayLosses (@(Model.Match.AwayPct?.ToString("0.000") ?? "-"))</span>
+            <span class="record"><strong>@Model.Match.HomeTeam?.Name Record</strong>: @Model.Match.HomeWins-@Model.Match.HomeLosses (@(Model.Match.HomePct?.ToString("0.000") ?? "-"))</span>
+        </div>
     </div>
 
+    <!-- Tabla con líneas por entrada -->
     <table class="table">
         <thead>
             <tr>
                 <th>Inning</th>
-                <th colspan="3">@Model.Match.HomeTeam?.Name</th>
-                <th colspan="3">@Model.Match.AwayTeam?.Name</th>
-            </tr>
-            <tr>
-                <th></th>
-                <th>R</th><th>H</th><th>E</th>
-                <th>R</th><th>H</th><th>E</th>
+                <th class="home-stat">R</th>
+                <th class="home-stat">H</th>
+                <th class="home-stat">E</th>
+                <th class="away-stat">R</th>
+                <th class="away-stat">H</th>
+                <th class="away-stat">E</th>
             </tr>
         </thead>
         <tbody>
@@ -45,22 +52,22 @@ else
         {
             <tr>
                 <td>@row.InningNumber</td>
-                <td>@(row.HomeRuns?.ToString() ?? "-")</td>
-                <td>@(row.HomeHits?.ToString() ?? "-")</td>
-                <td>@(row.HomeErrors?.ToString() ?? "-")</td>
-                <td>@(row.AwayRuns?.ToString() ?? "-")</td>
-                <td>@(row.AwayHits?.ToString() ?? "-")</td>
-                <td>@(row.AwayErrors?.ToString() ?? "-")</td>
+                <td class="home-stat">@(row.HomeRuns?.ToString() ?? "-")</td>
+                <td class="home-stat">@(row.HomeHits?.ToString() ?? "-")</td>
+                <td class="home-stat">@(row.HomeErrors?.ToString() ?? "-")</td>
+                <td class="away-stat">@(row.AwayRuns?.ToString() ?? "-")</td>
+                <td class="away-stat">@(row.AwayHits?.ToString() ?? "-")</td>
+                <td class="away-stat">@(row.AwayErrors?.ToString() ?? "-")</td>
             </tr>
         }
             <tr class="table-summary">
                 <td><strong>Total</strong></td>
-                <td>@Model.Match.HomeRuns</td>
-                <td>@Model.Match.HomeHits</td>
-                <td>@Model.Match.HomeErrors</td>
-                <td>@Model.Match.AwayRuns</td>
-                <td>@Model.Match.AwayHits</td>
-                <td>@Model.Match.AwayErrors</td>
+                <td class="home-stat">@Model.Match.HomeRuns</td>
+                <td class="home-stat">@Model.Match.HomeHits</td>
+                <td class="home-stat">@Model.Match.HomeErrors</td>
+                <td class="away-stat">@Model.Match.AwayRuns</td>
+                <td class="away-stat">@Model.Match.AwayHits</td>
+                <td class="away-stat">@Model.Match.AwayErrors</td>
             </tr>
         </tbody>
     </table>

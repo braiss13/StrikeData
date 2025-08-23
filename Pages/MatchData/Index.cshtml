@@ -4,11 +4,10 @@
     ViewData["Title"] = "Matches";
 }
 
-
-<h2 class="section-title">Matches</h2>
+<h2 class="section-title">Regular Season Matches</h2>
 
 <form method="get" class="date-selector" style="text-align:center; margin-bottom:20px;">
-    <label asp-for="SelectedDate" class="dropdown-label">Select date:</label>
+    <label asp-for="SelectedDate" class="dropdown-label">Select date (CEST):</label>
     <input type="date" asp-for="SelectedDate" class="dropdown" onchange="this.form.submit()" />
 </form>
 
@@ -22,9 +21,12 @@ else
     @foreach (var match in Model.Matches)
     {
         <div class="match-card">
+            <!-- Nombres de los equipos -->
             <div class="teams">@match.AwayTeam vs @match.HomeTeam</div>
-            <div class="score">@match.AwayRuns - @match.HomeRuns</div>
-            <div class="venue">@match.Venue</div>
+            <!-- Lugar del encuentro -->
+            <div class="venue"><span class="location-icon">📍</span>@match.Venue</div>
+            <!-- Resultado final destacado -->
+            <div class="result"><span class="score">@match.AwayRuns</span> - <span class="score">@match.HomeRuns</span></div>
             <a asp-page="Details" asp-route-id="@match.Id" class="stretched-link"></a>
         </div>
     }

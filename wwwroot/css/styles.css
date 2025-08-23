@@ -296,16 +296,37 @@ footer {
     margin-bottom: 0.5rem;
 }
 
-/* Score line on the card */
-.match-card .score {
-    font-size: 1.5em;
-    margin-bottom: 0.5rem;
-}
+/* Score line on the card is now handled by .result and .score classes */
 
 /* Venue information on the card */
 .match-card .venue {
     font-size: 0.9em;
     color: #93c5fd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.4rem;
+}
+
+/* Location icon used in match cards and match summaries */
+.match-card .location-icon {
+    margin-right: 0.4rem;
+    color: #fbbf24; /* Dorado para destacar la ubicación */
+    font-size: 1.1em;
+}
+
+/* Final result line on the card */
+.match-card .result {
+    margin-top: 0.6rem;
+    font-weight: 700;
+    color: #fbbf24;
+    font-size: 1.4em;
+}
+
+/* Individual score numbers in result */
+.match-card .result .score {
+    font-size: 1.6em;
+    margin: 0 0.2rem;
 }
 
 /* Full-card clickable link */
@@ -318,7 +339,7 @@ footer {
     z-index: 1;
 }
 
-/* Match details page */
+/* Match details page header has been refactored into match-summary-card */
 .match-details-header h3 {
     color: #93c5fd;
     margin-bottom: 0.5rem;
@@ -329,8 +350,88 @@ footer {
     margin: 4px 0;
 }
 
+/* Total row styling remains */
 .table-summary {
     font-weight: bold;
     background-color: #f3f4f6;
+}
+
+/* Highlight cells for home and away statistics in match details tables */
+/* Colores de fondo para destacar las estadísticas de cada equipo en la tabla de detalles.
+   Se usa !important para sobrescribir los colores alternados de filas definidos más arriba. */
+.home-stat {
+    background-color: rgba(37, 99, 235, 0.12) !important; /* Azul suave para el equipo local */
+}
+
+.away-stat {
+    background-color: rgba(236, 162, 90, 0.15) !important; /* Naranja suave para el equipo visitante */
+}
+
+/* Match summary card used on details page */
+.match-summary-card {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-radius: 0.75rem;
+    padding: 1rem 1.5rem;
+    margin-bottom: 2rem;
+    color: #f1f1f1;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.match-summary-card .summary-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    font-size: 2rem;
+    font-weight: 600;
+    color: #ffffff;
+    flex-wrap: wrap;
+}
+
+.match-summary-card .summary-top .team-name {
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.match-summary-card .summary-top .score-big {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #fbbf24;
+}
+
+.match-summary-card .meta-row {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.match-summary-card .meta-row .venue {
+    display: flex;
+    align-items: center;
+}
+
+.match-summary-card .meta-row .venue .location-icon {
+    margin-right: 0.25rem;
+    color: #fbbf24;
+}
+
+.match-summary-card .records-row {
+    margin-top: 0.5rem;
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: #e5e7eb;
+}
+
+.match-summary-card .records-row .record {
+    white-space: nowrap;
 }
 
