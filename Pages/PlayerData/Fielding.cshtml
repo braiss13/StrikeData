@@ -1,0 +1,64 @@
+@page
+@model StrikeData.Pages.PlayerData.FieldingModel
+
+@{
+    ViewData["Title"] = "Players – Fielding";
+}
+
+<h2 class="section-title">Fielding</h2>
+
+<form method="get">
+    <!-- Team dropdown -->
+    <div class="table-selector">
+        <select asp-for="SelectedTeamId"
+                asp-items="Model.TeamOptions"
+                class="form-select w-auto d-inline-block"
+                style="background-color:#1e3a8a; 
+                       color:#ffffff; 
+                       border:1px solid #2563eb; 
+                       border-radius:0.25rem; 
+                       padding:0.4rem 0.8rem;
+                       margin-bottom: 1rem;"
+                onchange="this.form.submit()">
+        </select>
+    </div>
+</form>
+
+<table class="table table-striped table-bordered table-sm " style="margin: 1 auto;">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th>Pos</th>
+            @foreach (var col in Model.VisibleColumns)
+            {
+                <th>@col</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var r in Model.Rows)
+    {
+        <tr>
+            <td>@(r.Number?.ToString() ?? "-")</td>
+            <td>@r.Name</td>
+            <td>@(string.IsNullOrWhiteSpace(r.Position) ? "-" : r.Position)</td>
+            @foreach (var col in Model.VisibleColumns)
+            {
+                var has = r.Values.TryGetValue(col, out var v);
+                if (has && v.HasValue)
+                {
+                    // Formato: FLD% a 3 decimales; demás sin formato especial
+                    var show3 = col is "FLD%";
+                    <td>@(show3 ? v.Value.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)
+                                : v.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))</td>
+                }
+                else
+                {
+                    <td>-</td>
+                }
+            }
+        </tr>
+    }
+    </tbody>
+</table>

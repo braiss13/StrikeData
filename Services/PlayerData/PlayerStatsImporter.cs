@@ -122,7 +122,6 @@ namespace StrikeData.Services.PlayerData
                     { "HBP", "hitByPitch" },
                     { "SAC", "sacBunts" },
                     { "SF", "sacFlies" },
-                    // GIDP a veces es "gidp" o "groundIntoDoublePlay"; aquí usamos gidp
                     { "GIDP", "gidp" },
                     { "GO/AO", "groundOutsToAirouts" },
                     { "XBH", "extraBaseHits" },

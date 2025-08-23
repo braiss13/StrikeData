@@ -1,15 +1,9 @@
+// PlayerFieldingScraper.cs
 using HtmlAgilityPack;
 using StrikeData.Services.Common;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace StrikeData.Services.PlayerData
 {
-    /// <summary>
-    /// Scraper para la tabla principal de Fielding por equipo en Baseball-Almanac (primer bloque de tabla).
-    /// SOLO extrae: Name, POS, OUTS, TC, CH, PO, A, E, DP, PB, CASB, CACS, FLD%
-    /// </summary>
     public class PlayerFieldingScraper : BaseballAlmanacScraperBase
     {
         public PlayerFieldingScraper(HttpClient httpClient) : base(httpClient) { }
@@ -17,15 +11,14 @@ namespace StrikeData.Services.PlayerData
         public class PlayerFieldingRowDto
         {
             public string Name { get; set; } = "";
-            public string? Pos { get; set; }   // <-- NECESARIO para filtrar por posición en el importador
+            public string? Pos { get; set; }             // <-- NUEVO
             public Dictionary<string, float?> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         }
 
-        // Sinónimos que puede usar Baseball-Almanac / otros
         private static readonly Dictionary<string, string[]> HeaderSynonyms = new(StringComparer.OrdinalIgnoreCase)
         {
             ["Name"] = new[] { "Name", "Player", "Player Name" },
-            ["POS"]  = new[] { "POS", "Pos", "Position" },
+            ["POS"]  = new[] { "POS", "Pos", "Position" },  // Se coge también la posición para quedarse solo con una (el mismo jugador puede tener varias)
             ["OUTS"] = new[] { "OUTS", "Outs", "Inn Outs", "INN OUTS", "Inn (Outs)", "Innings (Outs)" },
             ["TC"]   = new[] { "TC", "Total Chances", "Tot Ch", "T. Ch." },
             ["CH"]   = new[] { "CH", "Ch", "Chances" },
@@ -39,10 +32,6 @@ namespace StrikeData.Services.PlayerData
             ["FLD%"] = new[] { "FLD%", "Fld%", "FPCT", "Fld Pct", "Fielding %" },
         };
 
-        /// <summary>
-        /// Devuelve las filas (jugadores) de la primera tabla de Fielding para un equipo/año.
-        /// Incluye 'Pos' para que el importador pueda filtrar por la posición principal guardada.
-        /// </summary>
         public async Task<List<PlayerFieldingRowDto>> GetTeamFieldingRowsAsync(string teamCode, int year)
         {
             var url = $"https://www.baseball-almanac.com/teamstats/fielding.php?y={year}&t={teamCode.ToUpperInvariant()}";
@@ -52,14 +41,9 @@ namespace StrikeData.Services.PlayerData
 
             var tables = doc.DocumentNode.SelectNodes("//table") ?? new HtmlNodeCollection(null);
             Console.WriteLine($"[FieldingScraper] Tablas encontradas en la página: {tables.Count}");
+            if (tables.Count == 0) return new List<PlayerFieldingRowDto>();
 
-            if (tables.Count == 0)
-            {
-                Console.WriteLine("[FieldingScraper][WARN] No hay <table> en la página.");
-                return new List<PlayerFieldingRowDto>();
-            }
-
-            var wanted = new[] { "OUTS", "TC", "CH", "PO", "A", "E", "DP", "PB", "CASB", "CACS", "FLD%" };
+            var wanted = new[] { "OUTS","TC","CH","PO","A","E","DP","PB","CASB","CACS","FLD%" };
 
             HtmlNode? bestTable = null;
             int bestHeaderRowIdx = -1;
@@ -72,7 +56,6 @@ namespace StrikeData.Services.PlayerData
                 var rows = table.SelectNodes(".//tr");
                 if (rows == null || rows.Count < 2) continue;
 
-                // Buscar fila cabecera que contenga "Name" (o sinónimo)
                 int headerRowIndex = -1;
                 List<string>? headerCellsNorm = null;
 
@@ -92,13 +75,9 @@ namespace StrikeData.Services.PlayerData
                     }
                 }
 
-                var headerPreview = headerCellsNorm != null ? $"[{string.Join(", ", headerCellsNorm)}]" : "[no header row]";
-                Console.WriteLine($"[FieldingScraper] Tabla #{tIdx}: header= {headerPreview}");
+                Console.WriteLine($"[FieldingScraper] Tabla #{tIdx}: header= [{string.Join(", ", headerCellsNorm ?? new())}]");
+                if (headerRowIndex < 0 || headerCellsNorm == null) continue;
 
-                if (headerRowIndex < 0 || headerCellsNorm == null)
-                    continue;
-
-                // Mapeo de columnas según sinónimos
                 var indexMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
                 // Name
@@ -111,19 +90,13 @@ namespace StrikeData.Services.PlayerData
                 if (nameIdx < 0) continue;
                 indexMap["Name"] = nameIdx;
 
-                // POS (si existe)
-                int posIdx = -1;
-                if (HeaderSynonyms.TryGetValue("POS", out var posSyns))
+                // POS (opcional)
+                foreach (var syn in HeaderSynonyms["POS"])
                 {
-                    foreach (var syn in posSyns)
-                    {
-                        int idx = headerCellsNorm.FindIndex(s => s.Equals(syn, StringComparison.OrdinalIgnoreCase));
-                        if (idx >= 0) { posIdx = idx; break; }
-                    }
+                    int idx = headerCellsNorm.FindIndex(s => s.Equals(syn, StringComparison.OrdinalIgnoreCase));
+                    if (idx >= 0) { indexMap["POS"] = idx; break; }
                 }
-                if (posIdx >= 0) indexMap["POS"] = posIdx;
 
-                // Métricas
                 int hits = 0;
                 foreach (var w in wanted)
                 {
@@ -133,11 +106,7 @@ namespace StrikeData.Services.PlayerData
                         idx = headerCellsNorm.FindIndex(s => s.Equals(syn, StringComparison.OrdinalIgnoreCase));
                         if (idx >= 0) break;
                     }
-                    if (idx >= 0)
-                    {
-                        indexMap[w] = idx;
-                        hits++;
-                    }
+                    if (idx >= 0) { indexMap[w] = idx; hits++; }
                 }
 
                 Console.WriteLine($"[FieldingScraper] -> columnas reconocidas: {hits} / {wanted.Length}");
@@ -153,44 +122,36 @@ namespace StrikeData.Services.PlayerData
 
             if (bestTable == null || bestIndexMap == null)
             {
-                Console.WriteLine("[FieldingScraper][WARN] No se encontró una tabla de fielding con las columnas esperadas. Devolviendo lista vacía.");
+                Console.WriteLine("[FieldingScraper][WARN] No se encontró una tabla de fielding válida.");
                 return new List<PlayerFieldingRowDto>();
             }
 
-            // Parse filas
             var data = new List<PlayerFieldingRowDto>();
             var allRows = bestTable.SelectNodes(".//tr") ?? new HtmlNodeCollection(null);
 
             for (int r = bestHeaderRowIdx + 1; r < allRows.Count; r++)
             {
-                var tr = allRows[r];
-
-                // Si la fila tiene th (subheaders o totales), paramos
-                var ths = tr.SelectNodes("th");
-                if (ths != null && ths.Count > 0) break;
-
-                var cells = tr.SelectNodes("td");
+                var cells = allRows[r].SelectNodes("td");
                 if (cells == null || cells.Count == 0) continue;
 
                 if (!bestIndexMap.TryGetValue("Name", out int nameIdx)) continue;
                 if (nameIdx < 0 || nameIdx >= cells.Count) continue;
 
-                // Nombre (preferimos el texto de <a>)
+                var ths = allRows[r].SelectNodes("th");
+                if (ths != null && ths.Count > 0) break;
+
+                // Nombre desde <a>
                 var nameCell = cells[nameIdx];
-                var anchorTexts = nameCell.SelectNodes(".//a")
-                                          ?.Select(a => Utilities.CleanText(a.InnerText))
-                                          .Where(t => !string.IsNullOrWhiteSpace(t))
-                                          .ToList();
+                var anchorTexts = nameCell.SelectNodes(".//a")?.Select(a => Utilities.CleanText(a.InnerText))
+                                          .Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
                 var name = anchorTexts != null && anchorTexts.Count > 0
                     ? string.Join(" ", anchorTexts)
                     : Utilities.CleanText(nameCell.InnerText);
-
-                if (string.IsNullOrWhiteSpace(name)) continue;
-                if (name.Equals("Totals", StringComparison.OrdinalIgnoreCase)) break;
+                if (string.IsNullOrWhiteSpace(name) || name.Equals("Totals", StringComparison.OrdinalIgnoreCase)) break;
 
                 var dto = new PlayerFieldingRowDto { Name = name };
 
-                // POS (si lo tenemos)
+                // POS si existe
                 if (bestIndexMap.TryGetValue("POS", out int posIdx) && posIdx >= 0 && posIdx < cells.Count)
                 {
                     dto.Pos = Utilities.CleanText(cells[posIdx].InnerText);
@@ -207,9 +168,7 @@ namespace StrikeData.Services.PlayerData
                     int idx = kv.Value;
                     if (idx < 0 || idx >= cells.Count) continue;
 
-                    var raw = Utilities.CleanText(cells[idx].InnerText);
-                    raw = raw.Replace("%", "").Replace(",", "").Trim();
-
+                    var raw = Utilities.CleanText(cells[idx].InnerText).Replace("%", "").Replace(",", "").Trim();
                     dto.Values[key] = Utilities.Parse(raw);
                 }
 
