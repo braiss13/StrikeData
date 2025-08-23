@@ -442,3 +442,23 @@ footer {
     margin-top: 20px;
     margin-bottom: 40px;
 }
+
+/* 
+    Estilizado mejorado para inputs de fecha usados como dropdown.
+    Conserva el calendario nativo pero cambia colores y bordes para que
+    encaje con la paleta azul oscuro de la aplicación.
+    Solo se aplica a inputs type="date" con la clase .dropdown.
+ */
+
+input[type="date"].dropdown {
+    background-color: #1e40af;  /* Fondo azul oscuro para integrarlo en el diseño */
+    color: #f1f1f1;             /* Texto claro */
+    border: 2px solid #2563eb;  /* Borde azul medio */
+    padding: 0.6rem 0.8rem;
+    border-radius: 0.375rem;
+}
+
+/* Invertir el icono nativo del calendario para que se vea sobre fondo oscuro */
+input[type="date"].dropdown::-webkit-calendar-picker-indicator {
+    filter: invert(1) sepia(1) saturate(5) hue-rotate(170deg);
+}

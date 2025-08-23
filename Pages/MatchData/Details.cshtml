@@ -26,13 +26,13 @@ else
         </div>
         <div class="meta-row">
             <span class="venue"><span class="location-icon">📍</span>@Model.Match.Venue</span>
-            <span class="datetime">@localDate.ToString("yyyy-MM-dd HH:mm")</span>
+            <span class="datetime">@localDate.ToString("dd/MM/yyyy HH:mm") (CEST)</span>
         </div>
         <div class="records-row">
             <span class="record"><strong>@Model.Match.AwayTeam?.Name Record</strong>:
-                @Model.Match.AwayWins-@Model.Match.AwayLosses (@(Model.Match.AwayPct?.ToString("0.000") ?? "-"))</span>
+                @Model.Match.AwayWins-@Model.Match.AwayLosses (@(Model.Match.AwayPct?.ToString("0.000") ?? "-")%)</span>
             <span class="record"><strong>@Model.Match.HomeTeam?.Name Record</strong>:
-                @Model.Match.HomeWins-@Model.Match.HomeLosses (@(Model.Match.HomePct?.ToString("0.000") ?? "-"))</span>
+                @Model.Match.HomeWins-@Model.Match.HomeLosses (@(Model.Match.HomePct?.ToString("0.000") ?? "-")%)</span>
         </div>
     </div>
 
@@ -41,12 +41,12 @@ else
         <thead>
             <tr>
                 <th>Inning</th>
-                <th class="home-stat">R</th>
-                <th class="home-stat">H</th>
-                <th class="home-stat">E</th>
                 <th class="away-stat">R</th>
                 <th class="away-stat">H</th>
                 <th class="away-stat">E</th>
+                <th class="home-stat">R</th>
+                <th class="home-stat">H</th>
+                <th class="home-stat">E</th>
             </tr>
         </thead>
         <tbody>
@@ -54,22 +54,23 @@ else
             {
                 <tr>
                     <td>@row.InningNumber</td>
-                    <td class="home-stat">@(row.HomeRuns?.ToString() ?? "-")</td>
-                    <td class="home-stat">@(row.HomeHits?.ToString() ?? "-")</td>
-                    <td class="home-stat">@(row.HomeErrors?.ToString() ?? "-")</td>
                     <td class="away-stat">@(row.AwayRuns?.ToString() ?? "-")</td>
                     <td class="away-stat">@(row.AwayHits?.ToString() ?? "-")</td>
                     <td class="away-stat">@(row.AwayErrors?.ToString() ?? "-")</td>
+                    <td class="home-stat">@(row.HomeRuns?.ToString() ?? "-")</td>
+                    <td class="home-stat">@(row.HomeHits?.ToString() ?? "-")</td>
+                    <td class="home-stat">@(row.HomeErrors?.ToString() ?? "-")</td>
+                    
                 </tr>
             }
             <tr class="table-summary">
                 <td><strong>Total</strong></td>
-                <td class="home-stat">@Model.Match.HomeRuns</td>
-                <td class="home-stat">@Model.Match.HomeHits</td>
-                <td class="home-stat">@Model.Match.HomeErrors</td>
                 <td class="away-stat">@Model.Match.AwayRuns</td>
                 <td class="away-stat">@Model.Match.AwayHits</td>
                 <td class="away-stat">@Model.Match.AwayErrors</td>
+                <td class="home-stat">@Model.Match.HomeRuns</td>
+                <td class="home-stat">@Model.Match.HomeHits</td>
+                <td class="home-stat">@Model.Match.HomeErrors</td>
             </tr>
         </tbody>
     </table>
