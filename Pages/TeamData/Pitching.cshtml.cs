@@ -181,6 +181,9 @@ namespace StrikeData.Pages.TeamData
         {
             InitStatMeta();        // Inicializa las descripciones de estadísticas
 
+            // Reiniciar la lista de estadísticas por equipo por si el PageModel se reutiliza
+            TeamPitchingStats.Clear();
+
             // Abreviaturas de MLB básicas
             BasicStatNames = new List<string>
             {
