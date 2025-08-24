@@ -29,25 +29,18 @@
                     var hasMeta = Model.StatMeta.TryGetValue(statName, out var meta);
                     <th>
                         <span class="stat-head">
-                            <abbr title="@(hasMeta? meta!.LongName : statName)">@statName</abbr>
+                            <abbr title="@(hasMeta? meta!.LongName : statName)" tabindex="0">@statName</abbr>
                             @if (hasMeta && !string.IsNullOrWhiteSpace(meta!.Description))
                             {
-                                <button type="button" class="stat-info-btn" data-stat="@statName" aria-expanded="false"
-                                    aria-controls="tip-@statName" aria-label="Info @statName">
-                                    i
-                                </button>
-                                <div id="tip-@statName" class="stat-tooltip" role="tooltip" hidden>
-                                    <div class="stat-tooltip-title">
-                                        @meta.LongName (@statName)
-                                    </div>
-                                    <div class="stat-tooltip-body">
-                                        @meta.Description
-                                    </div>
+                                <div class="stat-tooltip">
+                                    <div class="stat-tooltip-title">@meta.LongName (@statName)</div>
+                                    <div class="stat-tooltip-body">@meta.Description</div>
                                 </div>
                             }
                         </span>
                     </th>
                 }
+
 
             </tr>
         </thead>
@@ -87,25 +80,18 @@
                     var hasMeta = Model.StatMeta.TryGetValue(statName, out var meta);
                     <th>
                         <span class="stat-head">
-                            <abbr title="@(hasMeta? meta!.LongName : statName)">@statName</abbr>
+                            <abbr title="@(hasMeta? meta!.LongName : statName)" tabindex="0">@statName</abbr>
                             @if (hasMeta && !string.IsNullOrWhiteSpace(meta!.Description))
                             {
-                                <button type="button" class="stat-info-btn" data-stat="@statName" aria-expanded="false"
-                                    aria-controls="tip-@statName" aria-label="Info @statName">
-                                    i
-                                </button>
-                                <div id="tip-@statName" class="stat-tooltip" role="tooltip" hidden>
-                                    <div class="stat-tooltip-title">
-                                        @meta.LongName (@statName)
-                                    </div>
-                                    <div class="stat-tooltip-body">
-                                        @meta.Description
-                                    </div>
+                                <div class="stat-tooltip">
+                                    <div class="stat-tooltip-title">@meta.LongName (@statName)</div>
+                                    <div class="stat-tooltip-body">@meta.Description</div>
                                 </div>
                             }
                         </span>
                     </th>
                 }
+
 
             </tr>
         </thead>
@@ -134,101 +120,101 @@
 
 
 <script>
-// Alterna entre la tabla básica y la avanzada, y marca el botón activo/inactivo
-function showTable(type) {
-    document.getElementById('basicTable').style.display = (type === 'basic') ? 'block' : 'none';
-    document.getElementById('advancedTable').style.display = (type === 'advanced') ? 'block' : 'none';
+    // Alterna entre la tabla básica y la avanzada, y marca el botón activo/inactivo
+    function showTable(type) {
+        document.getElementById('basicTable').style.display = (type === 'basic') ? 'block' : 'none';
+        document.getElementById('advancedTable').style.display = (type === 'advanced') ? 'block' : 'none';
 
-    const basicBtn = document.getElementById('basicBtn');
-    const advancedBtn = document.getElementById('advancedBtn');
-    if (type === 'basic') {
-        basicBtn.classList.remove('inactive');
-        advancedBtn.classList.add('inactive');
-    } else {
-        basicBtn.classList.add('inactive');
-        advancedBtn.classList.remove('inactive');
-    }
-}
-
-// Mostrar la tabla básica por defecto al cargar la página
-showTable('basic');
-
-// === Lógica para los tooltips de las estadísticas ===
-(function () {
-    // Usa las funciones que ya tienes; si no existen, reusa estas auxiliares:
-    let openBtn = null;
-
-    function getTip(btn) {
-        const id = btn.getAttribute('aria-controls');
-        return id && document.getElementById(id);
-    }
-    function open(btn) {
-        // cierra otros
-        document.querySelectorAll('.stat-info-btn[aria-expanded="true"]').forEach(b => {
-            b.setAttribute('aria-expanded','false');
-            const t = getTip(b);
-            if (t) t.hidden = true;
-        });
-        // abre éste
-        btn.setAttribute('aria-expanded','true');
-        const tip = getTip(btn);
-        if (tip) tip.hidden = false;
-        openBtn = btn;
-    }
-    function closeIf(btn) {
-        if (!btn) return;
-        btn.setAttribute('aria-expanded','false');
-        const tip = getTip(btn);
-        if (tip) tip.hidden = true;
-        if (openBtn === btn) openBtn = null;
+        const basicBtn = document.getElementById('basicBtn');
+        const advancedBtn = document.getElementById('advancedBtn');
+        if (type === 'basic') {
+            basicBtn.classList.remove('inactive');
+            advancedBtn.classList.add('inactive');
+        } else {
+            basicBtn.classList.add('inactive');
+            advancedBtn.classList.remove('inactive');
+        }
     }
 
-    // Abrir al pasar el ratón por el botón
-    document.addEventListener('mouseenter', (ev) => {
-        const btn = ev.target.closest('.stat-info-btn');
-        if (btn) open(btn);
-    }, true);
+    // Mostrar la tabla básica por defecto al cargar la página
+    showTable('basic');
 
-    // Cerrar cuando el ratón sale de botón Y tooltip (con pequeña tolerancia)
-    document.addEventListener('mouseleave', (ev) => {
-        const btn = ev.target.closest('.stat-info-btn');
-        if (!btn) return;
+    // === Lógica para los tooltips de las estadísticas ===
+    (function () {
+        // Usa las funciones que ya tienes; si no existen, reusa estas auxiliares:
+        let openBtn = null;
 
-        const tip = getTip(btn);
-        const next = ev.relatedTarget;
+        function getTip(btn) {
+            const id = btn.getAttribute('aria-controls');
+            return id && document.getElementById(id);
+        }
+        function open(btn) {
+            // cierra otros
+            document.querySelectorAll('.stat-info-btn[aria-expanded="true"]').forEach(b => {
+                b.setAttribute('aria-expanded', 'false');
+                const t = getTip(b);
+                if (t) t.hidden = true;
+            });
+            // abre éste
+            btn.setAttribute('aria-expanded', 'true');
+            const tip = getTip(btn);
+            if (tip) tip.hidden = false;
+            openBtn = btn;
+        }
+        function closeIf(btn) {
+            if (!btn) return;
+            btn.setAttribute('aria-expanded', 'false');
+            const tip = getTip(btn);
+            if (tip) tip.hidden = true;
+            if (openBtn === btn) openBtn = null;
+        }
 
-        // si el ratón entra al tooltip, no cierres
-        if (tip && tip.contains(next)) return;
+        // Abrir al pasar el ratón por el botón
+        document.addEventListener('mouseenter', (ev) => {
+            const btn = ev.target.closest('.stat-info-btn');
+            if (btn) open(btn);
+        }, true);
 
-        // espera un instante por si el puntero va hacia el tooltip
-        setTimeout(() => {
-            const active = document.activeElement;
-            const stillOverBtn = btn.matches(':hover');
-            const stillOverTip = tip && tip.matches(':hover');
-            // si no está sobre botón ni sobre tooltip, cierra
-            if (!stillOverBtn && !stillOverTip) closeIf(btn);
-        }, 80);
-    }, true);
+        // Cerrar cuando el ratón sale de botón Y tooltip (con pequeña tolerancia)
+        document.addEventListener('mouseleave', (ev) => {
+            const btn = ev.target.closest('.stat-info-btn');
+            if (!btn) return;
 
-    // También cerrar al salir del tooltip
-    document.addEventListener('mouseleave', (ev) => {
-        const tip = ev.target.closest('.stat-tooltip');
-        if (!tip) return;
-        const btnId = [...document.querySelectorAll('.stat-info-btn')]
-            .find(b => b.getAttribute('aria-controls') === tip.id);
-        const next = ev.relatedTarget;
-        // si vuelve al botón, no cierres
-        if (btnId && btnId.contains(next)) return;
+            const tip = getTip(btn);
+            const next = ev.relatedTarget;
 
-        setTimeout(() => {
-            const overTooltip = tip.matches(':hover');
-            const overBtn = btnId && btnId.matches(':hover');
-            if (!overTooltip && !overBtn) {
-                if (btnId) closeIf(btnId);
-            }
-        }, 80);
-    }, true);
+            // si el ratón entra al tooltip, no cierres
+            if (tip && tip.contains(next)) return;
 
-    // (Siguen funcionando clic/teclado de tu script original)
-})();
+            // espera un instante por si el puntero va hacia el tooltip
+            setTimeout(() => {
+                const active = document.activeElement;
+                const stillOverBtn = btn.matches(':hover');
+                const stillOverTip = tip && tip.matches(':hover');
+                // si no está sobre botón ni sobre tooltip, cierra
+                if (!stillOverBtn && !stillOverTip) closeIf(btn);
+            }, 80);
+        }, true);
+
+        // También cerrar al salir del tooltip
+        document.addEventListener('mouseleave', (ev) => {
+            const tip = ev.target.closest('.stat-tooltip');
+            if (!tip) return;
+            const btnId = [...document.querySelectorAll('.stat-info-btn')]
+                .find(b => b.getAttribute('aria-controls') === tip.id);
+            const next = ev.relatedTarget;
+            // si vuelve al botón, no cierres
+            if (btnId && btnId.contains(next)) return;
+
+            setTimeout(() => {
+                const overTooltip = tip.matches(':hover');
+                const overBtn = btnId && btnId.matches(':hover');
+                if (!overTooltip && !overBtn) {
+                    if (btnId) closeIf(btnId);
+                }
+            }, 80);
+        }, true);
+
+        // (Siguen funcionando clic/teclado de tu script original)
+    })();
 </script>
