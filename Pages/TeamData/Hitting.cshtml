@@ -7,10 +7,10 @@
 
 <h2 class="section-title">Hitting Stats</h2>
 
-<!-- Desplegable de selección de tipo de estadística con estilo consistente -->
 <form method="get">
     <div class="table-selector">
-        <select asp-for="SelectedStatTypeId"
+        <select id="statSelect"
+                asp-for="SelectedStatTypeId"
                 asp-items="Model.StatOptions"
                 class="form-select w-auto d-inline-block"
                 style="background-color:#1e3a8a;
@@ -19,12 +19,14 @@
                        border-radius:0.25rem;
                        padding:0.4rem 0.8rem;
                        margin-bottom: 1rem;"
-                onchange="this.form.submit()">
+                onchange="this.form.submit(); updateStatDesc();">
         </select>
     </div>
 </form>
 
-<!-- Tabla de estadísticas de bateo por equipo -->
+<!-- Área para mostrar la explicación de la estadística seleccionada -->
+<p id="statDescription" class="stat-desc" style="margin-left: 10px; color: #93c5fd;"></p>
+
 <table class="table table-striped table-bordered table-sm pitching-table" style="margin: 1 auto;">
     <thead>
         <tr>
@@ -41,33 +43,58 @@
         </tr>
     </thead>
     <tbody>
-        @{
-            var index = 1;
-            if (Model.TeamStats != null && Model.TeamStats.Count > 0)
-            {
-                foreach (var stat in Model.TeamStats)
-                {
-                    <tr>
-                        <td>@index</td>
-                        <td>@stat.Team.Name</td>
-                        <td>@(stat.Team.Games ?? 0)</td>
-                        <td>@(stat.Total ?? 0)</td>
-                        <td>@stat.CurrentSeason</td>
-                        <td>@(stat.Last3Games ?? 0)</td>
-                        <td>@(stat.LastGame ?? 0)</td>
-                        <td>@(stat.Home ?? 0)</td>
-                        <td>@(stat.Away ?? 0)</td>
-                        <td>@(stat.PrevSeason ?? 0)</td>
-                    </tr>
-                    index++;
-                }
-            }
-            else
+    @{
+        var index = 1;
+        if (Model.TeamStats != null && Model.TeamStats.Count > 0)
+        {
+            foreach (var stat in Model.TeamStats)
             {
                 <tr>
-                    <td colspan="10" style="text-align:center;">No data available</td>
+                    <td>@index</td>
+                    <td>@stat.Team.Name</td>
+                    <td>@(stat.Team.Games ?? 0)</td>
+                    <td>@(stat.Total ?? 0)</td>
+                    <td>@stat.CurrentSeason</td>
+                    <td>@(stat.Last3Games ?? 0)</td>
+                    <td>@(stat.LastGame ?? 0)</td>
+                    <td>@(stat.Home ?? 0)</td>
+                    <td>@(stat.Away ?? 0)</td>
+                    <td>@(stat.PrevSeason ?? 0)</td>
                 </tr>
+                index++;
             }
         }
+        else
+        {
+            <tr>
+                <td colspan="10" style="text-align:center;">No data available</td>
+            </tr>
+        }
+    }
     </tbody>
 </table>
+
+<!-- Script para actualizar la explicación de la estadística seleccionada -->
+<script>
+(function() {
+    // Diccionario de descripciones generado desde el modelo
+    const descriptions = {
+        @foreach (var kvp in Model.StatDescriptions)
+        {
+            <text>'@kvp.Key': "@kvp.Value.Replace("\"", "\\\"")",</text>
+        }
+    };
+
+    window.updateStatDesc = function () {
+        var select = document.getElementById('statSelect');
+        var descEl = document.getElementById('statDescription');
+        var val = select.value;
+        descEl.innerText = descriptions[val] || "";
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateStatDesc();
+    });
+})();
+</script>
+
