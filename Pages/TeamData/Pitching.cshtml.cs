@@ -30,36 +30,144 @@ namespace StrikeData.Pages.TeamData
 
         private void InitStatMeta()
         {
-            // Básicas
-            StatMeta["ERA"] = new StatInfo { LongName = "Earned Run Average", Description = "Carreras merecidas permitidas por cada 9 entradas: (ER×9)/IP." };
-            StatMeta["SHO"] = new StatInfo { LongName = "Shutouts", Description = "Partidos completos sin permitir carreras al rival." };
-            StatMeta["CG"] = new StatInfo { LongName = "Complete Games", Description = "Juegos completos lanzados por el pitcher titular." };
-            StatMeta["SV"] = new StatInfo { LongName = "Saves", Description = "Juegos salvados en situación de salvamento." };
-            StatMeta["SVO"] = new StatInfo { LongName = "Save Opportunities", Description = "Oportunidades totales de salvamento." };
-            StatMeta["IP"] = new StatInfo { LongName = "Innings Pitched", Description = "Entradas lanzadas (un tercio = 0.1)." };
-            StatMeta["H"] = new StatInfo { LongName = "Hits Allowed", Description = "Hits permitidos por el lanzador/equipo." };
-            StatMeta["R"] = new StatInfo { LongName = "Runs Allowed", Description = "Carreras recibidas." };
-            StatMeta["HR"] = new StatInfo { LongName = "Home Runs Allowed", Description = "Home runs permitidos." };
-            StatMeta["W"] = new StatInfo { LongName = "Wins", Description = "Juegos ganados por el lanzador/equipo." };
-            StatMeta["SO"] = new StatInfo { LongName = "Strikeouts", Description = "Ponches propinados." };
-            StatMeta["WHIP"] = new StatInfo { LongName = "Walks + Hits per Inning Pitched", Description = "Promedio de corredores por entrada: (BB+H)/IP." };
-            StatMeta["AVG"] = new StatInfo { LongName = "Batting Average Against", Description = "Promedio de bateo de los rivales: H/(AB vs el lanzador/equipo)." };
+            // Basic statistics (English names and explanatory descriptions)
+            StatMeta["ERA"] = new StatInfo
+            {
+                LongName = "Earned Run Average",
+                Description = "Earned run average: earned runs allowed per nine innings pitched ((earned runs × 9) / innings pitched)."
+            };
+            StatMeta["SHO"] = new StatInfo
+            {
+                LongName = "Shutouts",
+                Description = "Shutouts: complete games where no runs are allowed by the pitcher or team."
+            };
+            StatMeta["CG"] = new StatInfo
+            {
+                LongName = "Complete Games",
+                Description = "Complete games: games in which the starting pitcher pitches the entire game without relief."
+            };
+            StatMeta["SV"] = new StatInfo
+            {
+                LongName = "Saves",
+                Description = "Saves: relief appearances that preserve a lead while meeting the save criteria."
+            };
+            StatMeta["SVO"] = new StatInfo
+            {
+                LongName = "Save Opportunities",
+                Description = "Save opportunities: total chances a pitcher has to earn a save (regardless of outcome)."
+            };
+            StatMeta["IP"] = new StatInfo
+            {
+                LongName = "Innings Pitched",
+                Description = "Innings pitched: total innings thrown; each out equals one third of an inning."
+            };
+            StatMeta["H"] = new StatInfo
+            {
+                LongName = "Hits Allowed",
+                Description = "Hits allowed: total hits conceded to opposing batters. A hit occurs when a batter reaches at least first base safely after putting the ball in play, without an error or fielder's choice."
+            };
+            StatMeta["R"] = new StatInfo
+            {
+                LongName = "Runs Allowed",
+                Description = "Runs allowed: total runs (earned and unearned) given up by the pitcher or team. A run scores when a runner safely circles the bases and touches home plate."
+            };
+            StatMeta["HR"] = new StatInfo
+            {
+                LongName = "Home Runs Allowed",
+                Description = "Home runs allowed: number of home runs conceded to opponents. A home run occurs when a batted ball in fair territory clears the outfield fence or the batter circles all the bases on an inside-the-park hit."
+            };
+            StatMeta["W"] = new StatInfo
+            {
+                LongName = "Wins",
+                Description = "Wins: games credited as wins to the pitcher or team."
+            };
+            StatMeta["SO"] = new StatInfo
+            {
+                LongName = "Strikeouts",
+                Description = "Strikeouts: number of batters retired via strike three."
+            };
+            StatMeta["WHIP"] = new StatInfo
+            {
+                LongName = "Walks + Hits per Inning Pitched",
+                Description = "Walks plus hits per inning pitched: (walks + hits) divided by innings pitched; measures baserunners allowed."
+            };
+            StatMeta["AVG"] = new StatInfo
+            {
+                LongName = "Batting Average Against",
+                Description = "Batting average against: opponents' batting average; hits allowed divided by at-bats against."
+            };
 
-            // Avanzadas (ajusta según tus columnas)
-            StatMeta["TBF"] = new StatInfo { LongName = "Total Batters Faced", Description = "Bateadores enfrentados." };
-            StatMeta["NP"] = new StatInfo { LongName = "Number of Pitches", Description = "Número total de lanzamientos." };
-            StatMeta["P/IP"] = new StatInfo { LongName = "Pitches per Inning", Description = "Lanzamientos por entrada." };
-            StatMeta["GF"] = new StatInfo { LongName = "Games Finished", Description = "Juegos finalizados por el lanzador." };
-            StatMeta["HLD"] = new StatInfo { LongName = "Holds", Description = "Relevista mantiene la ventaja en situación de salvamento." };
-            StatMeta["IBB"] = new StatInfo { LongName = "Intentional Walks", Description = "Bases por bolas intencionales." };
-            StatMeta["WP"] = new StatInfo { LongName = "Wild Pitches", Description = "Lanzamientos descontrolados que permiten avance." };
-            StatMeta["K/BB"] = new StatInfo { LongName = "Strikeout-to-Walk Ratio", Description = "Relación SO/BB." };
-            StatMeta["OP/G"] = new StatInfo { LongName = "Opponent Runs per Game", Description = "Carreras recibidas por juego (TeamRankings)." };
-            StatMeta["ER/G"] = new StatInfo { LongName = "Earned Runs per Game", Description = "Carreras merecidas por juego (TeamRankings)." };
-            StatMeta["SO/9"] = new StatInfo { LongName = "Strikeouts per 9", Description = "Ponches por nueve entradas." };
-            StatMeta["H/9"] = new StatInfo { LongName = "Hits per 9", Description = "Hits por nueve entradas." };
-            StatMeta["HR/9"] = new StatInfo { LongName = "Home Runs per 9", Description = "Home runs por nueve entradas." };
-            StatMeta["W/9"] = new StatInfo { LongName = "Walks per 9", Description = "Bases por bolas por nueve entradas." };
+            // Advanced statistics (English names and explanations)
+            StatMeta["TBF"] = new StatInfo
+            {
+                LongName = "Total Batters Faced",
+                Description = "Total batters faced: number of plate appearances against the pitcher or team."
+            };
+            StatMeta["NP"] = new StatInfo
+            {
+                LongName = "Number of Pitches",
+                Description = "Number of pitches: total pitches thrown (balls and strikes)."
+            };
+            StatMeta["P/IP"] = new StatInfo
+            {
+                LongName = "Pitches per Inning",
+                Description = "Pitches per inning: average number of pitches thrown per inning pitched."
+            };
+            StatMeta["GF"] = new StatInfo
+            {
+                LongName = "Games Finished",
+                Description = "Games finished: appearances where the pitcher recorded the final out for his team."
+            };
+            StatMeta["HLD"] = new StatInfo
+            {
+                LongName = "Holds",
+                Description = "Holds: relief outings where the pitcher enters in a save situation, records at least one out and leaves with the lead intact."
+            };
+            StatMeta["IBB"] = new StatInfo
+            {
+                LongName = "Intentional Walks",
+                Description = "Intentional walks: walks issued intentionally by the pitcher."
+            };
+            StatMeta["WP"] = new StatInfo
+            {
+                LongName = "Wild Pitches",
+                Description = "Wild pitches: errant pitches that allow baserunners to advance."
+            };
+            StatMeta["K/BB"] = new StatInfo
+            {
+                LongName = "Strikeout-to-Walk Ratio",
+                Description = "Strikeout-to-walk ratio: strikeouts divided by walks."
+            };
+            StatMeta["OP/G"] = new StatInfo
+            {
+                LongName = "Opponent Runs per Game",
+                Description = "Opponent runs per game: average runs allowed per game (TeamRankings data)."
+            };
+            StatMeta["ER/G"] = new StatInfo
+            {
+                LongName = "Earned Runs per Game",
+                Description = "Earned runs per game: average earned runs allowed per game (TeamRankings data)."
+            };
+            StatMeta["SO/9"] = new StatInfo
+            {
+                LongName = "Strikeouts per 9",
+                Description = "Strikeouts per nine innings: (strikeouts × 9) / innings pitched."
+            };
+            StatMeta["H/9"] = new StatInfo
+            {
+                LongName = "Hits per 9",
+                Description = "Hits per nine innings: (hits allowed × 9) / innings pitched."
+            };
+            StatMeta["HR/9"] = new StatInfo
+            {
+                LongName = "Home Runs per 9",
+                Description = "Home runs per nine innings: (home runs allowed × 9) / innings pitched."
+            };
+            StatMeta["W/9"] = new StatInfo
+            {
+                LongName = "Walks per 9",
+                Description = "Walks per nine innings: (walks × 9) / innings pitched."
+            };
         }
 
         public class PitchingStatsViewModel

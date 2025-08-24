@@ -27,47 +27,34 @@
                 @foreach (var statName in Model.BasicStatNames)
                 {
                     var hasMeta = Model.StatMeta.TryGetValue(statName, out var meta);
-                    <th>
-                        <span class="stat-head">
-                            <abbr title="@(hasMeta? meta!.LongName : statName)" tabindex="0">@statName</abbr>
-                            @if (hasMeta && !string.IsNullOrWhiteSpace(meta!.Description))
-                            {
-                                <div class="stat-tooltip">
+                    if (hasMeta && !string.IsNullOrWhiteSpace(meta!.Description))
+                    {
+                        <th>
+                            <span class="stat-head">
+                                <span class="stat-abbr" title="" tabindex="0" aria-label="@meta.LongName" aria-describedby="tip-@statName">@statName</span>
+                                <div id="tip-@statName" class="stat-tooltip" role="tooltip">
                                     <div class="stat-tooltip-title">@meta.LongName (@statName)</div>
                                     <div class="stat-tooltip-body">@meta.Description</div>
                                 </div>
-                            }
-                        </span>
-                    </th>
+                            </span>
+                        </th>
+                    }
+                    else
+                    {
+                        <th>
+                            <span class="stat-head">
+                                <span class="stat-abbr" title="" tabindex="0" aria-label="@(hasMeta ? meta!.LongName : statName)">@statName</span>
+                            </span>
+                        </th>
+                    }
                 }
-
-
             </tr>
         </thead>
-        <tbody>
-            @{
-                var index_basic = 1;
-                foreach (var row in Model.TeamPitchingStats)
-                {
-                    <tr>
-                        <td>@index_basic</td>
-                        <td>@row.TeamName</td>
-                        <td>@row.Games</td>
-                        @foreach (var statName in Model.BasicStatNames)
-                        {
-                            float? val;
-                            row.Stats.TryGetValue(statName, out val);
-                            <td>@(val.HasValue? val.Value.ToString("0.##") : "-")</td>
-                        }
-                    </tr>
-                    index_basic++;
-                }
-            }
-        </tbody>
+        …
     </table>
 </div>
 
-<!-- Tabla avanzada (resto de MLB + TeamRankings) -->
+<!-- Tabla avanzada -->
 <div id="advancedTable" style="display:none;">
     <table class="table table-striped table-bordered table-sm pitching-table table-with-tooltips">
         <thead>
@@ -78,43 +65,30 @@
                 @foreach (var statName in Model.AdvancedStatNames)
                 {
                     var hasMeta = Model.StatMeta.TryGetValue(statName, out var meta);
-                    <th>
-                        <span class="stat-head">
-                            <abbr title="@(hasMeta? meta!.LongName : statName)" tabindex="0">@statName</abbr>
-                            @if (hasMeta && !string.IsNullOrWhiteSpace(meta!.Description))
-                            {
-                                <div class="stat-tooltip">
+                    if (hasMeta && !string.IsNullOrWhiteSpace(meta!.Description))
+                    {
+                        <th>
+                            <span class="stat-head">
+                                <span class="stat-abbr" title="" tabindex="0" aria-describedby="tip-@statName">@statName</span>
+                                <div id="tip-@statName" class="stat-tooltip" role="tooltip">
                                     <div class="stat-tooltip-title">@meta.LongName (@statName)</div>
                                     <div class="stat-tooltip-body">@meta.Description</div>
                                 </div>
-                            }
-                        </span>
-                    </th>
+                            </span>
+                        </th>
+                    }
+                    else
+                    {
+                        <th>
+                            <span class="stat-head">
+                                <span class="stat-abbr" title="" tabindex="0">@statName</span>
+                            </span>
+                        </th>
+                    }
                 }
-
-
             </tr>
         </thead>
-        <tbody>
-            @{
-                var index_advanced = 1;
-                foreach (var row in Model.TeamPitchingStats)
-                {
-                    <tr>
-                        <td>@index_advanced</td>
-                        <td>@row.TeamName</td>
-                        <td>@row.Games</td>
-                        @foreach (var statName in Model.AdvancedStatNames)
-                        {
-                            float? val;
-                            row.Stats.TryGetValue(statName, out val);
-                            <td>@(val.HasValue? val.Value.ToString("0.##") : "-")</td>
-                        }
-                    </tr>
-                    index_advanced++;
-                }
-            }
-        </tbody>
+        …
     </table>
 </div>
 

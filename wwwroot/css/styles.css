@@ -475,7 +475,7 @@ input[type="date"].dropdown::-webkit-calendar-picker-indicator {
     gap: .4rem;
 }
 
-/* Ocultamos el tooltip por defecto */
+/* Tooltip oculto por defecto y posicionado sobre la cabecera */
 .stat-head .stat-tooltip {
     display: none;
     position: absolute;
@@ -484,16 +484,16 @@ input[type="date"].dropdown::-webkit-calendar-picker-indicator {
     transform: translateX(-50%);
     min-width: 220px;
     max-width: 320px;
-    background: #0b1f57; /* azul oscuro acorde a la paleta */
+    background: #0b1f57;
     color: #fff;
-    border: 1px solid #2563eb; /* borde azul medio */
+    border: 1px solid #2563eb;
     border-radius: .5rem;
     box-shadow: 0 10px 24px rgba(0,0,0,.35);
     padding: .6rem .75rem;
     z-index: 10;
 }
 
-/* Flecha apuntando al encabezado */
+/* Flecha que apunta hacia abajo (se muestra en la parte inferior del tooltip) */
 .stat-head .stat-tooltip::after {
     content: "";
     position: absolute;
@@ -505,26 +505,31 @@ input[type="date"].dropdown::-webkit-calendar-picker-indicator {
     border-color: #2563eb transparent transparent transparent;
 }
 
+/* Títulos y cuerpo del tooltip */
 .stat-tooltip-title {
     font-weight: 700;
     color: #93c5fd;
     margin-bottom: .25rem;
 }
-
 .stat-tooltip-body {
     font-size: .9rem;
     line-height: 1.25rem;
     color: #e5e7eb;
 }
 
-/* Mostrar tooltip al pasar el ratón o al enfocar */
+/* Mostrar tooltip al pasar el ratón o al enfocar la abreviatura */
 .stat-head:hover .stat-tooltip,
 .stat-head:focus-within .stat-tooltip {
     display: block;
 }
 
-/* Permite que los tooltips se muestren fuera de la tabla. Sin esta regla,
-   el overflow:hidden de .table recortaría los popovers */
+/* Apariencia de la abreviatura: sin subrayado y con cursor tipo mano */
+.stat-head .stat-abbr {
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Asegura que los tooltips no se recorten por el overflow de las tablas */
 .table-with-tooltips {
     overflow: visible;
 }
