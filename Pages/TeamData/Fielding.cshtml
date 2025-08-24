@@ -1,5 +1,6 @@
 @page
 @model StrikeData.Pages.TeamData.FieldingModel
+@using System.Text.Json
 
 @{
     ViewData["Title"] = "Fielding Stats";
@@ -20,7 +21,7 @@
                        border-radius:0.25rem;
                        padding:0.4rem 0.8rem;
                        margin-bottom: 1rem;"
-                onchange="this.form.submit(); updateStatDesc();">
+                onchange="this.form.submit();">
         </select>
     </div>
 </form>
@@ -74,26 +75,11 @@
     </tbody>
 </table>
 
-<!-- Script para actualizar la explicación de la estadística seleccionada -->
-<script>
-(function () {
-    // Diccionario de descripciones generado desde el modelo
-    const descriptions = {
-        @foreach (var kvp in Model.StatDescriptions)
-        {
-            <text>'@kvp.Key': "@kvp.Value.Replace("\"", "\\\"")",</text>
-        }
-    };
-
-    window.updateStatDesc = function () {
-        var select = document.getElementById('statSelect');
-        var descEl = document.getElementById('statDescription');
-        var val = select.value;
-        descEl.innerText = descriptions[val] || "";
-    };
-
-    document.addEventListener('DOMContentLoaded', function () {
-        updateStatDesc();
-    });
-})();
-</script>
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const descriptions = @Html.Raw(JsonSerializer.Serialize(Model.StatDescriptions));
+            StrikeData.initStatDescription('statSelect', 'statDescription', descriptions);
+        });
+    </script>
+}

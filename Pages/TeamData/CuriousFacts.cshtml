@@ -20,7 +20,7 @@
                        border-radius:0.25rem; 
                        padding:0.4rem 0.8rem;
                        margin-bottom: 1rem;"
-                onchange="this.form.submit(); updateStatDesc();">
+                onchange="this.form.submit()">
         </select>
     </div>
 
@@ -82,30 +82,22 @@
     </tbody>
 </table>
 
-<!-- Script para actualizar la explicación de la estadística seleccionada -->
-<script>
-(function () {
-    // Diccionario de descripciones generado desde el modelo
-    const descriptions = {
-        @foreach (var kvp in Model.StatDescriptions)
-        {
-            <text>'@kvp.Key': "@kvp.Value.Replace("\"", "\\\"")",</text>
-        }
-    };
+@section Scripts {
+    <script>
+        (function () {
+            // Diccionario de descripciones generado desde el modelo
+            const descriptions = {
+                @foreach (var kvp in Model.StatDescriptions)
+                {
+                    <text>'@kvp.Key': "@kvp.Value.Replace("\\", "\\\\").Replace("\"", "\\\"")",</text>
+                }
+            };
 
-    // Perspectiva legible para anexar a la explicación
-    const perspective = "@Model.Perspective" === "opp" ? "Opponents" : "Team Itself";
+            // Perspectiva actual desde el modelo ("team" | "opp")
+            const perspective = "@Model.Perspective";
 
-    window.updateStatDesc = function () {
-        var select = document.getElementById('statSelect');
-        var descEl = document.getElementById('statDescription');
-        var val = select.value;
-        var base = descriptions[val] || "";
-        descEl.innerText = base ? (base + " — Perspective: " + perspective) : "";
-    };
-
-    document.addEventListener('DOMContentLoaded', function () {
-        updateStatDesc();
-    });
-})();
-</script>
+            // Inicializa texto bajo el select utilizando el helper global de site.js
+            StrikeData.initCuriousFactsDescription('statSelect', 'statDescription', descriptions, perspective);
+        })();
+    </script>
+}
