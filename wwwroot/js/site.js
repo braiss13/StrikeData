@@ -52,13 +52,70 @@
     descriptions,
     perspective
   ) {
-    const suffix = `Perspective: ${
-      String(perspective).toLowerCase() === "opp" ? "Opponents" : "Team Itself"
-    }`;
+    const suffix = `Perspective: ${String(perspective).toLowerCase() === "opp" ? "Opponents" : "Team Itself"
+      }`;
     return initStatDescription(selectId, targetId, descriptions, suffix);
   }
 
   // Exponer API pública
   window.StrikeData.initStatDescription = initStatDescription;
   window.StrikeData.initCuriousFactsDescription = initCuriousFactsDescription;
+})();
+
+
+(function () {
+  // Inicializa ordenación para todas las tablas con clase .sortable-table
+  window.StrikeData.initTableSorting = function () {
+    document
+      .querySelectorAll("table.sortable-table thead th[data-sortable]")
+      .forEach(function (th) {
+        let asc = true;
+        th.addEventListener("click", function () {
+          const table = th.closest("table");
+          const tbody = table.querySelector("tbody");
+          const index = Array.from(th.parentNode.children).indexOf(th);
+          const type = th.dataset.type || "string";
+          const rows = Array.from(tbody.querySelectorAll("tr"));
+
+          function dateKey(txt) {
+            // espera exactamente yyyy-MM-dd
+            const m = /^\s*(\d{4})-(\d{2})-(\d{2})\s*$/.exec(txt);
+            if (!m) return NaN;
+            return (+m[1]) * 10000 + (+m[2]) * 100 + (+m[3]); // yyyymmdd numérico
+          }
+
+          rows.sort(function (a, b) {
+            const cellA = (a.children[index]?.innerText || "").trim();
+            const cellB = (b.children[index]?.innerText || "").trim();
+            let comp;
+
+            if (type === "number") {
+              const aNum = parseFloat(cellA.replace(",", "."));
+              const bNum = parseFloat(cellB.replace(",", "."));
+              const aa = Number.isNaN(aNum) ? Number.NEGATIVE_INFINITY : aNum;
+              const bb = Number.isNaN(bNum) ? Number.NEGATIVE_INFINITY : bNum;
+              comp = aa - bb;
+            } else if (type === "date") {
+              const ka = dateKey(cellA);
+              const kb = dateKey(cellB);
+              const aa = Number.isNaN(ka) ? Number.NEGATIVE_INFINITY : ka;
+              const bb = Number.isNaN(kb) ? Number.NEGATIVE_INFINITY : kb;
+              comp = aa - bb;
+            } else {
+              comp = cellA.localeCompare(cellB);
+            }
+
+            return asc ? comp : -comp;
+          });
+
+          asc = !asc;
+          rows.forEach((row) => tbody.appendChild(row));
+        });
+      });
+  };
+
+  // Llama a la función al cargar la página
+  document.addEventListener("DOMContentLoaded", function () {
+    window.StrikeData.initTableSorting();
+  });
 })();

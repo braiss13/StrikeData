@@ -43,15 +43,15 @@
 @if (Model.ViewMode == "expanded")
 {
     <!-- Tabla de calendario, centrada mediante margin:auto -->
-    <table class="table table-striped table-bordered table-sm pitching-table"
+    <table class="table table-striped sortable-table table-bordered table-sm pitching-table"
            style="margin: 1 auto;">
         <thead>
             <tr>
-                <th>Game</th>
-                <th>Date</th>
-                <th>Opponent</th>
+                <th data-sortable data-type="number">Game</th>
+                <th data-sortable data-type="date">Date</th>
+                <th data-sortable data-type="string">Opponent</th>
                 <th>Score</th>
-                <th>Decision</th>
+                <th data-sortable data-type="string">Decision</th>
                 <th>Record</th>
             </tr>
         </thead>
@@ -75,14 +75,14 @@ else
     <!-- Sección Monthly Splits -->
     <div class="mb-4" style="max-width: 80%; margin: 0 auto;">
         <h4 class="table-subtitle">Monthly Splits</h4>
-        <table class="table table-striped table-bordered table-sm pitching-table">
+        <table class="table table-striped sortable-table table-bordered table-sm pitching-table">
             <thead>
                 <tr>
-                    <th>Month</th>
-                    <th>Games</th>
-                    <th>Wins</th>
-                    <th>Losses</th>
-                    <th>Win %</th>
+                    <th data-sortable data-type="string">Month</th>
+                    <th data-sortable data-type="number">Games</th>
+                    <th data-sortable data-type="number">Wins</th>
+                    <th data-sortable data-type="number">Losses</th>
+                    <th data-sortable data-type="number">Win %</th>
                 </tr>
             </thead>
             <tbody>
@@ -103,14 +103,14 @@ else
     <!-- Sección Team vs Team Splits -->
     <div class="mb-4" style="max-width: 80%; margin: 0 auto;">
         <h4 class="table-subtitle">Team vs Team Splits</h4>
-        <table class="table table-striped table-bordered table-sm pitching-table">
+        <table class="table table-striped sortable-table table-bordered table-sm pitching-table">
             <thead>
                 <tr>
-                    <th>Opponent</th>
-                    <th>Games</th>
-                    <th>Wins</th>
-                    <th>Losses</th>
-                    <th>Win %</th>
+                    <th data-sortable data-type="string">Opponent</th>
+                    <th data-sortable data-type="number">Games</th>
+                    <th data-sortable data-type="number">Wins</th>
+                    <th data-sortable data-type="number">Losses</th>
+                    <th data-sortable data-type="number">Win %</th>
                 </tr>
             </thead>
             <tbody>

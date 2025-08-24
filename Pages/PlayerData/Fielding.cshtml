@@ -24,18 +24,18 @@
     </div>
 </form>
 
-<table class="table table-striped table-bordered table-sm pitching-table table-with-tooltips" style="margin: 1 auto;">
+<table class="table table-striped sortable-table table-bordered table-sm pitching-table table-with-tooltips" style="margin: 1 auto;">
     <thead>
         <tr>
-            <th>#</th>
-            <th>Player</th>
-            <th>Pos</th>
+            <th data-sortable data-type="number">#</th>
+            <th data-sortable data-type="string">Player</th>
+            <th data-sortable data-type="string">Pos</th>
             @foreach (var col in Model.VisibleColumns)
             {
                 var hasMeta = Model.StatMeta.TryGetValue(col, out var meta);
                 if (hasMeta && !string.IsNullOrWhiteSpace(meta!.Description))
                 {
-                    <th>
+                    <th data-sortable data-type="number">
                         <span class="stat-head">
                             <span class="stat-abbr"
                                   title=""
