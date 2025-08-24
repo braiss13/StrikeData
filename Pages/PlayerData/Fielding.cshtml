@@ -7,16 +7,16 @@
 
 <h2 class="section-title">Fielding</h2>
 
+<!-- Team selector -->
 <form method="get">
-    <!-- Team dropdown -->
     <div class="table-selector">
         <select asp-for="SelectedTeamId"
                 asp-items="Model.TeamOptions"
                 class="form-select w-auto d-inline-block"
-                style="background-color:#1e3a8a; 
-                       color:#ffffff; 
-                       border:1px solid #2563eb; 
-                       border-radius:0.25rem; 
+                style="background-color:#1e3a8a;
+                       color:#ffffff;
+                       border:1px solid #2563eb;
+                       border-radius:0.25rem;
                        padding:0.4rem 0.8rem;
                        margin-bottom: 1rem;"
                 onchange="this.form.submit()">
@@ -24,7 +24,7 @@
     </div>
 </form>
 
-<table class="table table-striped table-bordered table-sm " style="margin: 1 auto;">
+<table class="table table-striped table-bordered table-sm pitching-table table-with-tooltips" style="margin: 1 auto;">
     <thead>
         <tr>
             <th>#</th>
@@ -32,33 +32,79 @@
             <th>Pos</th>
             @foreach (var col in Model.VisibleColumns)
             {
-                <th>@col</th>
+                var hasMeta = Model.StatMeta.TryGetValue(col, out var meta);
+                if (hasMeta && !string.IsNullOrWhiteSpace(meta!.Description))
+                {
+                    <th>
+                        <span class="stat-head">
+                            <span class="stat-abbr"
+                                  title=""
+                                  tabindex="0"
+                                  aria-label="@meta.LongName"
+                                  aria-describedby="tip-@col">@col</span>
+                            <div id="tip-@col" class="stat-tooltip" role="tooltip">
+                                <div class="stat-tooltip-title">@meta.LongName (@col)</div>
+                                <div class="stat-tooltip-body">@meta.Description</div>
+                            </div>
+                        </span>
+                    </th>
+                }
+                else
+                {
+                    <th>
+                        <span class="stat-head">
+                            <span class="stat-abbr"
+                                  title=""
+                                  tabindex="0"
+                                  aria-label="@(hasMeta ? meta!.LongName : col)">@col</span>
+                        </span>
+                    </th>
+                }
             }
         </tr>
     </thead>
     <tbody>
-    @foreach (var r in Model.Rows)
-    {
-        <tr>
-            <td>@(r.Number?.ToString() ?? "-")</td>
-            <td>@r.Name</td>
-            <td>@(string.IsNullOrWhiteSpace(r.Position) ? "-" : r.Position)</td>
-            @foreach (var col in Model.VisibleColumns)
+    @{
+        int index = 1;
+        if (Model.Rows != null && Model.Rows.Count > 0)
+        {
+            foreach (var r in Model.Rows)
             {
-                var has = r.Values.TryGetValue(col, out var v);
-                if (has && v.HasValue)
-                {
-                    // Formato: FLD% a 3 decimales; demás sin formato especial
-                    var show3 = col is "FLD%";
-                    <td>@(show3 ? v.Value.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)
-                                : v.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))</td>
-                }
-                else
-                {
-                    <td>-</td>
-                }
+                <tr>
+                    <td>@index</td>
+                    <td>@r.Name</td>
+                    <td>@(string.IsNullOrWhiteSpace(r.Position) ? "-" : r.Position)</td>
+                    @foreach (var col in Model.VisibleColumns)
+                    {
+                        float? val = null;
+                        if (r.Values != null)
+                        {
+                            r.Values.TryGetValue(col, out var v);
+                            val = v;
+                        }
+                        if (val.HasValue)
+                        {
+                            // Show three decimals for fielding percentage; counts as integer
+                            var isPercentage = col == "FLD%";
+                            <td>@(isPercentage
+                                   ? val.Value.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)
+                                   : val.Value.ToString("0", System.Globalization.CultureInfo.InvariantCulture))</td>
+                        }
+                        else
+                        {
+                            <td>-</td>
+                        }
+                    }
+                </tr>
+                index++;
             }
-        </tr>
+        }
+        else
+        {
+            <tr>
+                <td colspan="@(3 + Model.VisibleColumns.Count)" style="text-align:center;">No data available</td>
+            </tr>
+        }
     }
     </tbody>
 </table>

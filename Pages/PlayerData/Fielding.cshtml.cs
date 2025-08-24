@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
-using StrikeData.Models;
 
 namespace StrikeData.Pages.PlayerData
 {
@@ -16,26 +15,35 @@ namespace StrikeData.Pages.PlayerData
             _context = context;
         }
 
-        // Dropdown equipos
+        // Team dropdown options
         public List<SelectListItem> TeamOptions { get; set; } = new();
 
-        // Filtros (Team)
+        // Bound property for selected team
         [BindProperty(SupportsGet = true)]
         public int SelectedTeamId { get; set; }
 
-        // Columnas visibles
+        // Columns to display (all fielding stats)
         public List<string> VisibleColumns { get; private set; } = new();
 
-        // Filas de la tabla
+        // Player rows
         public List<PlayerRow> Rows { get; private set; } = new();
 
         private static readonly string CategoryName = "Fielding";
 
-        // Columnas pedidas: OUTS, TC, CH, PO, A, E, DP, PB, CASB, CACS, FLD%
+        // Fielding stat abbreviations
         private static readonly List<string> Columns = new()
         {
-            "OUTS","TC","CH","PO","A","E","DP","PB","CASB","CACS","FLD%"
+            "OUTS", "TC", "CH", "PO", "A", "E", "DP", "PB", "CASB", "CACS", "FLD%"
         };
+
+        // Metadata for stats: long name and description
+        public Dictionary<string, StatInfo> StatMeta { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public class StatInfo
+        {
+            public string LongName { get; set; } = "";
+            public string Description { get; set; } = "";
+        }
 
         public class PlayerRow
         {
@@ -46,9 +54,72 @@ namespace StrikeData.Pages.PlayerData
             public Dictionary<string, float?> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         }
 
+        // Fill StatMeta with names and descriptions
+        private void InitStatMeta()
+        {
+            StatMeta.Clear();
+            StatMeta["OUTS"] = new StatInfo
+            {
+                LongName = "Outs",
+                Description = "Total defensive outs recorded by the player."
+            };
+            StatMeta["TC"] = new StatInfo
+            {
+                LongName = "Total Chances",
+                Description = "Total defensive chances: putouts + assists + errors."
+            };
+            StatMeta["CH"] = new StatInfo
+            {
+                LongName = "Chances",
+                Description = "Number of opportunities to make a play (putouts + assists + errors)."
+            };
+            StatMeta["PO"] = new StatInfo
+            {
+                LongName = "Putouts",
+                Description = "Number of outs credited by tagging a runner, force plays or catching a fly ball."
+            };
+            StatMeta["A"] = new StatInfo
+            {
+                LongName = "Assists",
+                Description = "Number of times the player assists on an out."
+            };
+            StatMeta["E"] = new StatInfo
+            {
+                LongName = "Errors",
+                Description = "Defensive miscues allowing a runner to reach or advance."
+            };
+            StatMeta["DP"] = new StatInfo
+            {
+                LongName = "Double Plays",
+                Description = "Number of double plays in which the player participated."
+            };
+            StatMeta["PB"] = new StatInfo
+            {
+                LongName = "Passed Balls",
+                Description = "Number of pitches a catcher fails to handle, allowing runners to advance."
+            };
+            StatMeta["CASB"] = new StatInfo
+            {
+                LongName = "Stolen Bases Allowed",
+                Description = "Baserunners who successfully stole while the player was fielding."
+            };
+            StatMeta["CACS"] = new StatInfo
+            {
+                LongName = "Caught Stealing",
+                Description = "Baserunners thrown out while attempting to steal a base."
+            };
+            StatMeta["FLD%"] = new StatInfo
+            {
+                LongName = "Fielding Percentage",
+                Description = "Fielding percentage: (putouts + assists) divided by total chances."
+            };
+        }
+
         public async Task OnGetAsync()
         {
-            // Cargar equipos al dropdown
+            InitStatMeta();
+
+            // Teams for dropdown
             TeamOptions = await _context.Teams
                 .OrderBy(t => t.Name)
                 .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.Name })
@@ -57,9 +128,10 @@ namespace StrikeData.Pages.PlayerData
             if (SelectedTeamId == 0 && TeamOptions.Any())
                 SelectedTeamId = int.Parse(TeamOptions.First().Value);
 
+            // All fielding stats are visible
             VisibleColumns = Columns;
 
-            // Jugadores del equipo (TODAS las posiciones para fielding)
+            // Load players for selected team (any position)
             var players = await _context.Players
                 .AsNoTracking()
                 .Where(p => p.TeamId == SelectedTeamId)
@@ -68,35 +140,25 @@ namespace StrikeData.Pages.PlayerData
 
             var playerIds = players.Select(p => p.Id).ToList();
 
-            // Buscar PlayerStatTypes SOLO de la categoría Fielding para las columnas visibles
-            var fieldingCat = await _context.StatCategories
+            // Load stat types in the Fielding category for these columns
+            var statTypes = await _context.PlayerStatTypes
                 .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Name == CategoryName);
-
-            // Si no hay categoría, no habrá datos (mostrar solo jugadores)
-            List<PlayerStatType> statTypes = new();
-            if (fieldingCat != null)
-            {
-                statTypes = await _context.PlayerStatTypes
-                    .AsNoTracking()
-                    .Where(st => st.StatCategoryId == fieldingCat.Id && VisibleColumns.Contains(st.Name))
-                    .ToListAsync();
-            }
+                .Include(st => st.StatCategory)
+                .Where(st => st.StatCategory != null
+                             && st.StatCategory.Name == CategoryName
+                             && Columns.Contains(st.Name))
+                .ToListAsync();
 
             var typeIds = statTypes.Select(s => s.Id).ToList();
             var nameByTypeId = statTypes.ToDictionary(s => s.Id, s => s.Name);
 
-            // PlayerStats para esos jugadores y esas métricas (si no hay tipos, no traerá nada)
-            var stats = new List<PlayerStat>();
-            if (typeIds.Count > 0)
-            {
-                stats = await _context.PlayerStats
-                    .AsNoTracking()
-                    .Where(ps => playerIds.Contains(ps.PlayerId) && typeIds.Contains(ps.PlayerStatTypeId))
-                    .ToListAsync();
-            }
+            // Load player stats
+            var stats = await _context.PlayerStats
+                .AsNoTracking()
+                .Where(ps => playerIds.Contains(ps.PlayerId) && typeIds.Contains(ps.PlayerStatTypeId))
+                .ToListAsync();
 
-            // Montar filas
+            // Build rows
             var rows = new List<PlayerRow>();
             var byPlayer = stats.GroupBy(s => s.PlayerId).ToDictionary(g => g.Key, g => g.ToList());
 
@@ -119,11 +181,7 @@ namespace StrikeData.Pages.PlayerData
                     }
                 }
 
-                // Mostrar SOLO si tiene al menos un valor de las columnas visibles
-                if (row.Values.Values.Any(v => v.HasValue))
-                {
-                    rows.Add(row);
-                }
+                rows.Add(row);
             }
 
             Rows = rows;
