@@ -148,12 +148,12 @@ namespace StrikeData.Pages.TeamData
             StatMeta["OP/G"] = new StatInfo
             {
                 LongName = "Opponent Runs per Game",
-                Description = "Average runs allowed per game (TeamRankings data)."
+                Description = "Average runs allowed per game."
             };
             StatMeta["ER/G"] = new StatInfo
             {
                 LongName = "Earned Runs per Game",
-                Description = "Average earned runs allowed per game (TeamRankings data)."
+                Description = "Average earned runs allowed per game."
             };
             StatMeta["SO/9"] = new StatInfo
             {
@@ -251,18 +251,6 @@ namespace StrikeData.Pages.TeamData
                 }
                 vm.Stats = statsDict;
                 TeamPitchingStats.Add(vm);
-            }
-
-            // Construir la cadena de depuración para mostrar en la vista
-            DebugInfo = "statTypeMap: {statTypeMap.Count}, " +
-                        $"pitchingStats: {pitchingStats.Count}, teams: {teams.Count}, " +
-                        $"TeamPitchingStats: {TeamPitchingStats.Count}";
-            if (TeamPitchingStats.Count > 0)
-            {
-                var first = TeamPitchingStats[0];
-                var firstStats = string.Join(", ", first.Stats.Select(
-                    kvp => kvp.Key + "=" + (kvp.Value?.ToString("0.###") ?? "null")));
-                DebugInfo += $"; first team: {first.TeamName}; stats: {firstStats}";
             }
 
         }
