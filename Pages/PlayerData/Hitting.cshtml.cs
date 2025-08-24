@@ -67,6 +67,12 @@ namespace StrikeData.Pages.PlayerData
         {
             StatMeta.Clear();
             // Basic hitting stats definitions
+
+            StatMeta["Status"] = new StatInfo
+            {
+                LongName = "Player Status",
+                Description = "A => Active; M => Reassigned to Minors; D[n] => Days Injured (n = number of days)."
+            };
             StatMeta["G"] = new StatInfo
             {
                 LongName = "Games",

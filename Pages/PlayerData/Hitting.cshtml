@@ -10,30 +10,22 @@
 <!-- Form with team selector and view mode buttons -->
 <form method="get">
     <div class="table-selector">
-        <select asp-for="SelectedTeamId"
-                asp-items="Model.TeamOptions"
-                class="form-select w-auto d-inline-block"
-                style="background-color:#1e3a8a; 
+        <select asp-for="SelectedTeamId" asp-items="Model.TeamOptions" class="form-select w-auto d-inline-block" style="background-color:#1e3a8a; 
                        color:#ffffff; 
                        border:1px solid #2563eb; 
                        border-radius:0.25rem; 
                        padding:0.4rem 0.8rem;
-                       margin-bottom: 1rem;"
-                onchange="this.form.submit()">
+                       margin-bottom: 1rem;" onchange="this.form.submit()">
         </select>
     </div>
 
     <div class="table-selector mb-3">
-        <button type="submit"
-                name="ViewMode"
-                value="basic"
-                class="btn-stat-toggle @(Model.ViewMode == "basic" ? "" : "inactive")">
+        <button type="submit" name="ViewMode" value="basic"
+            class="btn-stat-toggle @(Model.ViewMode == "basic" ? "" : "inactive")">
             Basic
         </button>
-        <button type="submit"
-                name="ViewMode"
-                value="advanced"
-                class="btn-stat-toggle @(Model.ViewMode == "advanced" ? "" : "inactive")">
+        <button type="submit" name="ViewMode" value="advanced"
+            class="btn-stat-toggle @(Model.ViewMode == "advanced" ? "" : "inactive")">
             Advanced
         </button>
     </div>
@@ -45,10 +37,22 @@
             <th>#</th>
             <th>Player</th>
             <th>Pos</th>
-            @if (Model.ViewMode == "basic")
-            {
-                <th>Status</th>
+            @{
+                var metaStatus = Model.StatMeta.TryGetValue("Status", out var ms) ? ms : null;
             }
+            <th>
+                <span class="stat-head">
+                    <span class="stat-abbr" title="" tabindex="0" aria-label="@(metaStatus?.LongName ?? "Status")"
+                        aria-describedby="tip-Status">Status</span>
+                    @if (metaStatus != null)
+                    {
+                        <div id="tip-Status" class="stat-tooltip" role="tooltip">
+                            <div class="stat-tooltip-title">@metaStatus.LongName (Status)</div>
+                            <div class="stat-tooltip-body">@metaStatus.Description</div>
+                        </div>
+                    }
+                </span>
+            </th>
             @foreach (var col in Model.VisibleColumns)
             {
                 var hasMeta = Model.StatMeta.TryGetValue(col, out var meta);
@@ -56,11 +60,8 @@
                 {
                     <th>
                         <span class="stat-head">
-                            <span class="stat-abbr"
-                                  title=""
-                                  tabindex="0"
-                                  aria-label="@meta.LongName"
-                                  aria-describedby="tip-@col">@col</span>
+                            <span class="stat-abbr" title="" tabindex="0" aria-label="@meta.LongName"
+                                aria-describedby="tip-@col">@col</span>
                             <div id="tip-@col" class="stat-tooltip" role="tooltip">
                                 <div class="stat-tooltip-title">@meta.LongName (@col)</div>
                                 <div class="stat-tooltip-body">@meta.Description</div>
@@ -72,10 +73,8 @@
                 {
                     <th>
                         <span class="stat-head">
-                            <span class="stat-abbr"
-                                  title=""
-                                  tabindex="0"
-                                  aria-label="@(hasMeta ? meta!.LongName : col)">@col</span>
+                            <span class="stat-abbr" title="" tabindex="0"
+                                aria-label="@(hasMeta? meta!.LongName : col)">@col</span>
                         </span>
                     </th>
                 }
@@ -83,53 +82,52 @@
         </tr>
     </thead>
     <tbody>
-    @{
-        int index = 1;
-        if (Model.Rows != null && Model.Rows.Count > 0)
-        {
-            foreach (var r in Model.Rows)
+        @{
+            int index = 1;
+            if (Model.Rows != null && Model.Rows.Count > 0)
             {
-                <tr>
-                    <td>@index</td>
-                    <td>@r.Name</td>
-                    <td>@(string.IsNullOrWhiteSpace(r.Position) ? "-" : r.Position)</td>
-                    @if (Model.ViewMode == "basic")
-                    {
+                foreach (var r in Model.Rows)
+                {
+                    <tr>
+                        <td>@index</td>
+                        <td>@r.Name</td>
+                        <td>@(string.IsNullOrWhiteSpace(r.Position) ? "-" : r.Position)</td>
+                        <!-- Mostrar siempre status -->
                         <td>@(string.IsNullOrWhiteSpace(r.Status) ? "-" : r.Status)</td>
-                    }
-                    @foreach (var col in Model.VisibleColumns)
-                    {
-                        float? val = null;
-                        if (r.Values != null)
+                        @foreach (var col in Model.VisibleColumns)
                         {
-                            r.Values.TryGetValue(col, out var v);
-                            val = v;
+                            float? val = null;
+                            if (r.Values != null)
+                            {
+                                r.Values.TryGetValue(col, out var v);
+                                val = v;
+                            }
+                            if (val.HasValue)
+                            {
+                                var show3 = col is "AVG" or "OBP" or "SLG" or "OPS"
+                                or "BABIP" or "ISO" or "BB/K" or "GO/AO"
+                                or "AB/HR" or "BB%" or "SO%" or "HR%";
+                                <td>@(show3
+                                                    ? val.Value.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)
+                                : val.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))</td>
+                            }
+                            else
+                            {
+                                <td>-</td>
+                            }
                         }
-                        if (val.HasValue)
-                        {
-                            // Show three decimals for averages and rates
-                            var show3 = col is "AVG" or "OBP" or "SLG" or "OPS"
-                                        or "BABIP" or "ISO" or "BB/K" or "GO/AO"
-                                        or "AB/HR" or "BB%" or "SO%" or "HR%";
-                            <td>@(show3
-                                   ? val.Value.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)
-                                   : val.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))</td>
-                        }
-                        else
-                        {
-                            <td>-</td>
-                        }
-                    }
+                    </tr>
+                    index++;
+                }
+            }
+            else
+            {
+                <!-- Ajustar el colspan: ahora hay 4 columnas fijas (num, player, pos, status) -->
+                <tr>
+                    <td colspan="@(4 + Model.VisibleColumns.Count)" style="text-align:center;">No data available</td>
                 </tr>
-                index++;
             }
         }
-        else
-        {
-            <tr>
-                <td colspan="@(3 + (Model.ViewMode == "basic" ? 1 : 0) + Model.VisibleColumns.Count)" style="text-align:center;">No data available</td>
-            </tr>
-        }
-    }
     </tbody>
+
 </table>
