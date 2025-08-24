@@ -491,6 +491,8 @@ input[type="date"].dropdown::-webkit-calendar-picker-indicator {
     box-shadow: 0 10px 24px rgba(0,0,0,.35);
     padding: .6rem .75rem;
     z-index: 10;
+    white-space: normal;
+    overflow-wrap: break-word;
 }
 
 /* Flecha que apunta hacia abajo (se muestra en la parte inferior del tooltip) */
