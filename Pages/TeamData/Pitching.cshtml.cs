@@ -22,6 +22,13 @@ namespace StrikeData.Pages.TeamData
 
         public Dictionary<string, StatInfo> StatMeta { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// Contiene información de depuración sobre el número de registros recuperados
+        /// y el contenido de la primera fila. Se puede mostrar en la vista para
+        /// diagnosticar por qué la tabla aparece vacía.
+        /// </summary>
+        public string DebugInfo { get; private set; } = string.Empty;
+
         public class StatInfo
         {
             public string LongName { get; set; } = "";
@@ -244,6 +251,18 @@ namespace StrikeData.Pages.TeamData
                 }
                 vm.Stats = statsDict;
                 TeamPitchingStats.Add(vm);
+            }
+
+            // Construir la cadena de depuración para mostrar en la vista
+            DebugInfo = "statTypeMap: {statTypeMap.Count}, " +
+                        $"pitchingStats: {pitchingStats.Count}, teams: {teams.Count}, " +
+                        $"TeamPitchingStats: {TeamPitchingStats.Count}";
+            if (TeamPitchingStats.Count > 0)
+            {
+                var first = TeamPitchingStats[0];
+                var firstStats = string.Join(", ", first.Stats.Select(
+                    kvp => kvp.Key + "=" + (kvp.Value?.ToString("0.###") ?? "null")));
+                DebugInfo += $"; first team: {first.TeamName}; stats: {firstStats}";
             }
 
         }
