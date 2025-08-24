@@ -21,8 +21,12 @@ namespace StrikeData.Pages.TeamData
 
         public List<StatType> StatTypes { get; set; } = new();
         public List<TeamStat> TeamStats { get; set; } = new();
+
         // Opciones estilizadas para el desplegable de estadísticas
         public List<SelectListItem> StatOptions { get; set; } = new();
+
+        // Diccionario Id -> descripción de la estadística (para el panel bajo el select)
+        public Dictionary<string, string> StatDescriptions { get; private set; } = new();
 
         public async Task OnGetAsync()
         {
@@ -38,6 +42,24 @@ namespace StrikeData.Pages.TeamData
                 .Select(st => new SelectListItem { Value = st.Id.ToString(), Text = st.Name })
                 .ToList();
             StatOptions.Insert(0, new SelectListItem { Value = "", Text = "-- All --" });
+
+            // Construir el diccionario de descripciones por Id
+            StatDescriptions.Clear();
+            foreach (var st in StatTypes)
+            {
+                // Abreviatura en mayúsculas para mapear de forma robusta
+                string key = st.Name?.ToUpperInvariant() ?? string.Empty;
+
+                string desc = key switch
+                {
+                    "DP" => "Double plays per game: average number of defensive plays that record two outs in one continuous sequence",
+                    "E"  => "Errors per game: average number of misplays that allow a runner to reach or advance when an ordinary effort should have produced an out",
+                    _    => ""
+                };
+
+                // Guardamos la descripción asociada al Id (que es el value del <select>)
+                StatDescriptions[st.Id.ToString()] = desc;
+            }
 
             // Consulta base de TeamStats para Fielding
             var query = _context.TeamStats

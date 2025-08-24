@@ -10,7 +10,8 @@
 <form method="get">
     <!-- Desplegable del tipo de estadística -->
     <div class="table-selector">
-        <select asp-for="SelectedStatType"
+        <select id="statSelect"
+                asp-for="SelectedStatType"
                 asp-items="Model.StatTypeOptions"
                 class="form-select w-auto d-inline-block"
                 style="background-color:#1e3a8a; 
@@ -19,7 +20,7 @@
                        border-radius:0.25rem; 
                        padding:0.4rem 0.8rem;
                        margin-bottom: 1rem;"
-                onchange="this.form.submit()">
+                onchange="this.form.submit(); updateStatDesc();">
         </select>
     </div>
 
@@ -39,6 +40,9 @@
         </button>
     </div>
 </form>
+
+<!-- Área para mostrar la explicación de la estadística seleccionada -->
+<p id="statDescription" class="stat-desc" style="margin-left: 10px; color: #93c5fd;"></p>
 
 <!-- Tabla única de resultados -->
 <table class="table table-striped table-bordered table-sm pitching-table"
@@ -77,3 +81,31 @@
     }
     </tbody>
 </table>
+
+<!-- Script para actualizar la explicación de la estadística seleccionada -->
+<script>
+(function () {
+    // Diccionario de descripciones generado desde el modelo
+    const descriptions = {
+        @foreach (var kvp in Model.StatDescriptions)
+        {
+            <text>'@kvp.Key': "@kvp.Value.Replace("\"", "\\\"")",</text>
+        }
+    };
+
+    // Perspectiva legible para anexar a la explicación
+    const perspective = "@Model.Perspective" === "opp" ? "Opponents" : "Team Itself";
+
+    window.updateStatDesc = function () {
+        var select = document.getElementById('statSelect');
+        var descEl = document.getElementById('statDescription');
+        var val = select.value;
+        var base = descriptions[val] || "";
+        descEl.innerText = base ? (base + " — Perspective: " + perspective) : "";
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        updateStatDesc();
+    });
+})();
+</script>
