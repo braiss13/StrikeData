@@ -3,11 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
-using StrikeData.Models;
 using StrikeData.Models.Enums;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace StrikeData.Pages.TeamData
 {
