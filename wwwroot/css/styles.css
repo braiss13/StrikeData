@@ -522,3 +522,9 @@ input[type="date"].dropdown::-webkit-calendar-picker-indicator {
 .stat-head:focus-within .stat-tooltip {
     display: block;
 }
+
+/* Permite que los tooltips se muestren fuera de la tabla. Sin esta regla,
+   el overflow:hidden de .table recortaría los popovers */
+.table-with-tooltips {
+    overflow: visible;
+}

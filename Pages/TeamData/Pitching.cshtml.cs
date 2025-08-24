@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace StrikeData.Pages.TeamData
 {
@@ -75,7 +72,7 @@ namespace StrikeData.Pages.TeamData
         public async Task OnGetAsync()
         {
             InitStatMeta();        // Inicializa las descripciones de estadísticas
-            
+
             // Abreviaturas de MLB básicas
             BasicStatNames = new List<string>
             {
@@ -138,13 +135,6 @@ namespace StrikeData.Pages.TeamData
                 TeamPitchingStats.Add(vm);
             }
 
-            /*
-            // Ordenar por ERA ascendente y luego por nombre de equipo para mayor legibilidad
-            TeamPitchingStats = TeamPitchingStats
-                .OrderBy(vm => vm.Stats.ContainsKey("ERA") ? vm.Stats["ERA"] ?? float.MaxValue : float.MaxValue)
-                .ThenBy(vm => vm.TeamName)
-                .ToList();
-            */
         }
     }
 }

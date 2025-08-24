@@ -18,7 +18,7 @@
 
 <!-- Tabla básica (MLB hasta AVG) -->
 <div id="basicTable">
-    <table class="table table-striped table-bordered table-sm">
+    <table class="table table-striped table-bordered table-sm table-with-tooltips">
         <thead>
             <tr>
                 <th>#</th>
@@ -69,7 +69,7 @@
 
 <!-- Tabla avanzada (resto de MLB + TeamRankings) -->
 <div id="advancedTable" style="display:none;">
-    <table class="table table-striped table-bordered table-sm pitching-table">
+    <table class="table table-striped table-bordered table-sm pitching-table table-with-tooltips">
         <thead>
             <tr>
                 <th>#</th>
@@ -139,82 +139,4 @@
     // Mostrar la tabla básica por defecto al cargar la página
     showTable('basic');
 
-    // === Lógica para los tooltips de las estadísticas ===
-    (function () {
-        // Usa las funciones que ya tienes; si no existen, reusa estas auxiliares:
-        let openBtn = null;
-
-        function getTip(btn) {
-            const id = btn.getAttribute('aria-controls');
-            return id && document.getElementById(id);
-        }
-        function open(btn) {
-            // cierra otros
-            document.querySelectorAll('.stat-info-btn[aria-expanded="true"]').forEach(b => {
-                b.setAttribute('aria-expanded', 'false');
-                const t = getTip(b);
-                if (t) t.hidden = true;
-            });
-            // abre éste
-            btn.setAttribute('aria-expanded', 'true');
-            const tip = getTip(btn);
-            if (tip) tip.hidden = false;
-            openBtn = btn;
-        }
-        function closeIf(btn) {
-            if (!btn) return;
-            btn.setAttribute('aria-expanded', 'false');
-            const tip = getTip(btn);
-            if (tip) tip.hidden = true;
-            if (openBtn === btn) openBtn = null;
-        }
-
-        // Abrir al pasar el ratón por el botón
-        document.addEventListener('mouseenter', (ev) => {
-            const btn = ev.target.closest('.stat-info-btn');
-            if (btn) open(btn);
-        }, true);
-
-        // Cerrar cuando el ratón sale de botón Y tooltip (con pequeña tolerancia)
-        document.addEventListener('mouseleave', (ev) => {
-            const btn = ev.target.closest('.stat-info-btn');
-            if (!btn) return;
-
-            const tip = getTip(btn);
-            const next = ev.relatedTarget;
-
-            // si el ratón entra al tooltip, no cierres
-            if (tip && tip.contains(next)) return;
-
-            // espera un instante por si el puntero va hacia el tooltip
-            setTimeout(() => {
-                const active = document.activeElement;
-                const stillOverBtn = btn.matches(':hover');
-                const stillOverTip = tip && tip.matches(':hover');
-                // si no está sobre botón ni sobre tooltip, cierra
-                if (!stillOverBtn && !stillOverTip) closeIf(btn);
-            }, 80);
-        }, true);
-
-        // También cerrar al salir del tooltip
-        document.addEventListener('mouseleave', (ev) => {
-            const tip = ev.target.closest('.stat-tooltip');
-            if (!tip) return;
-            const btnId = [...document.querySelectorAll('.stat-info-btn')]
-                .find(b => b.getAttribute('aria-controls') === tip.id);
-            const next = ev.relatedTarget;
-            // si vuelve al botón, no cierres
-            if (btnId && btnId.contains(next)) return;
-
-            setTimeout(() => {
-                const overTooltip = tip.matches(':hover');
-                const overBtn = btnId && btnId.matches(':hover');
-                if (!overTooltip && !overBtn) {
-                    if (btnId) closeIf(btnId);
-                }
-            }, 80);
-        }, true);
-
-        // (Siguen funcionando clic/teclado de tu script original)
-    })();
 </script>
