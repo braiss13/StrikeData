@@ -1,4 +1,4 @@
-namespace StrikeData.Services.TeamData
+namespace StrikeData.Services.Normalization
 {
     public static class TeamNameNormalizer
     {

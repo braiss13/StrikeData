@@ -58,11 +58,11 @@ namespace StrikeData.Services.PlayerData
             var teams = await _context.Teams.AsNoTracking().ToListAsync();
             var teamsByName = teams.ToDictionary(t => t.Name, t => t, StringComparer.OrdinalIgnoreCase);
 
-            // Cache de Players por MLB_Player_Id (solo los que lo tienen)
+            // Cache de Players por MLB_Player_Id (solo los que lo tienen) **TRACKED** (sin AsNoTracking)
             var existingPlayers = await _context.Players
                 .Where(p => p.MLB_Player_Id != null)
-                .AsNoTracking()
-                .ToListAsync();
+                .ToListAsync(); 
+                
             var playersByMlbId = existingPlayers.ToDictionary(p => p.MLB_Player_Id!.Value, p => p);
 
             foreach (var kv in _TeamIdMap)
@@ -127,6 +127,7 @@ namespace StrikeData.Services.PlayerData
                     // Upsert por MLB_Player_Id
                     if (!playersByMlbId.TryGetValue(mlbId, out var player))
                     {
+                        // NUEVO -> Add (quedará trackeado como Added)
                         player = new Player
                         {
                             MLB_Player_Id = mlbId,
@@ -137,17 +138,17 @@ namespace StrikeData.Services.PlayerData
                             Status = status
                         };
                         _context.Players.Add(player);
-                        playersByMlbId[mlbId] = player;
+                        playersByMlbId[mlbId] = player; // OK: si reaparece en el mismo pase, seguirá siendo la MISMA entidad trackeada
                     }
                     else
                     {
+                        // EXISTENTE (trackeado) -> asignar propiedades; NO llamar a Update
                         player.TeamId = team.Id;
                         player.Name = fullName!.Trim();
                         player.Number = number;
                         player.Position = position;
                         player.Status = status;
-
-                        _context.Players.Update(player);
+                        // _context.Players.Update(player); // <- eliminado: no necesario y evita problemas con PK temporal si fuera una nueva entidad
                     }
                 }
 

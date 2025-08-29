@@ -1,14 +1,9 @@
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
 using StrikeData.Models;
-using StrikeData.Services.TeamData;
+using StrikeData.Services.Normalization;
 
 namespace StrikeData.Services.MatchData
 {

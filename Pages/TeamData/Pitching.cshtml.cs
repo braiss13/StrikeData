@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
+using StrikeData.Services.Glossary; 
 
 namespace StrikeData.Pages.TeamData
 {
@@ -35,146 +36,36 @@ namespace StrikeData.Pages.TeamData
             public string Description { get; set; } = "";
         }
 
+        /// <summary>
+        /// Rellena StatMeta usando el glosario central (TeamPitching) para todas las
+        /// abreviaturas definidas en BasicStatNames y AdvancedStatNames.
+        /// </summary>
         private void InitStatMeta()
         {
-            // Basic statistics (English names and explanatory descriptions)
-            StatMeta["ERA"] = new StatInfo
-            {
-                LongName = "Earned Run Average",
-                Description = "Earned runs allowed per nine innings pitched ((earned runs × 9) / innings pitched)."
-            };
-            StatMeta["SHO"] = new StatInfo
-            {
-                LongName = "Shutouts",
-                Description = "Complete games where no runs are allowed by the pitcher or team."
-            };
-            StatMeta["CG"] = new StatInfo
-            {
-                LongName = "Complete Games",
-                Description = "Games in which the starting pitcher pitches the entire game without relief."
-            };
-            StatMeta["SV"] = new StatInfo
-            {
-                LongName = "Saves",
-                Description = "Relief appearances that preserve a lead while meeting the save criteria."
-            };
-            StatMeta["SVO"] = new StatInfo
-            {
-                LongName = "Save Opportunities",
-                Description = "Total chances a pitcher has to earn a save (regardless of outcome)."
-            };
-            StatMeta["IP"] = new StatInfo
-            {
-                LongName = "Innings Pitched",
-                Description = "Total innings thrown; each out equals one third of an inning."
-            };
-            StatMeta["H"] = new StatInfo
-            {
-                LongName = "Hits Allowed",
-                Description = "Total hits conceded to opposing batters. A hit occurs when a batter reaches at least first base safely after putting the ball in play, without an error or fielder's choice."
-            };
-            StatMeta["R"] = new StatInfo
-            {
-                LongName = "Runs Allowed",
-                Description = "Total runs (earned and unearned) given up by the pitcher or team. A run scores when a runner safely circles the bases and touches home plate."
-            };
-            StatMeta["HR"] = new StatInfo
-            {
-                LongName = "Home Runs Allowed",
-                Description = "Number of home runs conceded to opponents. A home run occurs when a batted ball in fair territory clears the outfield fence or the batter circles all the bases on an inside-the-park hit."
-            };
-            StatMeta["W"] = new StatInfo
-            {
-                LongName = "Wins",
-                Description = "Games credited as wins to the pitcher or team."
-            };
-            StatMeta["SO"] = new StatInfo
-            {
-                LongName = "Strikeouts",
-                Description = "Number of batters retired via strike three."
-            };
-            StatMeta["WHIP"] = new StatInfo
-            {
-                LongName = "Walks + Hits per Inning Pitched",
-                Description = "(Walks + Hits) divided by innings pitched; measures baserunners allowed."
-            };
-            StatMeta["AVG"] = new StatInfo
-            {
-                LongName = "Batting Average Against",
-                Description = "Opponents' batting average; hits allowed divided by at-bats against."
-            };
+            StatMeta.Clear();
 
-            // Advanced statistics (English names and explanations)
-            StatMeta["TBF"] = new StatInfo
+            var glossary = StatGlossary.GetMap(StatDomain.TeamPitching);
+
+            foreach (var abbr in BasicStatNames.Concat(AdvancedStatNames))
             {
-                LongName = "Total Batters Faced",
-                Description = "Number of plate appearances against the pitcher or team."
-            };
-            StatMeta["NP"] = new StatInfo
-            {
-                LongName = "Number of Pitches",
-                Description = "Total pitches thrown (balls and strikes)."
-            };
-            StatMeta["P/IP"] = new StatInfo
-            {
-                LongName = "Pitches per Inning",
-                Description = "Average number of pitches thrown per inning pitched."
-            };
-            StatMeta["GF"] = new StatInfo
-            {
-                LongName = "Games Finished",
-                Description = "Appearances where the pitcher recorded the final out for his team."
-            };
-            StatMeta["HLD"] = new StatInfo
-            {
-                LongName = "Holds",
-                Description = "Relief outings where the pitcher enters in a save situation, records at least one out and leaves with the lead intact."
-            };
-            StatMeta["IBB"] = new StatInfo
-            {
-                LongName = "Intentional Walks",
-                Description = "Walks issued intentionally by the pitcher."
-            };
-            StatMeta["WP"] = new StatInfo
-            {
-                LongName = "Wild Pitches",
-                Description = "Errant pitches that allow baserunners to advance."
-            };
-            StatMeta["K/BB"] = new StatInfo
-            {
-                LongName = "Strikeout-to-Walk Ratio",
-                Description = "Strikeouts divided by walks."
-            };
-            StatMeta["OP/G"] = new StatInfo
-            {
-                LongName = "Opponent Runs per Game",
-                Description = "Average runs allowed per game."
-            };
-            StatMeta["ER/G"] = new StatInfo
-            {
-                LongName = "Earned Runs per Game",
-                Description = "Average earned runs allowed per game."
-            };
-            StatMeta["SO/9"] = new StatInfo
-            {
-                LongName = "Strikeouts per 9",
-                Description = "(Strikeouts × 9) / innings pitched."
-            };
-            StatMeta["H/9"] = new StatInfo
-            {
-                LongName = "Hits per 9",
-                Description = "(Hits allowed × 9) / innings pitched."
-            };
-            StatMeta["HR/9"] = new StatInfo
-            {
-                LongName = "Home Runs per 9",
-                Description = "(Home runs allowed × 9) / innings pitched."
-            };
-            StatMeta["W/9"] = new StatInfo
-            {
-                LongName = "Walks per 9",
-                Description = "(Walks × 9) / innings pitched."
-            };
+                if (glossary.TryGetValue(abbr, out var st))
+                {
+                    StatMeta[abbr] = new StatInfo
+                    {
+                        LongName = st.LongName,
+                        Description = st.Description
+                    };
+                }
+                else
+                {
+                    // Fallback por si alguna clave no estuviera en el glosario
+                    StatMeta[abbr] = new StatInfo
+                    {
+                        LongName = abbr,
+                        Description = ""
+                    };
+                }
+            }
         }
 
         public class PitchingStatsViewModel
@@ -186,42 +77,42 @@ namespace StrikeData.Pages.TeamData
 
         public async Task OnGetAsync()
         {
-            InitStatMeta();        // Inicializa las descripciones de estadísticas
-
-            // Reiniciar la lista de estadísticas por equipo por si el PageModel se reutiliza
-            TeamPitchingStats.Clear();
-
-            // Abreviaturas de MLB básicas
+            // 1) Define las abreviaturas que mostrarán las tablas
             BasicStatNames = new List<string>
             {
                 "ERA", "SHO", "CG", "SV", "SVO", "IP",
                 "H", "R", "HR", "W", "SO", "WHIP", "AVG"
             };
 
-            // Resto de abreviaturas MLB + las de TeamRankings (avanzadas)
             AdvancedStatNames = new List<string>
             {
                 "TBF", "NP", "P/IP", "GF", "HLD", "IBB", "WP", "K/BB",
                 "OP/G", "ER/G", "SO/9", "H/9", "HR/9", "W/9"
             };
 
-            // Obtener StatTypes de la categoría Pitching
+            // 2) Carga definiciones (tooltips) desde el glosario
+            InitStatMeta();
+
+            // 3) Reiniciar la lista de estadísticas por equipo
+            TeamPitchingStats.Clear();
+
+            // 4) Obtener StatTypes de la categoría Pitching
             var statTypeMap = await _context.StatTypes
                 .Include(st => st.StatCategory)
                 .Where(st => st.StatCategory != null && st.StatCategory.Name == "Pitching")
                 .ToDictionaryAsync(st => st.Name, st => st.Id);
 
-            // Cargar TeamStats asociados a Pitching
+            // 5) Cargar TeamStats asociados a Pitching
             var pitchingStats = await _context.TeamStats
                 .Include(ts => ts.StatType)
                 .Include(ts => ts.Team)
                 .Where(ts => statTypeMap.Values.Contains(ts.StatTypeId))
                 .ToListAsync();
 
-            // Cargar todos los equipos
+            // 6) Cargar todos los equipos
             var teams = await _context.Teams.ToListAsync();
 
-            // Construir un view model por equipo
+            // 7) Construir un view model por equipo
             foreach (var team in teams)
             {
                 var vm = new PitchingStatsViewModel
@@ -239,7 +130,7 @@ namespace StrikeData.Pages.TeamData
                         float? value = null;
                         if (ts != null)
                         {
-                            // Total para MLB, CurrentSeason para TeamRankings
+                            // Total para MLB, CurrentSeason para TeamRankings (fallback)
                             value = ts.Total ?? ts.CurrentSeason;
                         }
                         statsDict[statName] = value;
@@ -252,7 +143,6 @@ namespace StrikeData.Pages.TeamData
                 vm.Stats = statsDict;
                 TeamPitchingStats.Add(vm);
             }
-
         }
     }
 }

@@ -1,9 +1,10 @@
 using HtmlAgilityPack;
 using StrikeData.Data;
 using StrikeData.Models;
-using StrikeData.Models.Enums; // StatPerspective
+using StrikeData.Models.Enums;
+using StrikeData.Services.Normalization; // StatPerspective
 
-namespace StrikeData.Services.TeamData
+namespace StrikeData.Services.TeamData.Importers
 {
     public class WinTrendsImporter
     {
@@ -129,7 +130,6 @@ namespace StrikeData.Services.TeamData
             var cleaned = Utilities.CleanText(raw ?? "");
             return TeamNameNormalizer.Normalize(cleaned);
         }
-
 
         private async Task<int> GetWinTrendsCategoryIdAsync()
         {

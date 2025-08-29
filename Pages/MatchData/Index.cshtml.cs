@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
-using StrikeData.Models;
 
 namespace StrikeData.Pages.MatchData
 {

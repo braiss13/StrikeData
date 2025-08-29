@@ -1,8 +1,9 @@
 using HtmlAgilityPack;
 using StrikeData.Data;
 using StrikeData.Models;
+using StrikeData.Services.Normalization;
 
-namespace StrikeData.Services.TeamData
+namespace StrikeData.Services.TeamData.Importers
 {
     public class FieldingImporter
     {

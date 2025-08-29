@@ -3,8 +3,9 @@ using StrikeData.Data;
 using StrikeData.Models;
 using System.Globalization;
 using Newtonsoft.Json.Linq;
+using StrikeData.Services.Normalization;
 
-namespace StrikeData.Services.TeamData
+namespace StrikeData.Services.TeamData.Importers
 {
     public class PitchingImporter
     {

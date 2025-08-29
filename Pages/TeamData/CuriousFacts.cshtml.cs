@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
 using StrikeData.Models.Enums;
+using StrikeData.Services.Glossary; 
 
 namespace StrikeData.Pages.TeamData
 {
@@ -52,8 +53,18 @@ namespace StrikeData.Pages.TeamData
                 SelectedStatType = StatTypeOptions.First().Value;
             }
 
-            // Construir descripciones (base key -> texto)
-            BuildStatDescriptions();
+            // ---- DESCRIPCIONES DESDE GLOSARIO CENTRAL ----
+            // Cargamos el mapa del dominio CuriousFacts y construimos solo para las claves presentes en el select
+            var glossary = StatGlossary.GetMap(StatDomain.CuriousFacts);
+            StatDescriptions.Clear();
+            foreach (var opt in StatTypeOptions)
+            {
+                var key = opt.Value; // p.ej. "YRFI", "1IR/G", "F5IR/G"
+                if (glossary.TryGetValue(key, out var st) && !string.IsNullOrWhiteSpace(st.Description))
+                    StatDescriptions[key] = st.Description;
+                else
+                    StatDescriptions[key] = "";
+            }
 
             // Normaliza perspectiva
             var desiredPerspective = Perspective?.ToLowerInvariant() == "opp"
@@ -88,49 +99,6 @@ namespace StrikeData.Pages.TeamData
                 .ToListAsync();
 
             Rows = list;
-        }
-
-        private void BuildStatDescriptions()
-        {
-            StatDescriptions.Clear();
-
-            // Helper local para registrar descripciones
-            void Add(string key, string desc)
-            {
-                // Evita excepciones si hubiera duplicados por cualquier motivo
-                if (!StatDescriptions.ContainsKey(key))
-                    StatDescriptions[key] = desc;
-            }
-
-            // Porcentajes Y/N Run 1st Inning
-            Add("YRFI",  "Yes Run First Inning %: share of games with at least one run scored in the 1st inning.");
-            Add("NRFI",  "No Run First Inning %: share of games with zero runs scored in the 1st inning.");
-
-            // Inning-specific runs per game (team base key; la perspectiva se indica en el UI)
-            Add("1IR/G", "1st-inning runs per game: average runs scored in the 1st inning.");
-            Add("2IR/G", "2nd-inning runs per game: average runs scored in the 2nd inning.");
-            Add("3IR/G", "3rd-inning runs per game: average runs scored in the 3rd inning.");
-            Add("4IR/G", "4th-inning runs per game: average runs scored in the 4th inning.");
-            Add("5IR/G", "5th-inning runs per game: average runs scored in the 5th inning.");
-            Add("6IR/G", "6th-inning runs per game: average runs scored in the 6th inning.");
-            Add("7IR/G", "7th-inning runs per game: average runs scored in the 7th inning.");
-            Add("8IR/G", "8th-inning runs per game: average runs scored in the 8th inning.");
-            Add("9IR/G", "9th-inning runs per game: average runs scored in the 9th inning.");
-            Add("XTRAIR/G", "Extra-innings runs per game: average runs scored in extra innings.");
-
-            // First N innings aggregates
-            Add("F4IR/G", "First 4 innings runs per game: average runs scored across innings 1–4.");
-            Add("F5IR/G", "First 5 innings runs per game: average runs scored across innings 1–5.");
-            Add("F6IR/G", "First 6 innings runs per game: average runs scored across innings 1–6.");
-
-            // Last N innings aggregates (regulation)
-            Add("L2IR/G", "Last 2 innings runs per game: average runs scored across the final two regulation innings (typically 8–9).");
-            Add("L3IR/G", "Last 3 innings runs per game: average runs scored across the final three regulation innings (typically 7–9).");
-            Add("L4IR/G", "Last 4 innings runs per game: average runs scored across the final four regulation innings (typically 6–9).");
-
-            // NOTA: Las variantes de oponente (OYRFI, O1IR/G, OF4IR/G, etc.) usan el MISMO nombre base
-            // en StatType (sin la 'O'). La diferencia de significado (anotar vs permitir) se indica
-            // mediante la 'Perspective' seleccionada y se añade en el UI ("— Perspective: Opponents/Team Itself").
         }
 
         public class CuriousFactRow

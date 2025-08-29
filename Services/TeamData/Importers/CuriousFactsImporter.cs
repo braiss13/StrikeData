@@ -1,9 +1,10 @@
 using HtmlAgilityPack;
 using StrikeData.Data;
 using StrikeData.Models;
-using StrikeData.Models.Enums; // StatPerspective
+using StrikeData.Models.Enums;
+using StrikeData.Services.Normalization; // StatPerspective
 
-namespace StrikeData.Services.TeamData
+namespace StrikeData.Services.TeamData.Importers
 {
     public class CuriousFactsImporter
     {

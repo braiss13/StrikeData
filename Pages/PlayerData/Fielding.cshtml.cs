@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
+using StrikeData.Services.Glossary;
 
 namespace StrikeData.Pages.PlayerData
 {
@@ -58,61 +59,18 @@ namespace StrikeData.Pages.PlayerData
         private void InitStatMeta()
         {
             StatMeta.Clear();
-            StatMeta["OUTS"] = new StatInfo
+
+            // Trae el mapa del dominio
+            var map = StatGlossary.GetMap(StatDomain.PlayerFielding);
+
+            // Si quieres solo las columnas visibles:
+            foreach (var col in Columns) // o VisibleColumns
             {
-                LongName = "Outs",
-                Description = "Total defensive outs recorded by the player."
-            };
-            StatMeta["TC"] = new StatInfo
-            {
-                LongName = "Total Chances",
-                Description = "Total defensive chances: putouts + assists + errors."
-            };
-            StatMeta["CH"] = new StatInfo
-            {
-                LongName = "Chances",
-                Description = "Number of opportunities to make a play (putouts + assists + errors)."
-            };
-            StatMeta["PO"] = new StatInfo
-            {
-                LongName = "Putouts",
-                Description = "Number of outs credited by tagging a runner, force plays or catching a fly ball."
-            };
-            StatMeta["A"] = new StatInfo
-            {
-                LongName = "Assists",
-                Description = "Number of times the player assists on an out."
-            };
-            StatMeta["E"] = new StatInfo
-            {
-                LongName = "Errors",
-                Description = "Defensive miscues allowing a runner to reach or advance."
-            };
-            StatMeta["DP"] = new StatInfo
-            {
-                LongName = "Double Plays",
-                Description = "Number of double plays in which the player participated."
-            };
-            StatMeta["PB"] = new StatInfo
-            {
-                LongName = "Passed Balls",
-                Description = "Number of pitches a catcher fails to handle, allowing runners to advance."
-            };
-            StatMeta["CASB"] = new StatInfo
-            {
-                LongName = "Stolen Bases Allowed",
-                Description = "Baserunners who successfully stole while the player was fielding."
-            };
-            StatMeta["CACS"] = new StatInfo
-            {
-                LongName = "Caught Stealing",
-                Description = "Baserunners thrown out while attempting to steal a base."
-            };
-            StatMeta["FLD%"] = new StatInfo
-            {
-                LongName = "Fielding Percentage",
-                Description = "Fielding percentage: (putouts + assists) divided by total chances."
-            };
+                if (map.TryGetValue(col, out var st))
+                    StatMeta[col] = new StatInfo { LongName = st.LongName, Description = st.Description };
+                else
+                    StatMeta[col] = new StatInfo { LongName = col, Description = "" }; // fallback
+            }
         }
 
         public async Task OnGetAsync()

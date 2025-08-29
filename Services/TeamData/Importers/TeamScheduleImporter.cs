@@ -1,9 +1,10 @@
 using StrikeData.Data;
 using StrikeData.Models;
 using StrikeData.Models.Scraping;
-using StrikeData.Services.Common;
+using StrikeData.Services.Normalization;
+using StrikeData.Services.TeamData.Scrapers;
 
-namespace StrikeData.Services.TeamData
+namespace StrikeData.Services.TeamData.Importers
 {
     public class TeamScheduleImporter
     {

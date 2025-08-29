@@ -1,6 +1,5 @@
-using System.Collections.Generic;
 
-namespace StrikeData.Services.Common
+namespace StrikeData.Services.TeamData
 {
     /// <summary>
     /// Mapa de código de Baseball-Almanac -> nombre oficial en tu BD.

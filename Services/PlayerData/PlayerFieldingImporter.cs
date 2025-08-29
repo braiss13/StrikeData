@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
 using StrikeData.Models;
-using StrikeData.Services.Common;
+using StrikeData.Services.TeamData;
 
 namespace StrikeData.Services.PlayerData
 {

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
 using StrikeData.Models;
+using StrikeData.Services.Glossary; 
 
 namespace StrikeData.Pages.TeamData
 {
@@ -43,22 +44,22 @@ namespace StrikeData.Pages.TeamData
                 .ToList();
             StatOptions.Insert(0, new SelectListItem { Value = "", Text = "-- All --" });
 
-            // Construir el diccionario de descripciones por Id
+            // Construir el diccionario de descripciones por Id usando el glosario central
+            var glossary = StatGlossary.GetMap(StatDomain.TeamFielding);
             StatDescriptions.Clear();
             foreach (var st in StatTypes)
             {
-                // Abreviatura en mayúsculas para mapear de forma robusta
-                string key = st.Name?.ToUpperInvariant() ?? string.Empty;
-
-                string desc = key switch
+                // Buscamos por nombre (abreviatura). Si no existe en el glosario, dejamos vacío.
+                if (!string.IsNullOrWhiteSpace(st.Name) &&
+                    glossary.TryGetValue(st.Name, out var statText) &&
+                    !string.IsNullOrWhiteSpace(statText.Description))
                 {
-                    "DP" => "Double plays per game: average number of defensive plays that record two outs in one continuous sequence",
-                    "E"  => "Errors per game: average number of misplays that allow a runner to reach or advance when an ordinary effort should have produced an out",
-                    _    => ""
-                };
-
-                // Guardamos la descripción asociada al Id (que es el value del <select>)
-                StatDescriptions[st.Id.ToString()] = desc;
+                    StatDescriptions[st.Id.ToString()] = statText.Description;
+                }
+                else
+                {
+                    StatDescriptions[st.Id.ToString()] = "";
+                }
             }
 
             // Consulta base de TeamStats para Fielding

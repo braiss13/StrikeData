@@ -1,9 +1,8 @@
 using System.Globalization;
 using HtmlAgilityPack;
 using StrikeData.Models.Scraping;
-using StrikeData.Services.Common;
 
-namespace StrikeData.Services.TeamData
+namespace StrikeData.Services.TeamData.Scrapers
 {
     /// <summary>
     /// Scraper de Baseball-Almanac para calendario y splits de equipo.

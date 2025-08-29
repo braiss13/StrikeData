@@ -1,8 +1,6 @@
-using System.Net.Http;
-using System.Threading.Tasks;
 using HtmlAgilityPack;
 
-namespace StrikeData.Services.Common
+namespace StrikeData.Services.TeamData.Scrapers
 {
     /// <summary>
     /// Base común para scrapers de Baseball-Almanac:
