@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
 using StrikeData.Models;
+using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.PlayerData
 {
@@ -9,41 +10,6 @@ namespace StrikeData.Services.PlayerData
     {
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
-
-        // MLB team_id -> nombre oficial del equipo
-        private static readonly Dictionary<int, string> _TeamIdMap = new()
-        {
-            { 119, "Los Angeles Dodgers" },
-            { 112, "Chicago Cubs" },
-            { 147, "New York Yankees" },
-            { 109, "Arizona Diamondbacks" },
-            { 116, "Detroit Tigers" },
-            { 143, "Philadelphia Phillies" },
-            { 111, "Boston Red Sox" },
-            { 138, "St. Louis Cardinals" },
-            { 158, "Milwaukee Brewers" },
-            { 113, "Cincinnati Reds" },
-            { 136, "Seattle Mariners" },
-            { 120, "Washington Nationals" },
-            { 121, "New York Mets" },
-            { 139, "Tampa Bay Rays" },
-            { 135, "San Diego Padres" },
-            { 133, "Athletics" },
-            { 141, "Toronto Blue Jays" },
-            { 137, "San Francisco Giants" },
-            { 146, "Miami Marlins" },
-            { 144, "Atlanta Braves" },
-            { 114, "Cleveland Guardians" },
-            { 108, "Los Angeles Angels" },
-            { 117, "Houston Astros" },
-            { 142, "Minnesota Twins" },
-            { 110, "Baltimore Orioles" },
-            { 145, "Chicago White Sox" },
-            { 140, "Texas Rangers" },
-            { 134, "Pittsburgh Pirates" },
-            { 118, "Kansas City Royals" },
-            { 115, "Colorado Rockies" }
-        };
 
         public PlayerRosterImporter(AppDbContext context)
         {
@@ -61,11 +27,11 @@ namespace StrikeData.Services.PlayerData
             // Cache de Players por MLB_Player_Id (solo los que lo tienen) **TRACKED** (sin AsNoTracking)
             var existingPlayers = await _context.Players
                 .Where(p => p.MLB_Player_Id != null)
-                .ToListAsync(); 
-                
+                .ToListAsync();
+
             var playersByMlbId = existingPlayers.ToDictionary(p => p.MLB_Player_Id!.Value, p => p);
 
-            foreach (var kv in _TeamIdMap)
+            foreach (var kv in PlayerMaps.MlbTeamIdToOfficialName)
             {
                 int mlbTeamId = kv.Key;
                 string officialTeamName = kv.Value;

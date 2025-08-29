@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
 using StrikeData.Models;
+using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.PlayerData
 {
@@ -47,48 +48,7 @@ namespace StrikeData.Services.PlayerData
                 url: pitchingUrl,
                 categoryName: "Pitching",
                 // Mapa "nombre de la métrica" -> "campo JSON"
-                statFieldMap: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    // Básicas
-                    { "W", "wins" },
-                    { "L", "losses" },
-                    { "ERA", "era" },
-                    { "G", "gamesPlayed" },
-                    { "GS", "gamesStarted" },
-                    { "CG", "completeGames" },
-                    { "SHO", "shutouts" },
-                    { "SV", "saves" },
-                    { "SVO", "saveOpportunities" },
-                    { "IP", "inningsPitched" },
-                    { "R", "runs" },
-                    { "H", "hits" },
-                    { "ER", "earnedRuns" },
-                    { "HR", "homeRuns" },
-                    { "HB", "hitBatsmen" },
-                    { "BB", "baseOnBalls" },
-                    { "SO", "strikeOuts" },
-                    { "WHIP", "whip" },
-                    { "AVG", "avg" },
-                    { "TBF", "battersFaced" },
-                    { "NP", "numberOfPitches" },
-                    { "P/IP", "pitchesPerInning" },
-                    { "QS", "qualityStarts" },
-                    { "GF", "gamesFinished" },
-                    { "HLD", "holds" },
-                    { "IBB", "intentionalWalks" },
-                    { "WP", "wildPitches" },
-                    { "BK", "balks" },
-                    { "GDP", "groundIntoDoublePlay" },
-                    { "GO/AO", "groundOutsToAirouts" },
-                    { "SO/9", "strikeoutsPer9Inn" },
-                    { "BB/9", "walksPer9Inn" },
-                    { "H/9", "hitsPer9Inn" },
-                    { "K/BB", "strikeoutWalkRatio" },
-                    { "BABIP", "babip" },
-                    { "SB", "stolenBases" },
-                    { "CS", "caughtStealing" },
-                    { "PK", "pickoffs" }
-                },
+                statFieldMap: PlayerMaps.StatJsonFields.Pitching,
                 // Filtra por jugadores Pitcher (Position == "P"), por seguridad
                 mustBePitcher: true
             );
@@ -100,41 +60,7 @@ namespace StrikeData.Services.PlayerData
             await ImportStatsGroupAsync(
                 url: hittingUrl,
                 categoryName: "Hitting",
-                statFieldMap: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    { "G", "gamesPlayed" },
-                    { "AB", "atBats" },
-                    { "R", "runs" },
-                    { "H", "hits" },
-                    { "2B", "doubles" },
-                    { "3B", "triples" },
-                    { "HR", "homeRuns" },
-                    { "RBI", "rbi" },
-                    { "BB", "baseOnBalls" },
-                    { "SO", "strikeOuts" },
-                    { "SB", "stolenBases" },
-                    { "CS", "caughtStealing" },
-                    { "AVG", "avg" },
-                    { "OBP", "obp" },
-                    { "SLG", "slg" },
-                    { "OPS", "ops" },
-                    { "PA", "plateAppearances" },
-                    { "HBP", "hitByPitch" },
-                    { "SAC", "sacBunts" },
-                    { "SF", "sacFlies" },
-                    { "GIDP", "gidp" },
-                    { "GO/AO", "groundOutsToAirouts" },
-                    { "XBH", "extraBaseHits" },
-                    { "TB", "totalBases" },
-                    { "IBB", "intentionalWalks" },
-                    { "BABIP", "babip" },
-                    { "ISO", "iso" },
-                    { "AB/HR", "atBatsPerHomeRun" },
-                    { "BB/K", "walksPerStrikeout" },
-                    { "BB%", "walksPerPlateAppearance" },
-                    { "SO%", "strikeoutsPerPlateAppearance" },
-                    { "HR%", "homeRunsPerPlateAppearance" }
-                },
+                statFieldMap: PlayerMaps.StatJsonFields.Hitting,
                 mustBePitcher: false
             );
         }
@@ -146,7 +72,7 @@ namespace StrikeData.Services.PlayerData
         /// - Asegura PlayerStatType por cada clave del mapa
         /// - Asigna PlayerStat.Total para cada jugador y métrica
         /// </summary>
-        private async Task ImportStatsGroupAsync(string url, string categoryName, Dictionary<string, string> statFieldMap, bool mustBePitcher)
+        private async Task ImportStatsGroupAsync(string url, string categoryName, IReadOnlyDictionary<string, string> statFieldMap, bool mustBePitcher)
         {
             // 1) Cargar/crear categoría
             var category = await _context.StatCategories

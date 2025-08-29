@@ -56,25 +56,25 @@ namespace StrikeData.Pages
 
         public async Task OnGetAsync()
         {
-            #region Importadores de estadísticas de equipos
-            await _hitting_importer.ImportAllStatsAsyncH();
-            await _pitching_importer.ImportAllStatsAsyncP();
-            await _fielding_importer.ImportAllStatsAsyncF();
-            await _schedule_importer.ImportAllTeamsScheduleAsync(2025);
-            await _curious_importer.ImportAllStatsAsyncCF();
-            await _wintrends_importer.ImportAllStatsAsyncWT();
-            #endregion
+            // #region Importadores de estadísticas de equipos
+            // await _hitting_importer.ImportAllStatsAsyncH();
+            // await _pitching_importer.ImportAllStatsAsyncP();
+            // await _fielding_importer.ImportAllStatsAsyncF();
+            // await _schedule_importer.ImportAllTeamsScheduleAsync(2025);
+            // await _curious_importer.ImportAllStatsAsyncCF();
+            // await _wintrends_importer.ImportAllStatsAsyncWT();
+            // #endregion
 
-            #region Importadores de jugadores
-            // 1) Roster + stats (hitting/pitching) para todos los jugadores
-            await _playerStatsImporter.ImportAllPlayersAndStatsAsync(2025);
+            // #region Importadores de jugadores
+            // // 1) Roster + stats (hitting/pitching) para todos los jugadores
+            // await _playerStatsImporter.ImportAllPlayersAndStatsAsync(2025);
 
-            // 2) Fielding de jugadores (por equipo; sólo primera tabla; sólo si el jugador existe)
-            await _playerFieldingImporter.ImportAllTeamsPlayerFieldingAsync(2025);
-            #endregion
+            // // 2) Fielding de jugadores (por equipo; sólo primera tabla; sólo si el jugador existe)
+            // await _playerFieldingImporter.ImportAllTeamsPlayerFieldingAsync(2025);
+            // #endregion
 
-            // Importador de partidos (desde 2025-03-27 hasta ayer)
-            await _matchImporter.ImportSeasonMatchesAsync();
+            // // Importador de partidos (desde 2025-03-27 hasta ayer)
+            // await _matchImporter.ImportSeasonMatchesAsync();
         }
     }
 }

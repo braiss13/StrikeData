@@ -3,6 +3,7 @@ using StrikeData.Data;
 using StrikeData.Models;
 using StrikeData.Models.Enums;
 using StrikeData.Services.Normalization; // StatPerspective
+using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.TeamData.Importers
 {
@@ -10,47 +11,6 @@ namespace StrikeData.Services.TeamData.Importers
     {
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
-
-        // Mapa de abreviaturas y URLs de TeamRankings para "Curious Facts" (Other)
-        private static readonly Dictionary<string, string> _trCMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "YRFI",     "https://www.teamrankings.com/mlb/stat/yes-run-first-inning-pct" },
-            { "NRFI",     "https://www.teamrankings.com/mlb/stat/no-run-first-inning-pct" },
-            { "OYRFI",    "https://www.teamrankings.com/mlb/stat/opponent-yes-run-first-inning-pct" },
-            { "ONRFI",    "https://www.teamrankings.com/mlb/stat/opponent-no-run-first-inning-pct" },
-            { "1IR/G",    "https://www.teamrankings.com/mlb/stat/1st-inning-runs-per-game" },
-            { "2IR/G",    "https://www.teamrankings.com/mlb/stat/2nd-inning-runs-per-game" },
-            { "3IR/G",    "https://www.teamrankings.com/mlb/stat/3rd-inning-runs-per-game" },
-            { "4IR/G",    "https://www.teamrankings.com/mlb/stat/4th-inning-runs-per-game" },
-            { "5IR/G",    "https://www.teamrankings.com/mlb/stat/5th-inning-runs-per-game" },
-            { "6IR/G",    "https://www.teamrankings.com/mlb/stat/6th-inning-runs-per-game" },
-            { "7IR/G",    "https://www.teamrankings.com/mlb/stat/7th-inning-runs-per-game" },
-            { "8IR/G",    "https://www.teamrankings.com/mlb/stat/8th-inning-runs-per-game" },
-            { "9IR/G",    "https://www.teamrankings.com/mlb/stat/9th-inning-runs-per-game" },
-            { "XTRAIR/G", "https://www.teamrankings.com/mlb/stat/extra-inning-runs-per-game" },
-            { "O1IR/G",   "https://www.teamrankings.com/mlb/stat/opponent-1st-inning-runs-per-game" },
-            { "O2IR/G",   "https://www.teamrankings.com/mlb/stat/opponent-2nd-inning-runs-per-game" },
-            { "O3IR/G",   "https://www.teamrankings.com/mlb/stat/opponent-3rd-inning-runs-per-game" },
-            { "O4IR/G",   "https://www.teamrankings.com/mlb/stat/opponent-4th-inning-runs-per-game" },
-            { "O5IR/G",   "https://www.teamrankings.com/mlb/stat/opponent-5th-inning-runs-per-game" },
-            { "O6IR/G",   "https://www.teamrankings.com/mlb/stat/opponent-6th-inning-runs-per-game" },
-            { "O7IR/G",   "https://www.teamrankings.com/mlb/stat/opponent-7th-inning-runs-per-game" },
-            { "O8IR/G",   "https://www.teamrankings.com/mlb/stat/opponent-8th-inning-runs-per-game" },
-            { "O9IR/G",   "https://www.teamrankings.com/mlb/stat/opponent-9th-inning-runs-per-game" },
-            { "OXTRAIR/G","https://www.teamrankings.com/mlb/stat/opponent-extra-inning-runs-per-game" },
-            { "F4IR/G",   "https://www.teamrankings.com/mlb/stat/first-4-innings-runs-per-game" },
-            { "F5IR/G",   "https://www.teamrankings.com/mlb/stat/first-5-innings-runs-per-game" },
-            { "F6IR/G",   "https://www.teamrankings.com/mlb/stat/first-6-innings-runs-per-game" },
-            { "OF4IR/G",  "https://www.teamrankings.com/mlb/stat/opponent-first-4-innings-runs-per-game" },
-            { "OF5IR/G",  "https://www.teamrankings.com/mlb/stat/opponent-first-5-innings-runs-per-game" },
-            { "OF6IR/G",  "https://www.teamrankings.com/mlb/stat/opponent-first-6-innings-runs-per-game" },
-            { "L2IR/G",   "https://www.teamrankings.com/mlb/stat/last-2-innings-runs-per-game" },
-            { "L3IR/G",   "https://www.teamrankings.com/mlb/stat/last-3-innings-runs-per-game" },
-            { "L4IR/G",   "https://www.teamrankings.com/mlb/stat/last-4-innings-runs-per-game" },
-            { "OL2IR/G",  "https://www.teamrankings.com/mlb/stat/opponent-last-2-innings-runs-per-game" },
-            { "OL3IR/G",  "https://www.teamrankings.com/mlb/stat/opponent-last-3-innings-runs-per-game" },
-            { "OL4IR/G",  "https://www.teamrankings.com/mlb/stat/opponent-last-4-innings-runs-per-game" },
-        };
 
         public CuriousFactsImporter(AppDbContext context)
         {
@@ -61,7 +21,7 @@ namespace StrikeData.Services.TeamData.Importers
         // Método principal -> recorre el map y llama al método que hace scraping/guardado (mismo patrón que FieldingImporter)
         public async Task ImportAllStatsAsyncCF()
         {
-            foreach (var stat in _trCMap)
+            foreach (var stat in TeamRankingsMaps.CuriousFacts)
             {
                 await ImportCuriousTeamStatsTR(stat.Key, stat.Value);
             }

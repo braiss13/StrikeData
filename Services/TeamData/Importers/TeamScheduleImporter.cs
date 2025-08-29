@@ -2,6 +2,7 @@ using StrikeData.Data;
 using StrikeData.Models;
 using StrikeData.Models.Scraping;
 using StrikeData.Services.Normalization;
+using StrikeData.Services.StaticMaps;
 using StrikeData.Services.TeamData.Scrapers;
 
 namespace StrikeData.Services.TeamData.Importers

@@ -4,6 +4,7 @@ using StrikeData.Models;
 using System.Globalization;
 using Newtonsoft.Json.Linq;
 using StrikeData.Services.Normalization;
+using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.TeamData.Importers
 {
@@ -11,17 +12,6 @@ namespace StrikeData.Services.TeamData.Importers
     {
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
-
-        // Mapa de abreviaturas y URLs de TeamRankings para pitching.
-        private static readonly Dictionary<string, string> _trPMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "OP/G", "https://www.teamrankings.com/mlb/stat/outs-pitched-per-game" },
-            { "ER/G", "https://www.teamrankings.com/mlb/stat/outs-pitched-per-game" },
-            { "SO/9", "https://www.teamrankings.com/mlb/stat/strikeouts-per-9" },
-            { "H/9",  "https://www.teamrankings.com/mlb/stat/home-runs-per-9" },
-            { "HR/9", "https://www.teamrankings.com/mlb/stat/walks-per-9" },
-            { "W/9",  "https://www.teamrankings.com/mlb/stat/walks-per-9" }
-        };
 
         public PitchingImporter(AppDbContext context)
         {
@@ -35,7 +25,7 @@ namespace StrikeData.Services.TeamData.Importers
             // Primero obtenemos los totales de la MLB (ya implementado).
             await ImportTeamPitchingStatsMLB();
 
-            foreach (var stat in _trPMap)
+            foreach (var stat in TeamRankingsMaps.Pitching)
             {
                 await ImportPitchingTeamStatTR(stat.Key, stat.Value);
             }

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
 using StrikeData.Models;
-using StrikeData.Services.TeamData;
+using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.PlayerData
 {
@@ -9,11 +9,6 @@ namespace StrikeData.Services.PlayerData
     {
         private readonly AppDbContext _context;
         private readonly PlayerFieldingScraper _scraper;
-
-        private static readonly string[] Metrics = new[]
-        {
-            "OUTS","TC","CH","PO","A","E","DP","PB","CASB","CACS","FLD%"
-        };
 
         public PlayerFieldingImporter(AppDbContext context, PlayerFieldingScraper scraper)
         {
@@ -33,7 +28,8 @@ namespace StrikeData.Services.PlayerData
 
             var byName = existingTypes.ToDictionary(t => t.Name, t => t, StringComparer.OrdinalIgnoreCase);
             int created = 0;
-            foreach (var m in Metrics)
+            
+            foreach (var m in PlayerMaps.FieldingMetrics)
             {
                 if (!byName.ContainsKey(m))
                 {
@@ -89,7 +85,7 @@ namespace StrikeData.Services.PlayerData
 
                 if (!playersByTeam.TryGetValue(team.Id, out var byPlayerKey))
                 {
-                    Console.WriteLine($"[FieldingImporter][INFO] No hay jugadores en BD para TeamId={team.Id}. Saltando.");
+                    Console.WriteLine($"[FieldingImporter][INFO] There isn't players for TeamId={team.Id}. Skipping.");
                     continue;
                 }
 

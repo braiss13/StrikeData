@@ -1,5 +1,6 @@
 using HtmlAgilityPack;
 using StrikeData.Services.TeamData.Scrapers;
+using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.PlayerData
 {
@@ -14,23 +15,6 @@ namespace StrikeData.Services.PlayerData
             public Dictionary<string, float?> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         }
 
-        private static readonly Dictionary<string, string[]> HeaderSynonyms = new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["Name"] = new[] { "Name", "Player", "Player Name" },
-            ["POS"]  = new[] { "POS", "Pos", "Position" },  // Se coge también la posición para quedarse solo con una (el mismo jugador puede tener varias)
-            ["OUTS"] = new[] { "OUTS", "Outs", "Inn Outs", "INN OUTS", "Inn (Outs)", "Innings (Outs)" },
-            ["TC"]   = new[] { "TC", "Total Chances", "Tot Ch", "T. Ch." },
-            ["CH"]   = new[] { "CH", "Ch", "Chances" },
-            ["PO"]   = new[] { "PO", "Putouts" },
-            ["A"]    = new[] { "A", "Assists" },
-            ["E"]    = new[] { "E", "Errors" },
-            ["DP"]   = new[] { "DP", "Double Plays" },
-            ["PB"]   = new[] { "PB", "Passed Balls" },
-            ["CASB"] = new[] { "CASB", "SB" },
-            ["CACS"] = new[] { "CACS", "CS" },
-            ["FLD%"] = new[] { "FLD%", "Fld%", "FPCT", "Fld Pct", "Fielding %" },
-        };
-
         public async Task<List<PlayerFieldingRowDto>> GetTeamFieldingRowsAsync(string teamCode, int year)
         {
             var url = $"https://www.baseball-almanac.com/teamstats/fielding.php?y={year}&t={teamCode.ToUpperInvariant()}";
@@ -40,7 +24,7 @@ namespace StrikeData.Services.PlayerData
             var tables = doc.DocumentNode.SelectNodes("//table") ?? new HtmlNodeCollection(null);
             if (tables.Count == 0) return new List<PlayerFieldingRowDto>();
 
-            var wanted = new[] { "OUTS","TC","CH","PO","A","E","DP","PB","CASB","CACS","FLD%" };
+            var wanted = new[] { "OUTS", "TC", "CH", "PO", "A", "E", "DP", "PB", "CASB", "CACS", "FLD%" };
 
             HtmlNode? bestTable = null;
             int bestHeaderRowIdx = -1;
@@ -61,7 +45,7 @@ namespace StrikeData.Services.PlayerData
                     var hc = rows[r].SelectNodes("th|td")?.Select(h => Utilities.CleanText(h.InnerText)).ToList();
                     if (hc == null || hc.Count == 0) continue;
 
-                    bool hasName = HeaderSynonyms["Name"].Any(syn =>
+                    bool hasName = PlayerMaps.FieldingHeaderSynonyms["Name"].Any(syn =>
                         hc.Any(x => x.Equals(syn, StringComparison.OrdinalIgnoreCase)));
 
                     if (hasName)
@@ -78,7 +62,7 @@ namespace StrikeData.Services.PlayerData
 
                 // Name
                 int nameIdx = -1;
-                foreach (var syn in HeaderSynonyms["Name"])
+                foreach (var syn in PlayerMaps.FieldingHeaderSynonyms["Name"])
                 {
                     int idx = headerCellsNorm.FindIndex(s => s.Equals(syn, StringComparison.OrdinalIgnoreCase));
                     if (idx >= 0) { nameIdx = idx; break; }
@@ -87,7 +71,7 @@ namespace StrikeData.Services.PlayerData
                 indexMap["Name"] = nameIdx;
 
                 // POS (opcional)
-                foreach (var syn in HeaderSynonyms["POS"])
+                foreach (var syn in PlayerMaps.FieldingHeaderSynonyms["POS"])
                 {
                     int idx = headerCellsNorm.FindIndex(s => s.Equals(syn, StringComparison.OrdinalIgnoreCase));
                     if (idx >= 0) { indexMap["POS"] = idx; break; }
@@ -97,7 +81,7 @@ namespace StrikeData.Services.PlayerData
                 foreach (var w in wanted)
                 {
                     int idx = -1;
-                    foreach (var syn in HeaderSynonyms[w])
+                    foreach (var syn in PlayerMaps.FieldingHeaderSynonyms[w])
                     {
                         idx = headerCellsNorm.FindIndex(s => s.Equals(syn, StringComparison.OrdinalIgnoreCase));
                         if (idx >= 0) break;
@@ -168,7 +152,7 @@ namespace StrikeData.Services.PlayerData
 
                 data.Add(dto);
             }
-            
+
             return data;
         }
     }

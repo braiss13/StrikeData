@@ -4,6 +4,7 @@ using StrikeData.Models;
 using System.Globalization;
 using Newtonsoft.Json.Linq;
 using StrikeData.Services.Normalization;
+using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.TeamData.Importers
 {
@@ -14,38 +15,6 @@ namespace StrikeData.Services.TeamData.Importers
         private readonly HttpClient _httpClient;
 
         #region MLB
-
-        // Mapa de abreviaturas y URLs de TeamRankings para hitting.
-        private static readonly Dictionary<string, string> _trHMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-
-            { "AB", "https://www.teamrankings.com/mlb/stat/at-bats-per-game" },
-            { "R", "https://www.teamrankings.com/mlb/stat/runs-per-game" },
-            { "H", "https://www.teamrankings.com/mlb/stat/hits-per-game" },
-            { "HR", "https://www.teamrankings.com/mlb/stat/home-runs-per-game" },
-            { "S", "https://www.teamrankings.com/mlb/stat/singles-per-game" },
-            { "2B", "https://www.teamrankings.com/mlb/stat/doubles-per-game" },
-            { "3B", "https://www.teamrankings.com/mlb/stat/triples-per-game" },
-            { "RBI", "https://www.teamrankings.com/mlb/stat/rbis-per-game" },
-            { "BB", "https://www.teamrankings.com/mlb/stat/walks-per-game" },
-            { "SO", "https://www.teamrankings.com/mlb/stat/strikeouts-per-game" },
-            { "SB", "https://www.teamrankings.com/mlb/stat/stolen-bases-per-game" },
-            { "SBA", "https://www.teamrankings.com/mlb/stat/stolen-bases-attempted-per-game" },
-            { "CS", "https://www.teamrankings.com/mlb/stat/caught-stealing-per-game" },
-            { "SAC", "https://www.teamrankings.com/mlb/stat/sacrifice-hits-per-game" },
-            { "SF", "https://www.teamrankings.com/mlb/stat/sacrifice-flys-per-game" },
-            { "LOB", "https://www.teamrankings.com/mlb/stat/left-on-base-per-game" },
-            { "TLOB", "https://www.teamrankings.com/mlb/stat/team-left-on-base-per-game" },
-            { "HBP", "https://www.teamrankings.com/mlb/stat/hit-by-pitch-per-game" },
-            { "GIDP", "https://www.teamrankings.com/mlb/stat/grounded-into-double-plays-per-game" },
-            { "RLSP", "https://www.teamrankings.com/mlb/stat/runners-left-in-scoring-position-per-game" },
-            { "TB", "https://www.teamrankings.com/mlb/stat/total-bases-per-game" },
-            { "AVG", "https://www.teamrankings.com/mlb/stat/batting-average" },
-            { "SLG", "https://www.teamrankings.com/mlb/stat/slugging-pct" },
-            { "OBP", "https://www.teamrankings.com/mlb/stat/on-base-pct" },
-            { "OPS", "https://www.teamrankings.com/mlb/stat/on-base-plus-slugging-pct" },
-            { "AB/HR", "https://www.teamrankings.com/mlb/stat/at-bats-per-home-run" }
-        };
 
         public HittingImporter(AppDbContext context)
         {
@@ -60,7 +29,7 @@ namespace StrikeData.Services.TeamData.Importers
             await ImportHittingTeamStatsMLB();
 
             // 2. Luego, el scraping de TeamRankings con promedios por partido
-            foreach (var stat in _trHMap)
+            foreach (var stat in TeamRankingsMaps.Hitting)
             {
                 await ImportHittingTeamStatsTR(stat.Key, stat.Value);
             }

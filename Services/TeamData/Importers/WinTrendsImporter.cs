@@ -2,7 +2,8 @@ using HtmlAgilityPack;
 using StrikeData.Data;
 using StrikeData.Models;
 using StrikeData.Models.Enums;
-using StrikeData.Services.Normalization; // StatPerspective
+using StrikeData.Services.Normalization;
+using StrikeData.Services.StaticMaps; // StatPerspective
 
 namespace StrikeData.Services.TeamData.Importers
 {
@@ -10,32 +11,6 @@ namespace StrikeData.Services.TeamData.Importers
     {
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
-
-        private static readonly Dictionary<string, string> _trWTMap = new(StringComparer.OrdinalIgnoreCase)
-        {
-            { "All Games", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=all_games" },
-            { "After Win", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_after_win" },
-            { "After Loss", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_after_loss" },
-            { "League Games", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_league" },
-            { "Non League Games", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=non_league" },
-            { "Division Games", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_division" },
-            { "Non Division Games", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=non_division" },
-            { "As Home", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=s_home" },
-            { "As Away", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_away" },
-            { "As Favorite", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_fav" },
-            { "As Underdog", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_dog" },
-            { "As Home Favorite", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_home_fav" },
-            { "As Home Underdog", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_home_dog" },
-            { "As Away Favorite", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_away_favs" },
-            { "As Away Underdog", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=is_away_dog" },
-            { "With No Rest", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=no_rest" },
-            { "1 Day Off", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=one_day_off" },
-            { "4+ Days Off", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=four_plus_days_off" },
-            { "Second Game of Doubleheader", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=s_doubleheader" },
-            { "With Rest Advantage", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=rest_advantage" },
-            { "With Rest Disadvantage", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=rest_disadvantage" },
-            { "Equal Rest", "https://www.teamrankings.com/mlb/trends/win_trends/?sc=equal_rest" },
-        };
 
         public WinTrendsImporter(AppDbContext context)
         {
@@ -45,7 +20,7 @@ namespace StrikeData.Services.TeamData.Importers
 
         public async Task ImportAllStatsAsyncWT()
         {
-            foreach (var stat in _trWTMap)
+            foreach (var stat in TeamRankingsMaps.WinTrends)
                 await ImportWinTrendsTeamStatsTR(stat.Key, stat.Value);
         }
 

@@ -2,6 +2,7 @@ using HtmlAgilityPack;
 using StrikeData.Data;
 using StrikeData.Models;
 using StrikeData.Services.Normalization;
+using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.TeamData.Importers
 {
@@ -9,14 +10,6 @@ namespace StrikeData.Services.TeamData.Importers
     {
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
-
-        // Mapa de abreviaturas y URLs de TeamRankings para fielding.
-        private static readonly Dictionary<string, string> _trFMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-
-            { "DP", "https://www.teamrankings.com/mlb/stat/double-plays-per-game" },
-            { "E", "https://www.teamrankings.com/mlb/stat/runs-per-game" }
-        };
 
         public FieldingImporter(AppDbContext context)
         {
@@ -27,7 +20,7 @@ namespace StrikeData.Services.TeamData.Importers
         // Método principal -> Contiene las llamadas a los dos métodos de obtención de datos (TeamRankings)
         public async Task ImportAllStatsAsyncF()
         {
-            foreach (var stat in _trFMap)
+            foreach (var stat in TeamRankingsMaps.Fielding)
             {
                 await ImportHittingTeamStatsTR(stat.Key, stat.Value);
             }
