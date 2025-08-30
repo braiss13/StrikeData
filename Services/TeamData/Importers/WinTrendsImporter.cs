@@ -119,9 +119,9 @@ namespace StrikeData.Services.TeamData.Importers
         }
 
         /*
-        /// Normalizes a team name using the shared helpers:
-        /// - Cleans HTML/whitespace
-        /// - Maps aliases to official DB names
+            Normalizes a team name using the shared helpers:
+            - Cleans HTML/whitespace
+            - Maps aliases to official DB names
         */
         private static string NormalizeName(string? raw)
         {

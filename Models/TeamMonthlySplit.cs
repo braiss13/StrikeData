@@ -1,11 +1,8 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace StrikeData.Models
 {
-    /// <summary>
-    /// Resumen mensual de victorias/derrotas de un equipo en una temporada.
-    /// </summary>
+    // Monthly summary of a team's wins/losses in a season.
     public class TeamMonthlySplit
     {
         [Key]

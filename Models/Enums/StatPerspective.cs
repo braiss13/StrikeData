@@ -2,7 +2,7 @@ namespace StrikeData.Models.Enums
 {
     public enum StatPerspective : byte
     {
-        Team = 0,      // comportamiento propio
-        Opponent = 1   // cómo se comportan los rivales vs este equipo
+        Team = 0,      // own behavior
+        Opponent = 1   // how rivals behave against this team
     }
 }

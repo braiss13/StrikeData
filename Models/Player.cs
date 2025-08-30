@@ -18,17 +18,16 @@ namespace StrikeData.Models
         [MaxLength(50)]
         public string Position { get; set; }
 
-        // Id oficial de MLB. Suele caber en int, pero usamos long? por seguridad.
+        // MLB official ID. 
         public long? MLB_Player_Id { get; set; }
 
-        // Dorsal (0..99 normalmente). Lo dejamos nullable por si una fuente no lo trae.
+        // JerseyNumber (0..99 ). 
         public int? Number { get; set; }
 
-        // Estado del jugador (ej.: "Active", "Injured"). Texto corto.
+        // Player Status (ej.: "Active", "Injured"). 
         [MaxLength(30)]
         public string? Status { get; set; }
 
-        // Navegación (opcional) a stats de jugador
         public ICollection<PlayerStat> PlayerStats { get; set; }
     }
 }

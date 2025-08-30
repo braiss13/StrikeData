@@ -1,4 +1,3 @@
-// TeamScheduleImporter.cs
 using StrikeData.Data;
 using StrikeData.Models;
 using StrikeData.Models.Scraping;

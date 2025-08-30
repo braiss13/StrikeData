@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -10,9 +8,8 @@ namespace StrikeData.Models
         [Key]
         public int Id { get; set; }
 
-        /// <summary>
-        /// Identificador de la MLB (gamePk). Añade un índice único sobre esta columna.
-        /// </summary>
+        
+        // MLB ID (gamePk). 
         [Required]
         public long GamePk { get; set; }
 

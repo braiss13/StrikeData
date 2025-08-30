@@ -1,11 +1,8 @@
-using System;
-    using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace StrikeData.Models
 {
-    /// <summary>
-    /// Balance de enfrentamientos contra un rival concreto en una temporada.
-    /// </summary>
+    // Balance of matches against a specific rival in a season.
     public class TeamOpponentSplit
     {
         [Key]

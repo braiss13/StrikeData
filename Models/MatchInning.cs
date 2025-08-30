@@ -1,13 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace StrikeData.Models
 {
-    /// <summary>
-    /// Línea por entrada para un partido. Cada fila almacena carreras, hits y errores
-    /// de ambos equipos para una entrada concreta. Las entradas extra siguen numeradas
-    /// a partir de 10.
-    /// </summary>
     
     public class MatchInning
     {

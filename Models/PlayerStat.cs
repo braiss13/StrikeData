@@ -16,7 +16,7 @@ namespace StrikeData.Models
         public int PlayerStatTypeId { get; set; }
         public PlayerStatType PlayerStatType { get; set; }
 
-        // Valor de la estadística (número limpio, sin %)
+        // Stat value (clean number, without %)
         public float? Total { get; set; }
     }
 }

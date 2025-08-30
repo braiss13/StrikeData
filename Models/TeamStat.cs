@@ -16,7 +16,7 @@ namespace StrikeData.Models
         public int StatTypeId { get; set; }
         public StatType StatType { get; set; }
 
-        // Enumerado para distinguir Team vs Opponent
+        // Listed to distinguish Team vs Opponent
         public StatPerspective Perspective { get; set; } = StatPerspective.Team;
 
         public float? CurrentSeason { get; set; }

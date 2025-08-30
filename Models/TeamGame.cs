@@ -1,12 +1,8 @@
-using System;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace StrikeData.Models
 {
-    /// <summary>
-    /// Representa un partido del calendario de un equipo en una temporada concreta.
-    /// </summary>
+    // It represents a match on a team's schedule in a specific season.
     public class TeamGame
     {
         [Key]
@@ -16,7 +12,7 @@ namespace StrikeData.Models
         public int TeamId { get; set; }
         public Team Team { get; set; }
 
-        /// <summary>Temporada (año) a la que pertenece el partido.</summary>
+        // Season of the match.
         [Required]
         public int Season { get; set; }
 
@@ -26,27 +22,26 @@ namespace StrikeData.Models
         [Required]
         public DateTime Date { get; set; }
 
-        /// <summary>Indica si este equipo juega como local (vs) o visitante (at).</summary>
+        // Indicates if the match was played at home (true) or away (false).
         [Required]
         public bool IsHome { get; set; }
 
-        /// <summary>FK al equipo rival, si se logra mapear el nombre; si no, queda a null.</summary>
+        // FK to away Team, nullable in case the opponent team is not in the database.
         public int? OpponentTeamId { get; set; }
         public Team OpponentTeam { get; set; }
 
-        /// <summary>Nombre del rival tal como aparece en Baseball‑Almanac, normalizado.</summary>
+        // Away Team Name as it appears on Baseball‑Almanac, normalized.
         [Required, MaxLength(100)]
         public string OpponentName { get; set; }
 
-        /// <summary>Marcador del partido (p. ej. "5-3").</summary>
         [MaxLength(20)]
         public string Score { get; set; }
 
-        /// <summary>Decisión: W (win) o L (loss).</summary>
+        // Decision: W (win) o L (loss).
         [MaxLength(2)]
         public string Decision { get; set; }
 
-        /// <summary>Récord acumulado tras el partido (p. ej. "7-3").</summary>
+        // Accumulated record after the match (e.g. "7-3").
         [MaxLength(20)]
         public string Record { get; set; }
     }
