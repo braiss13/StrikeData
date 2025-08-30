@@ -19,15 +19,16 @@ Este proyecto centraliza las estadísticas en una base de datos PostgreSQL, perm
 
 ## 📂 Estructura del proyecto
 
-StrikeData/
-├── Data/               # DbContext y configuración de EF Core
-├── Models/             # Entidades: Team, TeamStat, StatType...
-├── Services/           # Importadores y lógica de integración y scraping
-├── Pages/              # Razor Pages (UI)
-├── Migrations/         # Migraciones de la base de datos
-├── wwwroot/            # Archivos estáticos (CSS, JS, imágenes)
-├── Program.cs          # Configuración y arranque de la app
-└── appsettings.json    # Configuración global
+La organización de carpetas sigue una arquitectura sencilla para separar responsabilidades:
+
+- **`Data/`** → Configuración de Entity Framework Core y `AppDbContext`.  
+- **`Models/`** → Entidades de dominio (ej. `Team`, `TeamStat`, `StatType`).  
+- **`Services/`** → Lógica de negocio e importadores (MLB API, TeamRankings).  
+- **`Pages/`** → Páginas Razor que conforman la interfaz web.  
+- **`Migrations/`** → Migraciones generadas con EF Core para versionar la base de datos.  
+- **`wwwroot/`** → Archivos estáticos (CSS, JS, imágenes).  
+- **`Program.cs`** → Punto de entrada y configuración principal de la aplicación.  
+- **`appsettings.json`** → Configuración de la aplicación (cadenas de conexión, opciones, etc.).
 
 ---
 
