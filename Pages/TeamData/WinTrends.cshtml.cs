@@ -6,11 +6,11 @@ using StrikeData.Data;
 
 namespace StrikeData.Pages.TeamData
 {
-    /// <summary>
-    /// PageModel for the Win Trends page.
-    /// Loads the available trend types (from StatTypes in the WinTrends category),
-    /// applies the selected filter, and projects TeamStats into a lightweight row model.
-    /// </summary>
+    /*
+        PageModel for the Win Trends page.
+        Loads the available trend types (from StatTypes in the WinTrends category),
+        applies the selected filter, and projects TeamStats into a lightweight row model.
+    */
     public class WinTrendsModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -20,19 +20,13 @@ namespace StrikeData.Pages.TeamData
             _context = context;
         }
 
-        /// <summary>
-        /// Options for the stat-type <select> (Value/Text = StatType.Name).
-        /// </summary>
+        // Options for the stat-type <select> (Value/Text = StatType.Name).
         public List<SelectListItem> StatTypeOptions { get; set; } = new();
 
-        /// <summary>
-        /// Materialized rows for the current selection.
-        /// </summary>
+        // Materialized rows for the current selection.
         public List<WinTrendRow> Rows { get; private set; } = new();
 
-        /// <summary>
-        /// Two-way bound stat type name chosen by the user (via query string).
-        /// </summary>
+        // Two-way bound stat type name chosen by the user (via query string).
         [BindProperty(SupportsGet = true)]
         public string SelectedStatType { get; set; } = string.Empty;
 
@@ -81,9 +75,7 @@ namespace StrikeData.Pages.TeamData
             Rows = list;
         }
 
-        /// <summary>
-        /// Small DTO for rendering a table row (keeps the view simple).
-        /// </summary>
+        // Small DTO for rendering a table row (keeps the view simple).
         public class WinTrendRow
         {
             public string TeamName { get; set; } = "";

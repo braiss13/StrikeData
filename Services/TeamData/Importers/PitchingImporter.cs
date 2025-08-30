@@ -9,12 +9,12 @@ using StrikeData.Data.Extensions;
 
 namespace StrikeData.Services.TeamData.Importers
 {
-    /// <summary>
-    /// Imports team-level PITCHING statistics from two sources:
-    /// 1) MLB Stats API (season totals for core pitching metrics)
-    /// 2) TeamRankings (per-game "Current Season" values for selected metrics)
-    /// Data is written into StatType/TeamStat under the "Pitching" category.
-    /// </summary>
+    /*
+        Imports team-level PITCHING statistics from two sources:
+        1) MLB Stats API (season totals for core pitching metrics)
+        2) TeamRankings (per-game "Current Season" values for selected metrics)
+        Data is written into StatType/TeamStat under the "Pitching" category.
+    */
     public class PitchingImporter
     {
         // EF Core DbContext for persistence and a dedicated HttpClient for network I/O.
@@ -27,11 +27,11 @@ namespace StrikeData.Services.TeamData.Importers
             _httpClient = new HttpClient();
         }
 
-        /// <summary>
-        /// Entry point for loading all pitching stats:
-        /// 1) Pull MLB season totals
-        /// 2) Pull TeamRankings metrics (per-game, current season)
-        /// </summary>
+        /*
+            Entry point for loading all pitching stats:
+            1) Pull MLB season totals
+            2) Pull TeamRankings metrics (per-game, current season)
+        */
         public async Task ImportAllStatsAsyncP()
         {
             // Step 1: MLB provides authoritative season totals per team
@@ -44,10 +44,10 @@ namespace StrikeData.Services.TeamData.Importers
             }
         }
 
-        /// <summary>
-        /// Imports MLB team pitching stats and stores them as season totals.
-        /// Each JSON record corresponds to one team; values are mapped to our StatType abbreviations.
-        /// </summary>
+        /*
+            Imports MLB team pitching stats and stores them as season totals.
+            Each JSON record corresponds to one team; values are mapped to our StatType abbreviations.
+        */
         private async Task ImportTeamPitchingStatsMLB()
         {
             var statsArray = await FetchTeamPitchingStatsMLB();
@@ -151,25 +151,7 @@ namespace StrikeData.Services.TeamData.Importers
             }
         }
 
-        /// <summary>
-        /// Returns the Id of the "Pitching" category, creating it if necessary.
-        /// </summary>
-        private async Task<int> GetPitchingCategoryIdAsync()
-        {
-            var category = _context.StatCategories.FirstOrDefault(c => c.Name == "Pitching");
-            if (category == null)
-            {
-                category = new StatCategory { Name = "Pitching" };
-                _context.StatCategories.Add(category);
-                await _context.SaveChangesAsync();
-            }
-            return category.Id;
-        }
-
-        /// <summary>
-        /// Calls the MLB endpoint used by their public site to retrieve team pitching stats
-        /// for the 2025 regular season and returns the "stats" array.
-        /// </summary>
+        // Calls the MLB endpoint used by their public site to retrieve team pitching stats for the 2025 regular season and returns the "stats" array.
         private async Task<JArray> FetchTeamPitchingStatsMLB()
         {
             var url = "https://bdfed.stitch.mlbinfra.com/bdfed/stats/team?&env=prod&gameType=R&group=pitching&order=desc&sortStat=strikeouts&stats=season&season=2025&limit=30&offset=0";
@@ -184,10 +166,10 @@ namespace StrikeData.Services.TeamData.Importers
             return stats;
         }
 
-        /// <summary>
-        /// Imports one pitching metric from TeamRankings.
-        /// Only the "2025" column is read and stored as TeamStat.CurrentSeason.
-        /// </summary>
+        /*
+            Imports one pitching metric from TeamRankings.
+            Only the "2025" column is read and stored as TeamStat.CurrentSeason.
+        */
         private async Task ImportPitchingTeamStatTR(string statTypeName, string url)
         {
             var response = await _httpClient.GetStringAsync(url);

@@ -1,9 +1,9 @@
 namespace StrikeData.Services.Glossary
 {
-    /// <summary>
-    /// Distinct stat domains. Some abbreviations exist in multiple domains,
-    /// so the domain disambiguates the meaning (e.g., "AVG" team vs player).
-    /// </summary>
+    /*
+        Distinct stat domains. Some abbreviations exist in multiple domains,
+        so the domain disambiguates the meaning (e.g., "AVG" team vs player).
+    */
     public enum StatDomain
     {
         TeamHitting,
@@ -15,15 +15,13 @@ namespace StrikeData.Services.Glossary
         CuriousFacts
     }
 
-    /// <summary>
-    /// Display metadata for a stat: long name and user-facing description.
-    /// </summary>
+    // Display metadata for a stat: long name and user-facing description.
     public record StatText(string LongName, string Description);
 
-    /// <summary>
-    /// Centralized glossary providing long names and descriptions per domain/abbr.
-    /// Views retrieve this to render tooltips and human-readable headings.
-    /// </summary>
+    /*
+        Centralized glossary providing long names and descriptions per domain/abbr.
+        Views retrieve this to render tooltips and human-readable headings.
+    */
     public static class StatGlossary
     {
         // Per-domain maps. Keys are case-insensitive on abbreviations to match UI/API.
@@ -220,9 +218,7 @@ namespace StrikeData.Services.Glossary
             },
         };
 
-        /// <summary>
-        /// Tries to resolve a stat description for a given domain/abbreviation.
-        /// </summary>
+        // Tries to resolve a stat description for a given domain/abbreviation.
         public static bool TryGet(StatDomain domain, string abbr, out StatText text)
         {
             text = default!;
@@ -230,9 +226,7 @@ namespace StrikeData.Services.Glossary
             return map.TryGetValue(abbr, out text);
         }
 
-        /// <summary>
-        /// Returns the full map for a domain. Empty map when domain has no entries.
-        /// </summary>
+        // Returns the full map for a domain. Empty map when domain has no entries.
         public static IReadOnlyDictionary<string, StatText> GetMap(StatDomain domain)
             => _maps.TryGetValue(domain, out var map) ? map : new Dictionary<string, StatText>();
     }

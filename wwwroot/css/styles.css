@@ -1,14 +1,22 @@
-/* Reset */
+/* ===========================
+   Reset
+   - Remove default margins/padding
+   - Use border-box to make sizing predictable
+   =========================== */
 body, h1, p, a {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-/* General */
+/* ===========================
+   General page scaffold
+   - App-wide font and blue gradient background
+   - Flex column to push footer to the bottom
+   =========================== */
 body {
     font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #1e3a8a, #3b82f6); /* Degradado azul */
+    background: linear-gradient(135deg, #1e3a8a, #3b82f6); /* Blue gradient background */
     color: #f1f1f1;
     margin: 0;
     padding: 0;
@@ -18,35 +26,44 @@ body {
     justify-content: space-between;
 }
 
-/* Header más grande */
+/* ===========================
+   Header (taller for visual weight)
+   - Deep blue background with subtle shadow separation
+   =========================== */
 header {
-    background-color: #1e3a8a; /* Fondo azul oscuro */
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* Sombra sutil */
-    padding: 20px 0; /* Incrementamos el padding para hacerlo más alto */
+    background-color: #1e3a8a;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    padding: 20px 0; /* Increased height */
 }
 
-/* Centrar los enlaces dentro del header */
+/* Center navbar content both axis within header */
 header nav {
     display: flex;
-    justify-content: center; /* Centra horizontalmente */
-    align-items: center; /* Centra verticalmente */
+    justify-content: center;
+    align-items: center;
 }
 
-/* Estilo de los enlaces del header */
+/* ===========================
+   Header links
+   - Increase legibility and add hover contrast
+   =========================== */
 header nav a {
-    color: #93c5fd; /* Azul claro */
+    color: #93c5fd; /* Light blue for contrast over dark header */
     text-decoration: none;
     font-weight: 500;
-    margin: 0 15px; /* Espaciado entre enlaces */
-    transition: color 0.3s ease; /* Solo cambia el color al pasar el ratón */
-    font-size: 1.2em; /* Tamaño de fuente más grande para más legibilidad */
+    margin: 0 15px;
+    transition: color 0.3s ease;
+    font-size: 1.2em;
 }
 
 header nav a:hover {
-    color: #ffffff; /* Blanco al pasar el ratón */
+    color: #ffffff; /* Stronger contrast on hover */
 }
 
-/* Footer */
+/* ===========================
+   Footer
+   - Mirrors header palette and adds a top shadow
+   =========================== */
 footer {
     text-align: center;
     padding: 20px;
@@ -56,8 +73,10 @@ footer {
     box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.4);
 }
 
-
-/* Welcome Section */
+/* ===========================
+   Welcome (home hero)
+   - Centered content with bold typography and card-like image
+   =========================== */
 .welcome {
     text-align: center;
     padding: 60px 20px;
@@ -86,19 +105,21 @@ footer {
     text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
 }
 
+/* Primary CTA buttons row */
 .buttons {
     display: flex;
     justify-content: center;
     gap: 15px;
 }
 
+/* Primary button */
 .buttons .btn {
     display: inline-block;
     margin: 10px;
     padding: 12px 30px;
     font-size: 1.2em;
     color: #ffffff;
-    background-color: #2563eb; /* Azul vivo */
+    background-color: #2563eb; /* Vibrant blue */
     text-decoration: none;
     border-radius: 30px;
     box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.3);
@@ -107,14 +128,15 @@ footer {
 }
 
 .buttons .btn:hover {
-    background-color: #3b82f6; /* Azul claro */
+    background-color: #3b82f6; /* Lighter blue hover */
     transform: translateY(-3px);
     box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.4);
 }
 
+/* Secondary (outlined-like) button for alternative actions */
 .buttons .btn.secondary {
-    background-color: #93c5fd; /* Azul pálido */
-    color: #1e3a8a; /* Azul oscuro */
+    background-color: #93c5fd;  /* Pale blue background */
+    color: #1e3a8a;             /* Dark blue text for contrast */
     border: 2px solid #2563eb;
 }
 
@@ -123,6 +145,9 @@ footer {
     color: #ffffff;
 }
 
+/* ===========================
+   Toggle buttons for table modes (e.g., Basic/Advanced)
+   =========================== */
 .btn-stat-toggle {
     border-radius: 0.25rem;
     margin-right: 0.5rem;
@@ -132,11 +157,13 @@ footer {
     border: 1px solid transparent;
 }
 .btn-stat-toggle.inactive {
-    background-color: #6c757d; /* gris para el inactivo */
+    background-color: #6c757d; /* Gray for inactive state */
 }
 
-
-/* Estilos para las tablas */
+/* ===========================
+   Tables (shared look across pages)
+   - Centered, soft card visuals, zebra rows
+   =========================== */
 .table {
     width: 80%;
     margin: 20px auto;
@@ -144,59 +171,59 @@ footer {
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     background-color: #ffffff;
     border-radius: 10px;
-    overflow: hidden;
+    overflow: hidden; /* Clip inner corners */
 }
 
-/* Cambiar el color del encabezado de las tablas */
+/* Section subtitle above grouped tables/cards */
 .table-subtitle {
     text-align: left;
-    font-size: 1.8em; /* Tamaño más grande */
+    font-size: 1.8em;
     font-weight: bold;
     margin: 20px 0 10px 10px;
-    color: #00eeff; /* Naranja vivo */
-    text-transform: uppercase; /* Texto en mayúsculas */
-    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3); /* Sombra para destacar */
+    color: #00eeff;
+    text-transform: uppercase;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .table-subtitle .highlight {
-    color: #00eeff; /* Naranja más vivo */
+    color: #00eeff;
     font-weight: bold;
     text-decoration: underline;
 }
 
-
-/* Encabezado de la tabla */
+/* Table header: dark blue band */
 .table thead {
-    background-color: #1e40af; /* Azul oscuro */
-    color: #ffffff; /* Texto blanco */
+    background-color: #1e40af;
+    color: #ffffff;
     font-size: 1em;
     text-align: center;
 }
 
-/* Filas de la tabla */
+/* Zebra striping for readability */
 .table tbody tr:nth-child(odd) {
-    background-color: #f3f4f6; /* Gris claro */
+    background-color: #f3f4f6;
 }
-
 .table tbody tr:nth-child(even) {
-    background-color: #e5e7eb; /* Gris más claro */
+    background-color: #e5e7eb;
 }
 
-/* Tamaño y estilo de las celdas */
+/* Cell sizing and typography */
 .table td {
-    color: #374151; /* Gris oscuro */
-    font-size: 1em; /* Tamaño de texto más grande */
-    padding: 15px 20px; /* Más espacio en las celdas */
+    color: #374151;
+    font-size: 1em;
+    padding: 15px 20px;
     text-align: center;
 }
 
-/* Hover en filas */
+/* Row hover to highlight focus while scanning */
 .table tbody tr:hover {
-    background-color: #7dd3fc; /* Azul vivo al pasar el ratón */
+    background-color: #7dd3fc;
     transition: background-color 0.3s ease;
 }
 
-/* Estilo para el contenedor del selector de tabla */
+/* ===========================
+   Table selectors (dropdowns/buttons wrapper)
+   =========================== */
 .table-selector {
     text-align: center;
     margin: 20px 0;
@@ -209,6 +236,7 @@ footer {
     margin-right: 10px;
 }
 
+/* Generic dropdown look for light UI panels */
 .dropdown {
     padding: 8px 12px;
     font-size: 1em;
@@ -219,48 +247,49 @@ footer {
     cursor: pointer;
 }
 
-
+/* ===========================
+   Pitching tables: compact density
+   =========================== */
 .pitching-table {
     font-size: 0.85rem;
 }
 .pitching-table th,
 .pitching-table td {
     padding: 0.6rem 0.7rem;
-    white-space: nowrap; /* evita saltos de línea */
+    white-space: nowrap; /* Prevent wrapping of short stat tokens */
 }
 
-/* Ocultar tablas no seleccionadas */
+/* Utility to hide non-active tables/views */
 .hidden {
     display: none;
 }
 
-
-/* Estilo para el título general */
+/* ===========================
+   Page & Section titles
+   =========================== */
 .page-title {
     text-align: center;
     font-size: 3em;
     font-weight: bold;
     margin: 20px 0;
-    color: #ffffff; /* Blanco puro */
+    color: #ffffff;
     text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
 }
 
-
-/* Estilo para subtítulos */
 .section-title {
     text-align: center;
     font-size: 2em;
     font-weight: 700;
     margin: 20px 0;
-    color: #f1f1f1; /* Color oscuro para contraste */
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); /* Sombras para mejor visibilidad */
+    color: #f1f1f1;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* ------------------------------------------------------------- */
-/*                        Match pages styling                   */
-/* ------------------------------------------------------------- */
+/* -------------------------------------------------------------
+   Match pages styling
+   ------------------------------------------------------------- */
 
-/* Container for match cards */
+/* Grid wrapper for match cards; centers and gaps items responsively */
 .match-grid {
     display: flex;
     flex-wrap: wrap;
@@ -269,7 +298,7 @@ footer {
     padding: 1rem;
 }
 
-/* Individual match card */
+/* Single match card: elevated, clickable tile */
 .match-card {
     position: relative;
     background-color: #1e40af;
@@ -283,22 +312,19 @@ footer {
     overflow: hidden;
 }
 
-/* Hover effect on card */
 .match-card:hover {
     transform: translateY(-5px);
     background-color: #2563eb;
 }
 
-/* Teams line on the card */
+/* Teams row (top emphasis) */
 .match-card .teams {
     font-weight: bold;
     font-size: 1.2em;
     margin-bottom: 0.5rem;
 }
 
-/* Score line on the card is now handled by .result and .score classes */
-
-/* Venue information on the card */
+/* Venue row with icon for quick scanning */
 .match-card .venue {
     font-size: 0.9em;
     color: #93c5fd;
@@ -308,14 +334,13 @@ footer {
     margin-top: 0.4rem;
 }
 
-/* Location icon used in match cards and match summaries */
 .match-card .location-icon {
     margin-right: 0.4rem;
-    color: #fbbf24; /* Dorado para destacar la ubicación */
+    color: #fbbf24; /* Golden accent to highlight venue */
     font-size: 1.1em;
 }
 
-/* Final result line on the card */
+/* Final result focus line */
 .match-card .result {
     margin-top: 0.6rem;
     font-weight: 700;
@@ -323,13 +348,12 @@ footer {
     font-size: 1.4em;
 }
 
-/* Individual score numbers in result */
 .match-card .result .score {
     font-size: 1.6em;
     margin: 0 0.2rem;
 }
 
-/* Full-card clickable link */
+/* Absolute stretched link to make the whole card clickable */
 .match-card .stretched-link {
     position: absolute;
     top: 0;
@@ -339,35 +363,32 @@ footer {
     z-index: 1;
 }
 
-/* Match details page header has been refactored into match-summary-card */
+/* Header remnants (kept for backward compatibility) */
 .match-details-header h3 {
     color: #93c5fd;
     margin-bottom: 0.5rem;
 }
-
 .match-details-header p {
     color: #e5e7eb;
     margin: 4px 0;
 }
 
-/* Total row styling remains */
+/* Total row emphasis in summary tables */
 .table-summary {
     font-weight: bold;
     background-color: #f3f4f6;
 }
 
-/* Highlight cells for home and away statistics in match details tables */
-/* Colores de fondo para destacar las estadísticas de cada equipo en la tabla de detalles.
-   Se usa !important para sobrescribir los colores alternados de filas definidos más arriba. */
+/* Highlight columns for home/away stats in details tables
+   - !important ensures it beats zebra striping */
 .home-stat {
-    background-color: rgba(37, 99, 235, 0.12) !important; /* Azul suave para el equipo local */
+    background-color: rgba(37, 99, 235, 0.12) !important; /* Soft blue for home team */
 }
-
 .away-stat {
-    background-color: rgba(236, 162, 90, 0.15) !important; /* Naranja suave para el equipo visitante */
+    background-color: rgba(236, 162, 90, 0.15) !important; /* Soft orange for away team */
 }
 
-/* Match summary card used on details page */
+/* Summary block at the top of match details */
 .match-summary-card {
     background-color: rgba(255, 255, 255, 0.12);
     border-radius: 0.75rem;
@@ -388,18 +409,17 @@ footer {
     color: #ffffff;
     flex-wrap: wrap;
 }
-
 .match-summary-card .summary-top .team-name {
     font-weight: 700;
     font-size: 1.5rem;
 }
-
 .match-summary-card .summary-top .score-big {
     font-size: 2.5rem;
     font-weight: 700;
     color: #fbbf24;
 }
 
+/* Meta row with venue, date, etc. */
 .match-summary-card .meta-row {
     margin-top: 0.5rem;
     font-size: 0.9rem;
@@ -410,17 +430,16 @@ footer {
     gap: 1.5rem;
     flex-wrap: wrap;
 }
-
 .match-summary-card .meta-row .venue {
     display: flex;
     align-items: center;
 }
-
 .match-summary-card .meta-row .venue .location-icon {
     margin-right: 0.25rem;
     color: #fbbf24;
 }
 
+/* Compact records section */
 .match-summary-card .records-row {
     margin-top: 0.5rem;
     display: flex;
@@ -430,44 +449,38 @@ footer {
     font-size: 0.9rem;
     color: #e5e7eb;
 }
-
 .match-summary-card .records-row .record {
     white-space: nowrap;
 }
 
-/* Container for the back-to-matches button on the details page. 
-   Adds extra spacing below the button so it doesn't touch the footer. */
+/* Back button container on details page; add bottom spacing not to touch footer */
 .back-button-container {
     text-align: center;
     margin-top: 20px;
     margin-bottom: 40px;
 }
 
-/* 
-    Estilizado mejorado para inputs de fecha usados como dropdown.
-    Conserva el calendario nativo pero cambia colores y bordes para que
-    encaje con la paleta azul oscuro de la aplicación.
-    Solo se aplica a inputs type="date" con la clase .dropdown.
- */
-
+/* ===========================
+   Date dropdown refinement
+   - Re-skin native date input to match dark palette
+   =========================== */
 input[type="date"].dropdown {
-    background-color: #1e40af;  /* Fondo azul oscuro para integrarlo en el diseño */
-    color: #f1f1f1;             /* Texto claro */
-    border: 2px solid #2563eb;  /* Borde azul medio */
+    background-color: #1e40af;
+    color: #f1f1f1;
+    border: 2px solid #2563eb;
     padding: 0.6rem 0.8rem;
     border-radius: 0.375rem;
 }
 
-/* Invertir el icono nativo del calendario para que se vea sobre fondo oscuro */
+/* Invert native calendar icon for dark background visibility */
 input[type="date"].dropdown::-webkit-calendar-picker-indicator {
     filter: invert(1) sepia(1) saturate(5) hue-rotate(170deg);
 }
 
-/* ------------------------------------------------------------- */
-/*                  Team Pitching Definitions styling            */
-/* ------------------------------------------------------------- */
-
-/* ====== Estadísticas: tooltips en cabecera ====== */
+/* -------------------------------------------------------------
+   Team Pitching Definitions: header tooltips
+   - Small UX layer to show long names + descriptions
+   ------------------------------------------------------------- */
 .stat-head {
     position: relative;
     display: inline-flex;
@@ -475,7 +488,7 @@ input[type="date"].dropdown::-webkit-calendar-picker-indicator {
     gap: .4rem;
 }
 
-/* Tooltip oculto por defecto y posicionado sobre la cabecera */
+/* Hidden by default; positioned above header cell */
 .stat-head .stat-tooltip {
     display: none;
     position: absolute;
@@ -495,7 +508,7 @@ input[type="date"].dropdown::-webkit-calendar-picker-indicator {
     overflow-wrap: break-word;
 }
 
-/* Flecha que apunta hacia abajo (se muestra en la parte inferior del tooltip) */
+/* Downward pointing arrow for the tooltip */
 .stat-head .stat-tooltip::after {
     content: "";
     position: absolute;
@@ -507,7 +520,7 @@ input[type="date"].dropdown::-webkit-calendar-picker-indicator {
     border-color: #2563eb transparent transparent transparent;
 }
 
-/* Títulos y cuerpo del tooltip */
+/* Tooltip typography */
 .stat-tooltip-title {
     font-weight: 700;
     color: #93c5fd;
@@ -519,19 +532,19 @@ input[type="date"].dropdown::-webkit-calendar-picker-indicator {
     color: #e5e7eb;
 }
 
-/* Mostrar tooltip al pasar el ratón o al enfocar la abreviatura */
+/* Reveal tooltip on hover or keyboard focus */
 .stat-head:hover .stat-tooltip,
 .stat-head:focus-within .stat-tooltip {
     display: block;
 }
 
-/* Apariencia de la abreviatura: sin subrayado y con cursor tipo mano */
+/* Make stat abbreviation look interactive */
 .stat-head .stat-abbr {
     text-decoration: none;
     cursor: pointer;
 }
 
-/* Asegura que los tooltips no se recorten por el overflow de las tablas */
+/* Ensure tooltips are not clipped by table overflow */
 .table-with-tooltips {
     overflow: visible;
 }

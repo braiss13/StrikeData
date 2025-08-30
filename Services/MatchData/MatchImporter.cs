@@ -7,12 +7,11 @@ using StrikeData.Services.Normalization;
 
 namespace StrikeData.Services.MatchData
 {
-    /// <summary>
-    /// Importador de calendario y resultados de partidos desde la API de MLB.  
-    /// Descarga diariamente los partidos entre una fecha inicial y final,
-    /// guarda/actualiza la entidad Match y crea/actualiza las líneas por
-    /// entrada (MatchInning).
-    /// </summary>
+    /*
+        Imports schedule and final linescore data from MLB StatsAPI.
+        Iterates a date range (inclusive), upserts Match (one per gamePk),
+        and upserts per-inning lines (MatchInning).
+    */
     public class MatchImporter
     {
         private readonly AppDbContext _context;
@@ -21,21 +20,30 @@ namespace StrikeData.Services.MatchData
         public MatchImporter(AppDbContext context, HttpClient? httpClient = null)
         {
             _context = context;
+            // Using a shared HttpClient if provided; otherwise a lightweight new instance.
+            // If this importer runs frequently, consider injecting a single, long-lived HttpClient via DI.
             _httpClient = httpClient ?? new HttpClient();
         }
 
-        /// <summary>
-        /// Importa todos los partidos entre <paramref name="startDate"/> y
-        /// <paramref name="endDate"/> (inclusive).
-        /// </summary>
+        /*
+            Imports all games between <paramref name="startDate"/> and <paramref name="endDate"/> (inclusive).
+            
+            Implementation details:
+            - Builds the MLB schedule endpoint per day and hydrates "linescore".
+            - Upserts Match by gamePk and then the MatchInning collection.
+            - Uses a per-run in-memory dictionary (teamsByName) to avoid N+1 team lookups.
+            - Each daily batch is saved with a single SaveChangesAsync().
+        */
         public async Task ImportMatchesAsync(DateTime startDate, DateTime endDate)
         {
-            // Pre-cargar equipos existentes en diccionario por nombre para evitar múltiples consultas.
+            // Preload known teams by official Name for O(1) lookup; reduces DB chatter in the hot loop.
             var teamsByName = _context.Teams.ToDictionary(
                 t => t.Name, t => t, StringComparer.OrdinalIgnoreCase);
 
+            // Iterate calendar days inclusive.
             for (var date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
             {
+                // MLB StatsAPI expects ISO date yyyy-MM-dd in the "schedule" endpoint.
                 string dateParam = date.ToString("yyyy-MM-dd");
                 string url =
                     $"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={dateParam}&gameType=R&hydrate=linescore";
@@ -43,18 +51,21 @@ namespace StrikeData.Services.MatchData
                 string json;
                 try
                 {
+                    // Single GET per day; failures are non-fatal (skip the day and continue).
                     json = await _httpClient.GetStringAsync(url);
                 }
                 catch
                 {
-                    // Si la petición falla (problemas de red, etc.), salta al día siguiente
+                    // Network error or transient problem—skip to the next day.
                     continue;
                 }
 
+                // parse using System.Text.Json for speed and allocations control.
                 using var doc = JsonDocument.Parse(json);
                 if (!doc.RootElement.TryGetProperty("dates", out var datesArr) ||
                     datesArr.ValueKind != JsonValueKind.Array)
                 {
+                    // No "dates" array means no games or unexpected shape; skip.
                     continue;
                 }
 
@@ -63,6 +74,7 @@ namespace StrikeData.Services.MatchData
                     if (!dateEl.TryGetProperty("games", out var gamesArr) ||
                         gamesArr.ValueKind != JsonValueKind.Array)
                     {
+                        // No "games" array provided; nothing to do.
                         continue;
                     }
 
@@ -71,14 +83,17 @@ namespace StrikeData.Services.MatchData
                         long gamePk;
                         try
                         {
+                            // gamePk is the stable MLB game identifier. key our Match on this.
                             gamePk = gameEl.GetProperty("gamePk").GetInt64();
                         }
                         catch
                         {
+                            // Missing or invalid gamePk; skip this row safely.
                             continue;
                         }
 
-                        // Buscar el partido existente por GamePk (incluye las entradas).
+                        // Try to load an existing Match including child innings for in-place update.
+                        // Include() avoids lazy-load/N+1 and allows us to update the collection.
                         var match = _context.Matches
                             .Include(m => m.Innings)
                             .FirstOrDefault(m => m.GamePk == gamePk);
@@ -90,7 +105,8 @@ namespace StrikeData.Services.MatchData
                             _context.Matches.Add(match);
                         }
 
-                        // Fecha del partido.
+                        // Date / Time (stored as UTC) 
+                        // MLB sends "gameDate" with timezone info; parse with Assume/Adjust to UTC fallback.
                         string gameDateStr =
                             gameEl.GetProperty("gameDate").GetString() ?? dateParam;
                         DateTime gameDate;
@@ -100,18 +116,21 @@ namespace StrikeData.Services.MatchData
                                 DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal,
                                 out gameDate))
                         {
+                            // Defensive fallback: use the requested day if parsing fails.
                             gameDate = date;
                         }
+                        // Ensure save the value as UTC for consistent time queries.
                         match.Date = DateTime.SpecifyKind(gameDate, DateTimeKind.Utc);
 
-                        // Estadio.
+                        // ----- Venue (optional) -----
                         if (gameEl.TryGetProperty("venue", out var venueEl) &&
                             venueEl.TryGetProperty("name", out var venueNameEl))
                         {
                             match.Venue = venueNameEl.GetString() ?? match.Venue;
                         }
 
-                        // Equipos y récords.
+                        // ----- Teams & Records -----
+                        // Normalize team names to our canonical names (TeamNameNormalizer) and ensure both teams exist in DB using the in-memory cache.
                         var teamsEl = gameEl.GetProperty("teams");
                         var homeEl = teamsEl.GetProperty("home");
                         var awayEl = teamsEl.GetProperty("away");
@@ -124,7 +143,7 @@ namespace StrikeData.Services.MatchData
                         string normalizedHomeName = TeamNameNormalizer.Normalize(homeName);
                         string normalizedAwayName = TeamNameNormalizer.Normalize(awayName);
 
-                        // Asegurar equipos en la base de datos.
+                        // Upsert teams into the cache and DB if needed.
                         if (!teamsByName.TryGetValue(normalizedHomeName, out var homeTeam))
                         {
                             homeTeam = new Team { Name = normalizedHomeName };
@@ -140,7 +159,7 @@ namespace StrikeData.Services.MatchData
                         match.HomeTeamId = homeTeam.Id;
                         match.AwayTeamId = awayTeam.Id;
 
-                        // Récords de liga.
+                        // League record for each side at the time of the game.
                         var homeRecord = homeEl.GetProperty("leagueRecord");
                         var awayRecord = awayEl.GetProperty("leagueRecord");
                         match.HomeWins  = TryGetInt(homeRecord, "wins");
@@ -150,10 +169,11 @@ namespace StrikeData.Services.MatchData
                         match.AwayLosses= TryGetInt(awayRecord, "losses");
                         match.AwayPct   = TryGetDecimal(awayRecord, "pct");
 
-                        // Líneas de anotación.
+                        // ----- Linescore (totals + per-inning) -----
+                        // The "hydrate=linescore" ensures totals and an array per inning when available.
                         if (gameEl.TryGetProperty("linescore", out var linescore))
                         {
-                            // Totales finales.
+                            // Totals for each team (runs/hits/errors).
                             if (linescore.TryGetProperty("teams", out var lsTeams))
                             {
                                 match.HomeRuns   = TryGetInt(lsTeams.GetProperty("home"), "runs");
@@ -162,20 +182,23 @@ namespace StrikeData.Services.MatchData
                                 match.AwayRuns   = TryGetInt(lsTeams.GetProperty("away"), "runs");
                                 match.AwayHits   = TryGetInt(lsTeams.GetProperty("away"), "hits");
                                 match.AwayErrors = TryGetInt(lsTeams.GetProperty("away"), "errors");
-                                // Alias para compatibilidad: HomeScore/AwayScore.
+
+                                // Back-compat alias in our model (some views use HomeScore/AwayScore).
                                 match.HomeScore  = match.HomeRuns;
                                 match.AwayScore  = match.AwayRuns;
                             }
 
-                            // Detalle por entrada.
+                            // Per-inning details. Not all games have full inning data (e.g. postponed/shortened).
                             if (linescore.TryGetProperty("innings", out var inningsArr) &&
                                 inningsArr.ValueKind == JsonValueKind.Array)
                             {
+                                // Build an index of existing in-memory innings to update in place.
                                 var existingInnings = match.Innings.ToDictionary(
                                     mi => mi.InningNumber);
 
                                 foreach (var innEl in inningsArr.EnumerateArray())
                                 {
+                                    // inning "num" can be missing in some edge cases; guard and skip.
                                     int? inningNumber = TryGetInt(innEl, "num");
                                     if (inningNumber == null)
                                         continue;
@@ -196,6 +219,7 @@ namespace StrikeData.Services.MatchData
                                         awayErrorsInn= TryGetInt(awayInning, "errors");
                                     }
 
+                                    // Upsert the inning row within the aggregate Match.
                                     if (!existingInnings.TryGetValue(inningNumber.Value, out var mi))
                                     {
                                         mi = new MatchInning
@@ -219,14 +243,15 @@ namespace StrikeData.Services.MatchData
                     }
                 }
 
-                // Persistir cambios diarios.
+                // Persist all upserts for this daily batch.  This reduces DB roundtrips significantly.
                 await _context.SaveChangesAsync();
             }
         }
 
-        /// <summary>
-        /// Intenta extraer un int de un elemento JSON. Devuelve null si no existe o no es numérico.
-        /// </summary>
+        /*
+            Safely extracts an int from a JSON element property; returns null if missing or not numeric.
+            Accepts numbers and numeric strings for robustness.
+        */
         private static int? TryGetInt(JsonElement element, string propertyName)
         {
             if (!element.TryGetProperty(propertyName, out var prop))
@@ -239,9 +264,11 @@ namespace StrikeData.Services.MatchData
             return null;
         }
 
-        /// <summary>
-        /// Intenta extraer un decimal de un elemento JSON, eliminando el símbolo % si lo incluye.
-        /// </summary>
+        /*
+            Safely extracts a decimal from a JSON element property; returns null if missing or unparsable.
+            Handles both numeric and "%" suffixed strings (e.g. "0.542", "54.2%").
+            Parsed with InvariantCulture to avoid locale issues.
+        */
         private static decimal? TryGetDecimal(JsonElement element, string propertyName)
         {
             if (!element.TryGetProperty(propertyName, out var prop))
@@ -267,10 +294,15 @@ namespace StrikeData.Services.MatchData
             return null;
         }
 
-        /// <summary>
-        /// Importa todos los partidos de la temporada 2025 desde el 27 de marzo
-        /// hasta el día anterior a la fecha actual en el huso horario de Europa/Madrid.
-        /// </summary>
+        /*
+         Imports all 2025 regular season matches from Mar 27, 2025 up to
+         yesterday in the Europe/Madrid timezone (CEST/CET aware).
+         
+         Rationale:
+         - MLB games can end late at night local time; using a local "yesterday"
+           avoids importing partially completed current-day games.
+         - Convert local boundaries to UTC before querying the API.
+        */
         public async Task ImportSeasonMatchesAsync()
         {
             var madrid  = TimeZoneInfo.FindSystemTimeZoneById("Europe/Madrid");

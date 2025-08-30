@@ -6,9 +6,8 @@ using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.PlayerData
 {
-    /// <summary>
-    /// Imports the 40-man roster for all MLB teams (season 2025) and upserts Player records.
-    /// </summary>
+    
+    // Imports the 40-man roster for all MLB teams (season 2025) and upserts Player records.
     public class PlayerRosterImporter
     {
         private readonly AppDbContext _context;
@@ -20,9 +19,8 @@ namespace StrikeData.Services.PlayerData
             _httpClient = new HttpClient(); // In production, prefer IHttpClientFactory
         }
 
-        /// <summary>
-        /// Imports 40-man rosters for the 30 MLB teams and performs upserts into Players.
-        /// </summary>
+        // Imports 40-man rosters for the 30 MLB teams and performs upserts into Players.
+        
         public async Task ImportAllPlayersAsync()
         {
             // Cache Teams by name (case-insensitive)

@@ -7,10 +7,10 @@ using StrikeData.Services.Glossary;
 
 namespace StrikeData.Pages.PlayerData
 {
-    /// <summary>
-    /// Razor PageModel for listing per-player fielding metrics by team.
-    /// Loads glossary metadata and PlayerStats for the "Fielding" category.
-    /// </summary>
+    /*
+        Razor PageModel for listing per-player fielding metrics by team.
+        Loads glossary metadata and PlayerStats for the "Fielding" category.
+    */
     public class FieldingModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -61,9 +61,7 @@ namespace StrikeData.Pages.PlayerData
                 new(StringComparer.OrdinalIgnoreCase);
         }
 
-        /// <summary>
-        /// Populates StatMeta from the central glossary for the fixed Columns list.
-        /// </summary>
+        // Populates StatMeta from the central glossary for the fixed Columns list.
         private void InitStatMeta()
         {
             StatMeta.Clear();

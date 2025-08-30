@@ -6,6 +6,10 @@
 
 <h2 class="section-title">Regular Season Matches</h2>
 
+<!-- 
+  Date selector (client sends yyyy-MM-dd). The PageModel normalizes and reflects
+  the selected date back to the input. Auto-submit on change to refresh.
+-->
 <form method="get" class="date-selector" style="text-align:center; margin-bottom:20px;">
     <label asp-for="SelectedDate" class="dropdown-label">Select date (CEST):</label>
     <input type="date" asp-for="SelectedDate" class="dropdown" onchange="this.form.submit()" />
@@ -13,20 +17,30 @@
 
 @if (Model.Matches == null || !Model.Matches.Any())
 {
+    <!-- Empty state: give a clear UX cue when no matches exist for the chosen date -->
     <p style="text-align:center; color:#fff;">No matches found for this date.</p>
 }
 else
 {
+    <!-- 
+      Grid of match cards:
+      - Each card shows Away vs Home, venue, and final score
+      - The stretched link makes the whole card clickable (details page)
+    -->
     <div class="match-grid">
     @foreach (var match in Model.Matches)
     {
         <div class="match-card">
-            <!-- Nombres de los equipos -->
+            <!-- Team names (keep short; full names are used) -->
             <div class="teams">@match.AwayTeam vs @match.HomeTeam</div>
-            <!-- Lugar del encuentro -->
+
+            <!-- Venue with location icon  -->
             <div class="venue"><span class="location-icon">📍</span>@match.Venue</div>
-            <!-- Resultado final destacado -->
+
+            <!-- Final score highlighted for quick scanning -->
             <div class="result"><span class="score">@match.AwayRuns</span> - <span class="score">@match.HomeRuns</span></div>
+
+            <!-- Full-card clickable area to reach the details page -->
             <a asp-page="Details" asp-route-id="@match.Id" class="stretched-link"></a>
         </div>
     }

@@ -2,7 +2,7 @@
 @model StrikeData.Pages.PlayerData.FieldingModel
 
 @{
-    // Page title for layout and browser tab
+    @* Page title for layout and browser tabs *@
     ViewData["Title"] = "Players – Fielding";
 }
 
@@ -65,7 +65,7 @@
                 }
                 else
                 {
-                    // Render a clean header even when the glossary lacks a description
+                    @* Render a clean header even when the glossary lacks a description *@
                     <th>
                         <span class="stat-head">
                             <span class="stat-abbr"
@@ -81,7 +81,7 @@
 
     <tbody>
     @{
-        // 1-based row numbering for readability
+        @* 1-based row numbering for readability *@
         int index = 1;
 
         if (Model.Rows != null && Model.Rows.Count > 0)
@@ -123,7 +123,7 @@
         }
         else
         {
-            // Empty state uses a dynamic colspan: 3 fixed columns + N metrics
+            @* Empty state uses a dynamic colspan: 3 fixed columns + N metrics *@
             <tr>
                 <td colspan="@(3 + Model.VisibleColumns.Count)" style="text-align:center;">
                     No data available

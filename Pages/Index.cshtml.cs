@@ -7,9 +7,11 @@ using StrikeData.Services.TeamData.Scrapers;
 
 namespace StrikeData.Pages
 {
+    /// Home page model that triggers *full data imports* when accessed.
     public class IndexModel : PageModel
     {
-        #region Importadores de estadísticas de equipos
+        #region Team Stat Importers
+        // TEAM importers: responsible for different stat categories and schedule.
         private readonly HittingImporter _hitting_importer;
         private readonly PitchingImporter _pitching_importer;
         private readonly FieldingImporter _fielding_importer;
@@ -18,63 +20,97 @@ namespace StrikeData.Pages
         private readonly WinTrendsImporter _wintrends_importer;
         #endregion
 
-        #region Importadores de jugadores
+        #region Player Stat Importers
+        // PLAYER importers: roster + season stats, and player fielding by team.
         private readonly PlayerStatsImporter _playerStatsImporter;
         private readonly PlayerFieldingImporter _playerFieldingImporter;
         #endregion
 
+        #region Matches Importer
+        // Matches importer: pulls schedule + linescore + per-inning details from MLB API.
         private readonly MatchImporter _matchImporter;
+        #endregion
 
         public IndexModel(AppDbContext context)
         {
-            #region Inicialización de importadores (TEAM)
-            _hitting_importer   = new HittingImporter(context);
-            _pitching_importer  = new PitchingImporter(context);
-            _fielding_importer  = new FieldingImporter(context);
+            #region Importer Inicialization (TEAM)
+            // NOTE: These importers each create and manage their own HttpClient unless otherwise injected.
+            // They read/write via the shared EF Core DbContext injected into this page model.
+            _hitting_importer = new HittingImporter(context);
+            _pitching_importer = new PitchingImporter(context);
+            _fielding_importer = new FieldingImporter(context);
 
-            // Un único HttpClient para ambos scrapers
+            // Reuse a single HttpClient instance for all HTTP-based scrapers in this request scope.
+            // This helps prevent socket exhaustion and improves performance.
             var httpClient = new HttpClient();
 
-            // Scraper + importador de Schedule (teams)
+            // Team schedule scraper requires an HttpClient. Pass the shared instance.
             var teamScheduleScraper = new TeamScheduleScraper(httpClient);
-            _schedule_importer      = new TeamScheduleImporter(context, teamScheduleScraper);
+            _schedule_importer = new TeamScheduleImporter(context, teamScheduleScraper);
 
-            _curious_importer    = new CuriousFactsImporter(context);
-            _wintrends_importer  = new WinTrendsImporter(context);
+            _curious_importer = new CuriousFactsImporter(context);
+            _wintrends_importer = new WinTrendsImporter(context);
             #endregion
 
-            #region Inicialización de importadores (PLAYERS)
-            _playerStatsImporter     = new PlayerStatsImporter(context); // roster + (hitting/pitching) season
-            // scraper + importador de fielding (players)
+            #region Importer Inicialization (PLAYERS)
+            // Pulls rosters and (hitting/pitching) season stats for all players.
+            _playerStatsImporter = new PlayerStatsImporter(context);
+
+            // Player fielding scraper uses the shared HttpClient. Importer coordinates persistence.
             var playerFieldingScraper = new PlayerFieldingScraper(httpClient);
-            _playerFieldingImporter   = new PlayerFieldingImporter(context, playerFieldingScraper);
+            _playerFieldingImporter = new PlayerFieldingImporter(context, playerFieldingScraper);
             #endregion
 
-            // Importador de partidos
+            #region Matches Importer Initialization
+            // Matches importer (uses the shared HttpClient to call MLB StatsAPI).
             _matchImporter = new MatchImporter(context, httpClient);
+            #endregion
         }
 
+        /*
+            Handles GET by running all importers sequentially.
+            
+            Execution order rationale:
+            1) Team stat categories (hitting, pitching, fielding) to populate core aggregates.
+            2) Team schedule (games and splits), then derived categories (curious facts, win trends)
+                which may assume teams already exist.
+            3) Player imports (roster + stats, then player fielding) so team references and rosters align.
+            4) Match importer (season to date) last, as it writes many records and benefits from existing teams.
+        */
         public async Task OnGetAsync()
         {
-            // #region Importadores de estadísticas de equipos
-            // await _hitting_importer.ImportAllStatsAsyncH();
-            // await _pitching_importer.ImportAllStatsAsyncP();
-            // await _fielding_importer.ImportAllStatsAsyncF();
-            // await _schedule_importer.ImportAllTeamsScheduleAsync(2025);
-            // await _curious_importer.ImportAllStatsAsyncCF();
-            // await _wintrends_importer.ImportAllStatsAsyncWT();
-            // #endregion
+            #region Team Stat Importers
+            // MLB + TeamRankings: aggregates per team for the Hitting category.
+            await _hitting_importer.ImportAllStatsAsyncH();
 
-            // #region Importadores de jugadores
-            // // 1) Roster + stats (hitting/pitching) para todos los jugadores
-            // await _playerStatsImporter.ImportAllPlayersAndStatsAsync(2025);
+            // MLB + TeamRankings: aggregates per team for the Pitching category.
+            await _pitching_importer.ImportAllStatsAsyncP();
 
-            // // 2) Fielding de jugadores (por equipo; sólo primera tabla; sólo si el jugador existe)
-            // await _playerFieldingImporter.ImportAllTeamsPlayerFieldingAsync(2025);
-            // #endregion
+            // TeamRankings: aggregates per team for the Fielding category.
+            await _fielding_importer.ImportAllStatsAsyncF();
 
-            // // Importador de partidos (desde 2025-03-27 hasta ayer)
-            // await _matchImporter.ImportSeasonMatchesAsync();
+            // Baseball Almanac: team schedule + monthly and vs-opponent splits for the given season.
+            await _schedule_importer.ImportAllTeamsScheduleAsync(2025);
+
+            // TeamRankings: curious facts by perspective (team/opponent). Depends on teams existing.
+            await _curious_importer.ImportAllStatsAsyncCF();
+
+            // TeamRankings: win trends (record and win%). Depends on teams existing.
+            await _wintrends_importer.ImportAllStatsAsyncWT();
+            #endregion
+
+            #region Player Stat Importers
+            // (1) Roster + player season stats (hitting/pitching) for all teams.
+            await _playerStatsImporter.ImportAllPlayersAndStatsAsync(2025);
+
+            // (2) Player fielding (first table per team; only if player already exists).
+            await _playerFieldingImporter.ImportAllTeamsPlayerFieldingAsync(2025);
+            #endregion
+
+            #region Matches Importer
+            // MLB StatsAPI: season matches from 2025-03-27 through "yesterday" in Europe/Madrid TZ.
+            await _matchImporter.ImportSeasonMatchesAsync();
+            #endregion
         }
     }
 }

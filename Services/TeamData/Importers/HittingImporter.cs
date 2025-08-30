@@ -9,12 +9,12 @@ using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.TeamData.Importers
 {
-    /// <summary>
-    /// Imports team-level HITTING statistics from two sources:
-    /// 1) MLB Stats API (season totals + games count)
-    /// 2) TeamRankings (per-game splits such as current season, last N, home/away)
-    /// Results are persisted into StatType/TeamStat under the "Hitting" category.
-    /// </summary>
+    /*
+        Imports team-level HITTING statistics from two sources:
+        1) MLB Stats API (season totals + games count)
+        2) TeamRankings (per-game splits such as current season, last N, home/away)
+        Results are persisted into StatType/TeamStat under the "Hitting" category.
+    */
     public class HittingImporter
     {
         // Data access for persistence and an HttpClient for outbound fetches.
@@ -29,11 +29,11 @@ namespace StrikeData.Services.TeamData.Importers
             _httpClient = new HttpClient();
         }
 
-        /// <summary>
-        /// Orchestrates the import of all team-level hitting stats:
-        /// 1) Loads MLB season totals (and Games) per team
-        /// 2) Loads TeamRankings per-game splits for each hitting metric
-        /// </summary>
+        /*
+            Orchestrates the import of all team-level hitting stats:
+            1) Loads MLB season totals (and Games) per team
+            2) Loads TeamRankings per-game splits for each hitting metric
+        */
         public async Task ImportAllStatsAsyncH()
         {
             // Step 1: totals and games from MLB (authoritative for season aggregates)
@@ -46,10 +46,10 @@ namespace StrikeData.Services.TeamData.Importers
             }
         }
 
-        /// <summary>
-        /// Imports MLB season totals for hitting (one record per team).
-        /// MLB provides team "Games" and aggregated totals for core batting stats.
-        /// </summary>
+        /*
+            Imports MLB season totals for hitting (one record per team).
+            MLB provides team "Games" and aggregated totals for core batting stats.
+        */
         private async Task ImportHittingTeamStatsMLB()
         {
             // Fetch raw array from MLB (each element corresponds to one team)
@@ -140,7 +140,7 @@ namespace StrikeData.Services.TeamData.Importers
                     var statType = _context.StatTypes.FirstOrDefault(s => s.Name == shortName);
                     if (statType == null)
                     {
-                        // Create in the Hitting category the first time we see it
+                        // Create in the Hitting category the first time see it
                         statType = new StatType { Name = shortName };
                         statType = new StatType { Name = shortName, StatCategoryId = hittingCategoryId };
                         _context.StatTypes.Add(statType);
@@ -163,26 +163,11 @@ namespace StrikeData.Services.TeamData.Importers
             await _context.SaveChangesAsync();
         }
 
-        /// <summary>
-        /// Ensures the "Hitting" StatCategory exists and returns its Id.
-        /// </summary>
-        private async Task<int> GetHittingCategoryIdAsync()
-        {
-            var category = _context.StatCategories.FirstOrDefault(c => c.Name == "Hitting");
-            if (category == null)
-            {
-                category = new StatCategory { Name = "Hitting" };
-                _context.StatCategories.Add(category);
-                await _context.SaveChangesAsync();
-            }
-            return category.Id;
-        }
-
-        /// <summary>
-        /// Calls MLB Stats API (internal stitch endpoint used by MLB sites) to obtain
-        /// the team-level hitting stats for the 2025 regular season.
-        /// Returns the "stats" array as a JArray for further processing.
-        /// </summary>
+        /*
+            Calls MLB Stats API (internal stitch endpoint used by MLB sites) to obtain
+            the team-level hitting stats for the 2025 regular season.
+            Returns the "stats" array as a JArray for further processing.
+        */
         private async Task<JArray> FetchTeamHittingStatsMLB()
         {
             // Network-captured endpoint used by MLB pages to fetch season team stats
@@ -207,11 +192,11 @@ namespace StrikeData.Services.TeamData.Importers
         // ========== SECTION: TEAM RANKINGS STATISTICS ===================
         // ================================================================
 
-        /// <summary>
-        /// Imports a single TeamRankings hitting metric (identified by <paramref statTypeName>)
-        /// from the provided <paramref url>. TeamRankings supplies per-game splits:
-        /// CurrentSeason, Last3Games, LastGame, Home, Away, PrevSeason.
-        /// </summary>
+        /*
+            Imports a single TeamRankings hitting metric (identified by <paramref statTypeName>)
+            from the provided <paramref url>. TeamRankings supplies per-game splits:
+            CurrentSeason, Last3Games, LastGame, Home, Away, PrevSeason.
+        */
         public async Task ImportHittingTeamStatsTR(string statTypeName, string url)
         {
             // Download the HTML page and load it into a DOM for parsing
@@ -292,11 +277,11 @@ namespace StrikeData.Services.TeamData.Importers
             await _context.SaveChangesAsync();
         }
 
-        /// <summary>
-        /// Computes TeamStats.Total for TR-only metrics by multiplying
-        /// the per-game CurrentSeason value by the number of Games stored on Team.
-        /// Only applies to specific metrics that are not delivered as totals by MLB.
-        /// </summary>
+        /*
+            Computes TeamStats.Total for TR-only metrics by multiplying
+            the per-game CurrentSeason value by the number of Games stored on Team.
+            Only applies to specific metrics that are not delivered as totals by MLB.
+        */
         private static void CalculateTotal(string statTypeName, Team team, TeamStat stat)
         {
             // Only compute TOTALS for these TR metrics (others already come as MLB totals)

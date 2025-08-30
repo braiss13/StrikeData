@@ -5,11 +5,11 @@ using StrikeData.Services.Glossary;
 
 namespace StrikeData.Pages.TeamData
 {
-    /// <summary>
-    /// PageModel for the team-level Pitching view.
-    /// Exposes two sets of abbreviations (Basic and Advanced), loads the corresponding
-    /// values for each team, and provides glossary metadata used by the Razor view.
-    /// </summary>
+    /*
+        PageModel for the team-level Pitching view.
+        Exposes two sets of abbreviations (Basic and Advanced), loads the corresponding
+        values for each team, and provides glossary metadata used by the Razor view.
+    */
     public class PitchingModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -29,9 +29,7 @@ namespace StrikeData.Pages.TeamData
         // Tooltip metadata keyed by abbreviation (long name + description).
         public Dictionary<string, StatInfo> StatMeta { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
 
-        /// <summary>
-        /// Optional diagnostics used during development (e.g., counts/first row).
-        /// </summary>
+        // Optional diagnostics used during development (e.g., counts/first row).
         public string DebugInfo { get; private set; } = string.Empty;
 
         public class StatInfo
@@ -40,10 +38,10 @@ namespace StrikeData.Pages.TeamData
             public string Description { get; set; } = "";
         }
 
-        /// <summary>
-        /// Fills StatMeta using the central glossary (TeamPitching) for all abbreviations
-        /// present in BasicStatNames and AdvancedStatNames.
-        /// </summary>
+        /*
+            Fills StatMeta using the central glossary (TeamPitching) for all abbreviations
+            present in BasicStatNames and AdvancedStatNames.
+        */
         private void InitStatMeta()
         {
             StatMeta.Clear();
@@ -135,9 +133,11 @@ namespace StrikeData.Pages.TeamData
 
                         if (ts != null)
                         {
-                            // Convention:
-                            // - MLB values are season aggregates -> stored in Total
-                            // - TeamRankings values are per-game -> stored in CurrentSeason
+                            /*
+                                Convention:
+                                - MLB values are season aggregates -> stored in Total
+                                - TeamRankings values are per-game -> stored in CurrentSeason
+                            */
                             value = ts.Total ?? ts.CurrentSeason;
                         }
 

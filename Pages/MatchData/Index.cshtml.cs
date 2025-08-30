@@ -5,11 +5,10 @@ using StrikeData.Data;
 
 namespace StrikeData.Pages.MatchData
 {
-    /// <summary>
-    /// Page model for displaying a list of matches for a given date.  The page
-    /// defaults to showing yesterday's games in the Europe/Madrid timezone if
-    /// no date is provided.  Each match card links to a details view.
-    /// </summary>
+    /*  Page model that lists matches for a selected date.
+        Defaults to "yesterday" in Europe/Madrid if no date is provided.
+        Each item is a small projection suitable for the card layout.
+    */
     public class IndexModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -19,18 +18,11 @@ namespace StrikeData.Pages.MatchData
             _context = context;
         }
 
-        /// <summary>
-        /// Date selected by the user via query string.  This value is bound
-        /// on GET requests only.  The time component is ignored.
-        /// </summary>
+        /// Bound date from query string (yyyy-MM-dd). use only the date part.
         [BindProperty(SupportsGet = true)]
         public DateTime? SelectedDate { get; set; }
 
-        /// <summary>
-        /// A lightweight projection of the Match entity used to populate
-        /// the cards on the index page.  Includes team names, runs and
-        /// venue information.
-        /// </summary>
+        /// Lightweight projection used by the view to render cards. Keeps data transfer small.
         public List<MatchSummary> Matches { get; private set; } = new();
 
         public class MatchSummary
@@ -46,23 +38,24 @@ namespace StrikeData.Pages.MatchData
 
         public async Task OnGetAsync()
         {
-            // Determine the date we need to query.  If a date is provided, use
-            // its date portion.  Otherwise default to yesterday based on the
-            // Europe/Madrid timezone.
+
+            /*  Determine the target local date:
+                - If a date query is provided, use that
+                - Otherwise default to "yesterday" in Europe/Madrid to avoid same-day partial results
+            */
             var madrid = TimeZoneInfo.FindSystemTimeZoneById("Europe/Madrid");
             var todayLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, madrid).Date;
             var selectedLocalDate = SelectedDate?.Date ?? todayLocal.AddDays(-1);
 
-            // Reflect back the normalized selected date so it binds back into the
-            // date input correctly on post-back.
+            // Reflect the normalized date back to the form field.
             SelectedDate = selectedLocalDate;
 
-            // Convert the local date boundaries to UTC for comparison in the database.
+            // Translate local day boundaries to UTC to query by Match.Date (stored in UTC).
             var startUtc = TimeZoneInfo.ConvertTimeToUtc(selectedLocalDate, madrid);
             var endUtc = TimeZoneInfo.ConvertTimeToUtc(selectedLocalDate.AddDays(1), madrid);
 
-            // Query matches that start within the selected local day.  Bring
-            // related team information into the query to avoid n+1 lookups.
+            // Query matches starting within the chosen local day. Include team names for display.
+            // AsNoTracking for read-only improves performance and reduces memory overhead.
             var matches = await _context.Matches
                 .Include(m => m.HomeTeam)
                 .Include(m => m.AwayTeam)
@@ -70,6 +63,7 @@ namespace StrikeData.Pages.MatchData
                 .Where(m => m.Date >= startUtc && m.Date < endUtc)
                 .ToListAsync();
 
+            // Project to a compact view model sorted by team names for stable ordering.
             Matches = matches
                 .Select(m => new MatchSummary
                 {

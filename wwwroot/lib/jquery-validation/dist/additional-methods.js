@@ -78,7 +78,7 @@ $.validator.addMethod( "abaRoutingNumber", function( value ) {
 // Accept a value from a file input based on a required mimetype
 $.validator.addMethod( "accept", function( value, element, param ) {
 
-	// Split mime on commas in case we have multiple types we can accept
+	// Split mime on commas in case have multiple types can accept
 	var typeParam = typeof param === "string" ? param.replace( /\s/g, "" ) : "image/*",
 		optionalValue = this.optional( element ),
 		i, file, regex;
@@ -124,7 +124,7 @@ $.validator.addMethod( "alphanumeric", function( value, element ) {
 /*
  * Dutch bank account numbers (not 'giro' numbers) have 9 digits
  * and pass the '11 check'.
- * We accept the notation with spaces, as that is common.
+ * accept the notation with spaces, as that is common.
  * acceptable: 123456789 or 12 34 56 789
  */
 $.validator.addMethod( "bankaccountNL", function( value, element ) {
@@ -259,7 +259,7 @@ $.validator.addMethod( "cifES", function( value, element ) {
 			// Odd positions are multiplied first.
 			n *= 2;
 
-			// If the multiplication is bigger than 10 we need to adjust
+			// If the multiplication is bigger than 10 need to adjust
 			odd_sum += n < 10 ? n : n - 9;
 
 		// Even positions
@@ -820,7 +820,7 @@ $.validator.addMethod( "iban", function( value, element ) {
 	bbanpattern = bbancountrypatterns[ countrycode ];
 
 	// As new countries will start using IBAN in the
-	// future, we only check if the countrycode is known.
+	// future, only check if the countrycode is known.
 	// This prevents false negatives, while almost all
 	// false positives introduced by this, will be caught
 	// by the checksum validation below anyway.

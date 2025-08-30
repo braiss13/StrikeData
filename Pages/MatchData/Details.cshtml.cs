@@ -6,11 +6,10 @@ using StrikeData.Models;
 
 namespace StrikeData.Pages.MatchData
 {
-    /// <summary>
-    /// Page model for displaying the details of a single match.  Shows per-inning
-    /// statistics along with the final score and each team's record at the
-    /// time of the game.  If the match is not found, returns a 404.
-    /// </summary>
+    /*  Page model that renders a single match with its per-inning breakdown.
+      - Loads Match by PK including HomeTeam, AwayTeam, and Innings.
+      - If not found, returns 404.
+    */
     public class DetailsModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -20,19 +19,13 @@ namespace StrikeData.Pages.MatchData
             _context = context;
         }
 
-        /// <summary>
-        /// The full match entity including team and inning navigations.
-        /// </summary>
+        // The full match entity including team and inning navigations.
         public Match? Match { get; set; }
 
-        /// <summary>
-        /// A collection of inning rows used to render the table on the page.
-        /// </summary>
+        // Projection used to render the per-inning table compactly.
         public List<InningRow> InningRows { get; private set; } = new();
 
-        /// <summary>
-        /// Simple projection of a MatchInning used for display.
-        /// </summary>
+        /// Presentation model for a single inning line.
         public class InningRow
         {
             public int InningNumber { get; set; }
@@ -46,7 +39,7 @@ namespace StrikeData.Pages.MatchData
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
-            // Load the match by its primary key and include the related teams and innings.
+            // Fetch match by primary key. Include() reduces extra DB roundtrips.
             Match = await _context.Matches
                 .Include(m => m.HomeTeam)
                 .Include(m => m.AwayTeam)
@@ -56,10 +49,11 @@ namespace StrikeData.Pages.MatchData
 
             if (Match == null)
             {
+                // Return a proper 404 if the match does not exist.
                 return NotFound();
             }
 
-            // Project each inning into a row for the table, ordered by inning number.
+            // Order innings ascending and project to the presentation model.
             InningRows = Match.Innings
                 .OrderBy(i => i.InningNumber)
                 .Select(i => new InningRow

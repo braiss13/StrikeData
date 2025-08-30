@@ -8,11 +8,11 @@ using StrikeData.Services.Glossary;
 
 namespace StrikeData.Pages.TeamData
 {
-    /// <summary>
-    /// PageModel for the team-level Hitting view.
-    /// Loads available Hitting StatTypes, exposes a filterable list of TeamStats,
-    /// and provides glossary descriptions for the selected stat (for UI tooltips/explanations).
-    /// </summary>
+    /*
+        PageModel for the team-level Hitting view.
+        Loads available Hitting StatTypes, exposes a filterable list of TeamStats,
+        and provides glossary descriptions for the selected stat (for UI tooltips/explanations).
+    */
     public class HittingModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -22,33 +22,28 @@ namespace StrikeData.Pages.TeamData
             _context = context;
         }
 
-        /// <summary>
-        /// Bound query parameter for the selected StatType in the dropdown.
-        /// Null (or empty) means "All".
-        /// </summary>
+        /*
+            Bound query parameter for the selected StatType in the dropdown.
+            Null (or empty) means "All".
+        */
         [BindProperty(SupportsGet = true)]
         public int? SelectedStatTypeId { get; set; }
 
-        /// <summary>
-        /// All hitting StatTypes loaded from the database (category = "Hitting").
-        /// </summary>
+        // All hitting StatTypes loaded from the database (category = "Hitting").
         public List<StatType> StatTypes { get; set; } = new();
 
-        /// <summary>
-        /// TeamStat rows to be displayed in the table. Filtered by SelectedStatTypeId if provided.
-        /// </summary>
+        // TeamStat rows to be displayed in the table. Filtered by SelectedStatTypeId if provided.
         public List<TeamStat> TeamStats { get; set; } = new();
 
-        /// <summary>
-        /// Options for the <select> element (value = StatType.Id, text = StatType.Name).
-        /// </summary>
+        // Options for the <select> element (value = StatType.Id, text = StatType.Name).
         public List<SelectListItem> StatOptions { get; set; } = new();
 
-        /// <summary>
-        /// Maps StatType.Id (as string, matching the select's value) to the glossary description text.
-        /// Used by the client-side script to display an explanation of the chosen stat.
-        /// </summary>
+        /*
+            Maps StatType.Id (as string, matching the select's value) to the glossary description text.
+            Used by the client-side script to display an explanation of the chosen stat.
+        */
         public Dictionary<string, string> StatDescriptions { get; private set; } = new();
+
 
         public async Task OnGetAsync()
         {

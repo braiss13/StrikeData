@@ -120,7 +120,7 @@
             .addClass("field-validation-valid")
             .removeClass("field-validation-error")
             .removeData("unobtrusiveContainer")
-            .find(">*")  // If we were using valmsg-replace, get the underlying error
+            .find(">*")  // If were using valmsg-replace, get the underlying error
             .removeData("unobtrusiveContainer");
     }
 
@@ -364,7 +364,7 @@
         adapters.addSingleVal("extension", "extension");
     } else {
         // for backward compatibility, when the 'extension' validation method does not exist, such as with versions
-        // of JQuery Validation plugin prior to 1.10, we should use the 'accept' method for
+        // of JQuery Validation plugin prior to 1.10, should use the 'accept' method for
         // validating the extension, and ignore mime-type validations as they are not supported.
         adapters.addSingleVal("extension", "extension", "accept");
     }

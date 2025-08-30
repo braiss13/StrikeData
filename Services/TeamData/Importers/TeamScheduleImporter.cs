@@ -8,11 +8,11 @@ using StrikeData.Services.TeamData.Scrapers;
 
 namespace StrikeData.Services.TeamData.Importers
 {
-    /// <summary>
-    /// Imports team schedules and split summaries for an entire season
-    /// using Baseball Almanac pages (via TeamScheduleScraper).
-    /// Persists: TeamGames (per game), TeamMonthlySplits (per month), TeamOpponentSplits (per opponent).
-    /// </summary>
+    /*
+        Imports team schedules and split summaries for an entire season
+        using Baseball Almanac pages (via TeamScheduleScraper).
+        Persists: TeamGames (per game), TeamMonthlySplits (per month), TeamOpponentSplits (per opponent).
+    */
     public class TeamScheduleImporter
     {
         private readonly AppDbContext _context;
@@ -24,14 +24,14 @@ namespace StrikeData.Services.TeamData.Importers
             _scraper = scraper;
         }
 
-        /// <summary>
-        /// Iterates over all known Baseball Almanac team codes and imports:
-        /// - full schedule (per game data),
-        /// - monthly splits, and
-        /// - opponent splits
-        /// for the given season.
-        /// Only teams already present in the DB are processed.
-        /// </summary>
+        /*
+            Iterates over all known Baseball Almanac team codes and imports:
+            - full schedule (per game data),
+            - monthly splits, and
+            - opponent splits
+            for the given season.
+            Only teams already present in the DB are processed.
+        */
         public async Task ImportAllTeamsScheduleAsync(int season)
         {
             foreach (var kvp in TeamCodeMap.CodeToName)
@@ -64,7 +64,7 @@ namespace StrikeData.Services.TeamData.Importers
                 foreach (var gameDto in result.Schedule)
                 {
                     // The scraped "Opponent" text already includes a prefix ("vs " or "at ").
-                    // We derive IsHome from that prefix and strip it from the opponent's name.
+                    // derive IsHome from that prefix and strip it from the opponent's name.
                     bool isHome = false;
                     string oppText = gameDto.Opponent.Trim();
                     string oppName = oppText;

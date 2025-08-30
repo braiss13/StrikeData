@@ -1,9 +1,9 @@
 namespace StrikeData.Services.StaticMaps
 {
-    /// <summary>
-    /// Static URL maps for TeamRankings (team-level metrics and trend pages).
-    /// Keys are the internal abbreviations used in the UI; values are full URLs.
-    /// </summary>
+    /*
+        Static URL maps for TeamRankings (team-level metrics and trend pages).
+        Keys are the internal abbreviations used in the UI; values are full URLs.
+    */
     public static class TeamRankingsMaps
     {
         // Base URL fragments used to build complete endpoints
@@ -11,22 +11,16 @@ namespace StrikeData.Services.StaticMaps
         private const string STAT_BASE = BASE + "/stat/";
         private const string WIN_TRENDS_BASE = BASE + "/trends/win_trends/?sc=";
 
-        /// <summary>
-        /// Helper to build a stat map (key -> full stat URL) from a slug dictionary.
-        /// </summary>
+        // Helper to build a stat map (key -> full stat URL) from a slug dictionary.
         private static IReadOnlyDictionary<string, string> BuildStatMap(IDictionary<string, string> slugByKey) =>
             slugByKey.ToDictionary(kv => kv.Key, kv => STAT_BASE + kv.Value, StringComparer.OrdinalIgnoreCase);
 
-        /// <summary>
-        /// Helper to build a trends map (key -> full trends URL) from a query-string code map.
-        /// </summary>
+        // Helper to build a trends map (key -> full trends URL) from a query-string code map.
         private static IReadOnlyDictionary<string, string> BuildTrendsMap(IDictionary<string, string> scByKey) =>
             scByKey.ToDictionary(kv => kv.Key, kv => WIN_TRENDS_BASE + kv.Value, StringComparer.OrdinalIgnoreCase);
 
         // ========== Curious Facts ==========
-        /// <summary>
-        /// Team-level “curious facts” metrics (per-inning splits and YRFI/NRFI).
-        /// </summary>
+        // Team-level “curious facts” metrics (per-inning splits and YRFI/NRFI).
         public static IReadOnlyDictionary<string, string> CuriousFacts { get; } = BuildStatMap(
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -69,9 +63,7 @@ namespace StrikeData.Services.StaticMaps
             });
 
         // ========== Fielding ==========
-        /// <summary>
-        /// Team-level fielding endpoints. Keys match the UI abbreviations.
-        /// </summary>
+        // Team-level fielding endpoints. Keys match the UI abbreviations.
         public static IReadOnlyDictionary<string, string> Fielding { get; } = BuildStatMap(
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -80,9 +72,7 @@ namespace StrikeData.Services.StaticMaps
             });
 
         // ========== Hitting ==========
-        /// <summary>
-        /// Team-level hitting endpoints. Abbreviations align with the glossary.
-        /// </summary>
+        // Team-level hitting endpoints. Abbreviations align with the glossary.
         public static IReadOnlyDictionary<string, string> Hitting { get; } = BuildStatMap(
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -115,9 +105,7 @@ namespace StrikeData.Services.StaticMaps
             });
 
         // ========== Pitching ==========
-        /// <summary>
-        /// Team-level pitching endpoints. Keys are internal abbreviations.
-        /// </summary>
+        // Team-level pitching endpoints. Keys are internal abbreviations.
         public static IReadOnlyDictionary<string, string> Pitching { get; } = BuildStatMap(
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -129,10 +117,8 @@ namespace StrikeData.Services.StaticMaps
                 { "W/9",  "walks-per-9" }
             });
 
-        // ========== Win Trends ==========
-        /// <summary>
-        /// Win-trend contexts built by attaching a query-string short code (sc).
-        /// </summary>
+        // ========== Win Trends ========== 
+        // Win-trend contexts built by attaching a query-string short code (sc).
         public static IReadOnlyDictionary<string, string> WinTrends { get; } = BuildTrendsMap(
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {

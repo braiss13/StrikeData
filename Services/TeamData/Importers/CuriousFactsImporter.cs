@@ -8,11 +8,11 @@ using StrikeData.Data.Extensions;
 
 namespace StrikeData.Services.TeamData.Importers
 {
-    /// <summary>
-    /// Imports "Curious Facts" team metrics from TeamRankings.
-    /// Each metric can be displayed from the team's own perspective or from opponents (prefixed with 'O').
-    /// Persists values into TeamStats associated to the "CuriousFacts" category.
-    /// </summary>
+    /*
+        Imports "Curious Facts" team metrics from TeamRankings.
+        Each metric can be displayed from the team's own perspective or from opponents (prefixed with 'O').
+        Persists values into TeamStats associated to the "CuriousFacts" category.
+    */
     public class CuriousFactsImporter
     {
         private readonly AppDbContext _context;
@@ -24,9 +24,7 @@ namespace StrikeData.Services.TeamData.Importers
             _httpClient = new HttpClient();
         }
 
-        /// <summary>
-        /// Main entry point. Iterates <see cref="TeamRankingsMaps.CuriousFacts"/> and imports each metric.
-        /// </summary>
+        // Main entry point. Iterates <see cref="TeamRankingsMaps.CuriousFacts"/> and imports each metric.
         public async Task ImportAllStatsAsyncCF()
         {
             foreach (var stat in TeamRankingsMaps.CuriousFacts)
@@ -35,12 +33,7 @@ namespace StrikeData.Services.TeamData.Importers
             }
         }
 
-        /// <summary>
-        /// Scrapes a single TeamRankings "curious fact" table and upserts rows into TeamStats.
-        /// The <paramref statTypeKey> may start with 'O' to indicate the "Opponent" perspective
-        /// </summary>
-        /// <param statTypeKey> Abbreviation from the map (e.g., "YRFI", "OYRFI", "F5IR/G").</param>
-        /// <param url> TeamRankings URL for that metric.</param>
+        // Scrapes a single TeamRankings "curious fact" table and upserts rows into TeamStats.
         public async Task ImportCuriousTeamStatsTR(string statTypeKey, string url)
         {
             // Download HTML and load it into an HtmlAgilityPack document
@@ -133,31 +126,15 @@ namespace StrikeData.Services.TeamData.Importers
             await _context.SaveChangesAsync();
         }
 
-        /// <summary>
-        /// Legacy helper retained for compatibility; current importer ensures the category
-        /// </summary>
-        private async Task<int> GetCuriousFactsCategoryIdAsync()
-        {
-            var category = _context.StatCategories.FirstOrDefault(c => c.Name == "CuriousFacts");
-            if (category == null)
-            {
-                category = new StatCategory { Name = "CuriousFacts" };
-                _context.StatCategories.Add(category);
-                await _context.SaveChangesAsync();
-            }
-            return category.Id;
-        }
-
-        // --- local parsing helper ---
-
-        /// <summary>
-        /// Extracts a numeric value from a TD cell:
-        /// - Trims whitespace
-        /// - Removes percent signs (if present)
-        /// - HTML-deentitizes
-        /// - Parses using <see cref="Utilities.Parse(string)"/>
-        /// Returns null if the cell is empty or cannot be parsed.
-        /// </summary>
+        /*
+            --- local parsing helper ---
+            Extracts a numeric value from a TD cell:
+            - Trims whitespace
+            - Removes percent signs (if present)
+            - HTML-deentitizes
+            - Parses using <see cref="Utilities.Parse(string)"/>
+            Returns null if the cell is empty or cannot be parsed.
+        */
         private static float? ParseCell(IList<HtmlNode> cells, int index)
         {
             if (index >= cells.Count) return null;

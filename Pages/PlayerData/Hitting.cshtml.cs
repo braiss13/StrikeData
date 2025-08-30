@@ -7,10 +7,10 @@ using StrikeData.Services.Glossary;
 
 namespace StrikeData.Pages.PlayerData
 {
-    /// <summary>
-    /// Razor PageModel for listing hitting stats by team.
-    /// It renders a basic/advanced view with tooltips sourced from the glossary.
-    /// </summary>
+    /*
+        Razor PageModel for listing hitting stats by team.
+        It renders a basic/advanced view with tooltips sourced from the glossary.
+    */
     public class HittingPlayerModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -71,9 +71,7 @@ namespace StrikeData.Pages.PlayerData
                 new(StringComparer.OrdinalIgnoreCase);
         }
 
-        /// <summary>
-        /// Loads glossary metadata for the current set of visible keys (Status + columns).
-        /// </summary>
+        // Loads glossary metadata for the current set of visible keys (Status + columns).
         private void InitStatMeta()
         {
             StatMeta.Clear();

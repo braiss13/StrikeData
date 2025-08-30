@@ -9,13 +9,20 @@
 
 @if (Model.Match == null)
 {
+    <!-- Not found scenario (404 handled by page model); keep a friendly message -->
     <p style="text-align:center; color:#fff;">Match not found.</p>
 }
 else
 {
-    <!-- Tarjeta resumen del partido -->
+    <!--
+      Summary card:
+      - Shows Away vs Home and the final score
+      - Displays venue and local datetime (Europe/Madrid)
+      - Shows each team's record at the time of the game
+    -->
     <div class="match-summary-card">
         @{
+            // Convert stored UTC time to Europe/Madrid for readability on the UI.
             var madrid = TimeZoneInfo.FindSystemTimeZoneById("Europe/Madrid");
             var localDate = TimeZoneInfo.ConvertTimeFromUtc(Model.Match.Date, madrid);
         }
@@ -36,7 +43,11 @@ else
         </div>
     </div>
 
-    <!-- Tabla con líneas por entrada -->
+    <!-- 
+      Per-inning table:
+      - Columns highlighted for home/away via CSS utility classes
+      - Null-safe display using "-" when a value is missing
+    -->
     <table class="table">
         <thead>
             <tr>
@@ -63,6 +74,7 @@ else
                     
                 </tr>
             }
+            <!-- Totals row: mirrors the summary numbers from Match -->
             <tr class="table-summary">
                 <td><strong>Total</strong></td>
                 <td class="away-stat">@Model.Match.AwayRuns</td>
@@ -75,10 +87,10 @@ else
         </tbody>
     </table>
 
+    <!-- Back to index button with extra bottom spacing (see CSS .back-button-container) -->
     <div class="back-button-container">
         <a asp-page="./Index" class="btn-stat-toggle" style="background-color:#2563eb;color:#ffffff;">
             Back to Matches
         </a>
     </div>
-
 }

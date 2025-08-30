@@ -8,13 +8,13 @@ using StrikeData.Services.Glossary;
 
 namespace StrikeData.Pages.TeamData
 {
-    /// <summary>
-    /// PageModel for "Curious Facts" team metrics. Provides:
-    /// - The list of available stat types (base keys without the optional 'O' prefix)
-    /// - A perspective toggle (team vs opponent)
-    /// - A single results table bound to the current selection
-    /// - A description dictionary used by the client-side helper to show contextual help
-    /// </summary>
+    /*
+        PageModel for "Curious Facts" team metrics. Provides:
+        - The list of available stat types (base keys without the optional 'O' prefix)
+        - A perspective toggle (team vs opponent)
+        - A single results table bound to the current selection
+        - A description dictionary used by the client-side helper to show contextual help
+    */
     public class CuriousFactsModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -106,10 +106,8 @@ namespace StrikeData.Pages.TeamData
 
             Rows = list;
         }
-
-        /// <summary>
+        
         /// View model projected for the table: only the fields displayed in the Razor view.
-        /// </summary>
         public class CuriousFactRow
         {
             public string TeamName { get; set; } = "";

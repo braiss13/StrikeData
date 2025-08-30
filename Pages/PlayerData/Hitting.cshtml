@@ -128,7 +128,7 @@
 
     <tbody>
         @{
-            // 1-based row numbering for readability
+            @* 1-based row numbering for readability *@
             var index = 1;
 
             if (Model.Rows != null && Model.Rows.Count > 0)
@@ -171,7 +171,7 @@
                             }
                             else
                             {
-                                // No value available for this player/metric
+                                <!-- No value available for this player/metric -->
                                 <td>-</td>
                             }
                         }
@@ -181,7 +181,7 @@
             }
             else
             {
-                // Empty state with dynamic colspan (4 fixed cols + N metrics)
+                <!-- Empty state with dynamic colspan (4 fixed cols + N metrics) -->
                 <tr>
                     <td colspan="@(4 + Model.VisibleColumns.Count)" style="text-align:center;">
                         No data available

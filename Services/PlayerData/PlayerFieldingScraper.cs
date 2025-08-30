@@ -4,10 +4,10 @@ using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.PlayerData
 {
-    /// <summary>
-    /// Scrapes per-player fielding tables from Baseball Almanac for a team and season.
-    /// Produces normalized rows containing Name, optional POS, and a map of metrics.
-    /// </summary>
+    /*
+        Scrapes per-player fielding tables from Baseball Almanac for a team and season.
+        Produces normalized rows containing Name, optional POS, and a map of metrics.
+    */
     public class PlayerFieldingScraper : BaseballAlmanacScraperBase
     {
         public PlayerFieldingScraper(HttpClient httpClient) : base(httpClient) { }
@@ -20,20 +20,20 @@ namespace StrikeData.Services.PlayerData
                 new(StringComparer.OrdinalIgnoreCase);
         }
 
-        /// <summary>
-        /// Downloads and parses the best matching fielding table for a team.
-        /// Heuristics select the table whose header hits the most expected columns.
-        /// </summary>
+        /*
+            Downloads and parses the best matching fielding table for a team.
+            Heuristics select the table whose header hits the most expected columns.
+        */
         public async Task<List<PlayerFieldingRowDto>> GetTeamFieldingRowsAsync(string teamCode, int year)
         {
             var url = $"https://www.baseball-almanac.com/teamstats/fielding.php?y={year}&t={teamCode.ToUpperInvariant()}";
             var doc = await LoadDocumentAsync(url);
 
-            // Baseball Almanac pages may contain multiple tables; we scan all of them.
+            // Baseball Almanac pages may contain multiple tables; scan all of them.
             var tables = doc.DocumentNode.SelectNodes("//table") ?? new HtmlNodeCollection(null);
             if (tables.Count == 0) return new List<PlayerFieldingRowDto>();
 
-            // Target metric headers we care about (abbreviations)
+            // Target metric headers care about (abbreviations)
             var wanted = new[] { "OUTS", "TC", "CH", "PO", "A", "E", "DP", "PB", "CASB", "CACS", "FLD%" };
 
             // Track the "best" table/header mapping according to header coverage ("hits")

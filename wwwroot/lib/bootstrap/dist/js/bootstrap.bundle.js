@@ -181,7 +181,7 @@
 
     if (element instanceof ShadowRoot) {
       return element;
-    } // when we don't find a shadow root
+    } // when don't find a shadow root
 
 
     if (!element.parentNode) {
@@ -628,7 +628,7 @@
         elementMap.set(element, new Map());
       }
 
-      const instanceMap = elementMap.get(element); // make it clear we only want one instance per element
+      const instanceMap = elementMap.get(element); // make it clear only want one instance per element
       // can be removed later when multiple key/instances are fine to be used
 
       if (!instanceMap.has(key) && instanceMap.size !== 0) {
@@ -1310,10 +1310,10 @@
           // If it's a touch-enabled device, mouseenter/leave are fired as
           // part of the mouse compatibility events on first tap - the carousel
           // would stop cycling until user tapped out of it;
-          // here, we listen for touchend, explicitly pause the carousel
-          // (as if it's the second time we tap on it, mouseenter compat event
+          // here, listen for touchend, explicitly pause the carousel
+          // (as if it's the second time tap on it, mouseenter compat event
           // is NOT fired) and after a timeout (to allow for mouse compatibility
-          // events to fire) we explicitly restart cycling
+          // events to fire) explicitly restart cycling
           this.pause();
 
           if (this.touchTimeout) {
@@ -1445,7 +1445,7 @@
       }
 
       if (!activeElement || !nextElement) {
-        // Some weirdness is happening, so we bail
+        // Some weirdness is happening, so bail
         return;
       }
 
@@ -2413,7 +2413,7 @@
           heightProp = 'scrollHeight';
           widthProp = 'scrollWidth';
         }
-      } // $FlowFixMe[incompatible-cast]: force type refinement, we compare offsetParent with window above, but Flow doesn't detect it
+      } // $FlowFixMe[incompatible-cast]: force type refinement, compare offsetParent with window above, but Flow doesn't detect it
 
 
       offsetParent = offsetParent;
@@ -2603,7 +2603,7 @@
       width = visualViewport.width;
       height = visualViewport.height; // Uses Layout Viewport (like Chrome; Safari does not currently)
       // In Chrome, it returns a value very close to 0 (+/-) but contains rounding
-      // errors due to floating point numbers, so we need to check precision.
+      // errors due to floating point numbers, so need to check precision.
       // Safari returns a number <= 0, usually < -1 when pinch-zoomed
       // Feature detection fails in mobile emulation mode in Chrome.
       // Math.abs(win.innerWidth / visualViewport.scale - visualViewport.width) <
@@ -2674,7 +2674,7 @@
 
   /*
   given a DOM element, return the list of all scroll parents, up the list of ancesors
-  until we get to the top window object. This list is what we attach scroll listeners
+  until get to the top window object. This list is what attach scroll listeners
   to, because if any of these parent elements scroll, we'll need to re-calculate the
   reference element's position.
   */
@@ -3254,7 +3254,7 @@
       var max$1 = popperOffsets[mainAxis] - overflow[altSide];
       var additive = tether ? -popperRect[len] / 2 : 0;
       var minLen = variation === start ? referenceRect[len] : popperRect[len];
-      var maxLen = variation === start ? -popperRect[len] : -referenceRect[len]; // We need to include the arrow in the calculation so the arrow doesn't go
+      var maxLen = variation === start ? -popperRect[len] : -referenceRect[len]; // need to include the arrow in the calculation so the arrow doesn't go
       // outside the reference bounds
 
       var arrowElement = state.elements.arrow;
@@ -3264,7 +3264,7 @@
       };
       var arrowPaddingObject = state.modifiersData['arrow#persistent'] ? state.modifiersData['arrow#persistent'].padding : getFreshSideObject();
       var arrowPaddingMin = arrowPaddingObject[mainSide];
-      var arrowPaddingMax = arrowPaddingObject[altSide]; // If the reference length is smaller than the arrow length, we don't want
+      var arrowPaddingMax = arrowPaddingObject[altSide]; // If the reference length is smaller than the arrow length, don't want
       // to include its full size in the calculation. If the reference is small
       // and near the edge of a boundary, the popper can overflow even if the
       // reference is not overflowing as well (e.g. virtual elements with no
@@ -3813,7 +3813,7 @@
         Manipulator.setDataAttribute(this._menu, 'popper', 'none');
       } else {
         this._createPopper(parent);
-      } // If this is a touch-enabled device we add extra
+      } // If this is a touch-enabled device add extra
       // empty mouseover listeners to the body's immediate children;
       // only needed because of broken event delegation on iOS
       // https://www.quirksmode.org/blog/archives/2014/02/mouse_event_bub.html
@@ -3868,8 +3868,8 @@
 
       if (hideEvent.defaultPrevented) {
         return;
-      } // If this is a touch-enabled device we remove the extra
-      // empty mouseover listeners we added for iOS support
+      } // If this is a touch-enabled device remove the extra
+      // empty mouseover listeners added for iOS support
 
 
       if ('ontouchstart' in document.documentElement) {
@@ -3947,7 +3947,7 @@
 
       if (parentDropdown.classList.contains(CLASS_NAME_DROPSTART)) {
         return PLACEMENT_LEFT;
-      } // We need to trim the value because custom properties can also include spaces
+      } // need to trim the value because custom properties can also include spaces
 
 
       const isEnd = getComputedStyle(this._menu).getPropertyValue('--bs-position').trim() === 'end';
@@ -3993,7 +3993,7 @@
             offset: this._getOffset()
           }
         }]
-      }; // Disable Popper if we have a static display
+      }; // Disable Popper if have a static display
 
       if (this._config.display === 'static') {
         defaultBsPopperConfig.modifiers = [{
@@ -4186,7 +4186,7 @@
       this._disableOverFlow(); // give padding to element to balance the hidden scrollbar width
 
 
-      this._setElementAttributes(this._element, 'paddingRight', calculatedValue => calculatedValue + width); // trick: We adjust positive paddingRight and negative marginRight to sticky-top elements to keep showing fullwidth
+      this._setElementAttributes(this._element, 'paddingRight', calculatedValue => calculatedValue + width); // trick: adjust positive paddingRight and negative marginRight to sticky-top elements to keep showing fullwidth
 
 
       this._setElementAttributes(SELECTOR_FIXED_CONTENT, 'paddingRight', calculatedValue => calculatedValue + width);
@@ -4273,7 +4273,7 @@
   const Default$7 = {
     className: 'modal-backdrop',
     isVisible: true,
-    // if false, we use the backdrop helper without adding any element to the dom
+    // if false, use the backdrop helper without adding any element to the dom
     isAnimated: false,
     rootElement: 'body',
     // give the choice to place backdrop under different elements
@@ -5519,7 +5519,7 @@
 
       if (customClass) {
         tip.classList.add(...customClass.split(' '));
-      } // If this is a touch-enabled device we add extra
+      } // If this is a touch-enabled device add extra
       // empty mouseover listeners to the body's immediate children;
       // only needed because of broken event delegation on iOS
       // https://www.quirksmode.org/blog/archives/2014/02/mouse_event_bub.html
@@ -5581,8 +5581,8 @@
         return;
       }
 
-      tip.classList.remove(CLASS_NAME_SHOW$2); // If this is a touch-enabled device we remove the extra
-      // empty mouseover listeners we added for iOS support
+      tip.classList.remove(CLASS_NAME_SHOW$2); // If this is a touch-enabled device remove the extra
+      // empty mouseover listeners added for iOS support
 
       if ('ontouchstart' in document.documentElement) {
         [].concat(...document.body.children).forEach(element => EventHandler.off(element, 'mouseover', noop));
@@ -5633,7 +5633,7 @@
       if (!content && templateElement) {
         templateElement.remove();
         return;
-      } // we use append for html objects to maintain js events
+      } // use append for html objects to maintain js events
 
 
       this.setElementContent(templateElement, content);

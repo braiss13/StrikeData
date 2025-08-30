@@ -7,11 +7,11 @@ using StrikeData.Models;
 
 namespace StrikeData.Pages.TeamData
 {
-    /// <summary>
-    /// PageModel for the Team Schedule page. It loads a team's full schedule and
-    /// two kinds of summaries (monthly splits and opponent splits) for a fixed season.
-    /// The view supports two modes: "expanded" (per-game table) and "summarized" (split tables).
-    /// </summary>
+    /*
+        PageModel for the Team Schedule page. It loads a team's full schedule and
+        two kinds of summaries (monthly splits and opponent splits) for a fixed season.
+        The view supports two modes: "expanded" (per-game table) and "summarized" (split tables).
+    */
     public class ScheduleModel : PageModel
     {
         private readonly AppDbContext _context;

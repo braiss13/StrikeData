@@ -5,10 +5,10 @@ using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.PlayerData
 {
-    /// <summary>
-    /// Imports per-player fielding metrics from a web scraper and stores them
-    /// under the "Fielding" StatCategory in PlayerStats.
-    /// </summary>
+    /*
+        Imports per-player fielding metrics from a web scraper and stores them
+        under the "Fielding" StatCategory in PlayerStats.
+    */
     public class PlayerFieldingImporter
     {
         private readonly AppDbContext _context;
@@ -20,11 +20,11 @@ namespace StrikeData.Services.PlayerData
             _scraper = scraper;
         }
 
-        /// <summary>
-        /// Imports fielding stats for all teams in the given season.
-        /// Ensures StatCategory and PlayerStatTypes exist, matches rows to Players,
-        /// and upserts PlayerStats.
-        /// </summary>
+        /*
+            Imports fielding stats for all teams in the given season.
+            Ensures StatCategory and PlayerStatTypes exist, matches rows to Players,
+            and upserts PlayerStats.
+        */
         public async Task ImportAllTeamsPlayerFieldingAsync(int season)
         {
             // Ensure the "Fielding" category exists
@@ -63,8 +63,7 @@ namespace StrikeData.Services.PlayerData
                 .AsNoTracking()
                 .ToListAsync();
 
-            // Build a per-team dictionary keyed by normalized "Name|POS" variants
-            // to improve match rate against scraped rows.
+            // Build a per-team dictionary keyed by normalized "Name|POS" variants to improve match rate against scraped rows.
             static string Key(string name, string? pos)
                 => $"{Utilities.NormalizePlayerName(name)}|{(pos ?? "").ToUpperInvariant()}";
 

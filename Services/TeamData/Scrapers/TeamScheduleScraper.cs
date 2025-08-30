@@ -4,20 +4,18 @@ using StrikeData.Models.Scraping;
 
 namespace StrikeData.Services.TeamData.Scrapers
 {
-    /// <summary>
-    /// Baseball Almanac scraper for a team's schedule page:
-    /// - Loads the target HTML,
-    /// - Extracts the main schedule table (per-game rows),
-    /// - Extracts "Fast Facts" splits (monthly and opponent).
-    /// Returns DTOs only (EF entities are managed by the importer).
-    /// </summary>
+    /*
+        Baseball Almanac scraper for a team's schedule page:
+        - Loads the target HTML,
+        - Extracts the main schedule table (per-game rows),
+        - Extracts "Fast Facts" splits (monthly and opponent).
+        Returns DTOs only (EF entities are managed by the importer).
+    */
     public class TeamScheduleScraper : BaseballAlmanacScraperBase
     {
         public TeamScheduleScraper(HttpClient httpClient) : base(httpClient) { }
 
-        /// <summary>
-        /// Downloads and parses the team schedule and split summaries for a given year.
-        /// </summary>
+        // Downloads and parses the team schedule and split summaries for a given year.
         public async Task<TeamScheduleResultDto> GetTeamScheduleAndSplitsAsync(string teamCode, int year)
         {
             if (string.IsNullOrWhiteSpace(teamCode))
@@ -32,10 +30,10 @@ namespace StrikeData.Services.TeamData.Scrapers
             return result;
         }
 
-        /// <summary>
-        /// Extracts the main schedule table with columns:
-        /// Game, Date, Opponent, Score, Decision, Record.
-        /// </summary>
+        /*
+            Extracts the main schedule table with columns:
+            Game, Date, Opponent, Score, Decision, Record.
+        */
         private static void ParseScheduleTable(HtmlDocument doc, TeamScheduleResultDto result)
         {
             // Locate the schedule table by checking known header labels.
@@ -91,12 +89,12 @@ namespace StrikeData.Services.TeamData.Scrapers
             }
         }
 
-        /// <summary>
-        /// Parses the "Fast Facts" area and separates:
-        /// - Monthly Splits (rows named after months),
-        /// - Team vs Team Splits (remaining rows).
-        /// Excludes score-related summaries (Shutouts, 1-Run Games, Blowouts).
-        /// </summary>
+        /*
+            Parses the "Fast Facts" area and separates:
+            - Monthly Splits (rows named after months),
+            - Team vs Team Splits (remaining rows).
+            Excludes score-related summaries (Shutouts, 1-Run Games, Blowouts).
+        */
         private static void ParseFastFacts(HtmlDocument doc, TeamScheduleResultDto result)
         {
             var fastFactsDiv = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'fast-facts')]");

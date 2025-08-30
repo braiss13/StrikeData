@@ -8,11 +8,11 @@ using StrikeData.Services.Glossary;
 
 namespace StrikeData.Pages.TeamData
 {
-    /// <summary>
-    /// PageModel for TEAM Fielding. Loads the list of fielding StatTypes, builds the
-    /// dropdown, retrieves TeamStats for the "Fielding" category, and exposes a
-    /// description map (from the central glossary) keyed by StatType.Id for the UI.
-    /// </summary>
+    /*
+        PageModel for TEAM Fielding. Loads the list of fielding StatTypes, builds the
+        dropdown, retrieves TeamStats for the "Fielding" category, and exposes a
+        description map (from the central glossary) keyed by StatType.Id for the UI.
+    */
     public class FieldingModel : PageModel
     {
         private readonly AppDbContext _context;

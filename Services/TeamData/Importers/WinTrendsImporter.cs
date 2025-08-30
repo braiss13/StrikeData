@@ -8,10 +8,10 @@ using StrikeData.Data.Extensions;
 
 namespace StrikeData.Services.TeamData.Importers
 {
-    /// <summary>
-    /// Imports "win trends" team statistics from TeamRankings.
-    /// Persists data into TeamStats under the "WinTrends" category, using the Team perspective.
-    /// </summary>
+    /*
+        Imports "win trends" team statistics from TeamRankings.
+        Persists data into TeamStats under the "WinTrends" category, using the Team perspective.
+    */
     public class WinTrendsImporter
     {
         private readonly AppDbContext _context;
@@ -23,21 +23,19 @@ namespace StrikeData.Services.TeamData.Importers
             _httpClient = new HttpClient();
         }
 
-        /// <summary>
-        /// Entry point: iterates the WinTrends map and imports each stat from TeamRankings.
-        /// </summary>
+        // Entry point: iterates the WinTrends map and imports each stat from TeamRankings.
         public async Task ImportAllStatsAsyncWT()
         {
             foreach (var stat in TeamRankingsMaps.WinTrends)
                 await ImportWinTrendsTeamStatsTR(stat.Key, stat.Value);
         }
 
-        /// <summary>
-        /// Scrapes one WinTrends table from TeamRankings and upserts:
-        /// - StatType (category = WinTrends)
-        /// - Team entities (normalized name)
-        /// - TeamStats for that StatType and Team (Perspective = Team), setting WinLossRecord and WinPct
-        /// </summary>
+        /*
+            Scrapes one WinTrends table from TeamRankings and upserts:
+            - StatType (category = WinTrends)
+            - Team entities (normalized name)
+            - TeamStats for that StatType and Team (Perspective = Team), setting WinLossRecord and WinPct
+        */
         public async Task ImportWinTrendsTeamStatsTR(string statTypeName, string url)
         {
             var response = await _httpClient.GetStringAsync(url);
@@ -120,30 +118,16 @@ namespace StrikeData.Services.TeamData.Importers
             await _context.SaveChangesAsync();
         }
 
-        /// <summary>
+        /*
         /// Normalizes a team name using the shared helpers:
         /// - Cleans HTML/whitespace
         /// - Maps aliases to official DB names
-        /// </summary>
+        */
         private static string NormalizeName(string? raw)
         {
             var cleaned = Utilities.CleanText(raw ?? "");
             return TeamNameNormalizer.Normalize(cleaned);
         }
 
-        /// <summary>
-        /// Ensures the "WinTrends" StatCategory exists and returns its Id.
-        /// </summary>
-        private async Task<int> GetWinTrendsCategoryIdAsync()
-        {
-            var category = _context.StatCategories.FirstOrDefault(c => c.Name == "WinTrends");
-            if (category == null)
-            {
-                category = new StatCategory { Name = "WinTrends" };
-                _context.StatCategories.Add(category);
-                await _context.SaveChangesAsync();
-            }
-            return category.Id;
-        }
     }
 }

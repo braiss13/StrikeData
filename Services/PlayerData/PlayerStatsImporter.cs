@@ -6,11 +6,10 @@ using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.PlayerData
 {
-    /// <summary>
-    /// Orchestrates the import of season-level player stats (pitching + hitting)
-    /// from MLB APIs. It makes sure StatCategory and PlayerStatType exist and
-    /// upserts values into PlayerStats.
-    /// </summary>
+    /*
+        Orchestrates the import of season-level player stats (pitching + hitting)
+        from MLB APIs. It makes sure StatCategory and PlayerStatType exist and upserts values into PlayerStats.
+    */
     public class PlayerStatsImporter
     {
         private readonly AppDbContext _context;
@@ -23,12 +22,11 @@ namespace StrikeData.Services.PlayerData
             _httpClient = new HttpClient();
         }
 
-        /// <summary>
-        /// Entry point used from Index:
-        /// 1) Ensures Players exist (40-man rosters)
-        /// 2) Imports season stats for both groups (pitching + hitting)
-        /// </summary>
-        /// <param name="season">MLB season to import (e.g., 2025)</param>
+        /*
+            Entry point used from Index:
+            1) Ensures Players exist (40-man rosters)
+            2) Imports season stats for both groups (pitching + hitting)
+        */
         public async Task ImportAllPlayersAndStatsAsync(int season = 2025)
         {
             // Step 1: Make sure Players exist (roster import creates/updates them).
@@ -39,17 +37,16 @@ namespace StrikeData.Services.PlayerData
             await ImportSeasonStatsAsync(season);
         }
 
-        /// <summary>
-        /// Imports both groups for the given season:
-        /// - Pitching: group=pitching (filtered to pitchers only)
-        /// - Hitting:  group=hitting (filtered to non-pitchers)
-        /// The API returns a bulk "stats" array that we traverse and persist.
-        /// </summary>
+        /*
+            Imports both groups for the given season:
+            - Pitching: group=pitching (filtered to pitchers only)
+            - Hitting:  group=hitting (filtered to non-pitchers)
+            The API returns a bulk "stats" array that traverse and persist.
+        */
         public async Task ImportSeasonStatsAsync(int season = 2025)
         {
-            // API endpoints are documented internally by MLB; these URLs fetch
-            // aggregates (season scope) for all players.
-            // We keep a large "limit" to cover the full population in one pass.
+            // API endpoints are documented internally by MLB; these URLs fetch aggregates (season scope) for all players.
+            // Keep a large "limit" to cover the full population in one pass.
 
             // ==== PITCHING ====
             var pitchingUrl =
@@ -77,17 +74,13 @@ namespace StrikeData.Services.PlayerData
             );
         }
 
-        /// <summary>
-        /// Imports one group (pitching or hitting):
-        /// 1) Ensure StatCategory and PlayerStatType records exist
-        /// 2) Preload Players and PlayerStats for efficient upserts
-        /// 3) Download and parse the bulk JSON payload
-        /// 4) For each player item, filter by role (if requested) and upsert totals
-        /// </summary>
-        /// <param name="url">API endpoint returning a "stats" array</param>
-        /// <param name="categoryName">"Pitching" or "Hitting"</param>
-        /// <param name="statFieldMap">MetricName -> JSON field mapping</param>
-        /// <param name="mustBePitcher">When true: include only Position == "P"; when false: exclude pitchers</param>
+        /*
+            Imports one group (pitching or hitting):
+            1) Ensure StatCategory and PlayerStatType records exist
+            2) Preload Players and PlayerStats for efficient upserts
+            3) Download and parse the bulk JSON payload
+            4) For each player item, filter by role (if requested) and upsert totals
+        */
         private async Task ImportStatsGroupAsync(
             string url,
             string categoryName,
@@ -181,9 +174,11 @@ namespace StrikeData.Services.PlayerData
                 if (!playersByMlbId.TryGetValue(playerIdFromApi, out var player))
                     continue; // player not in our DB (roster import might not have added it yet)
 
-                // Optional role filter to keep groups consistent:
-                // - Pitching group -> only pitchers
-                // - Hitting group  -> exclude pitchers
+                /*
+                    Optional role filter to keep groups consistent:
+                    - Pitching group -> only pitchers
+                    - Hitting group  -> exclude pitchers
+                */
                 var isPitcher = string.Equals(player.Position, "P", StringComparison.OrdinalIgnoreCase);
                 if (mustBePitcher && !isPitcher) continue;
                 if (!mustBePitcher && isPitcher) continue;

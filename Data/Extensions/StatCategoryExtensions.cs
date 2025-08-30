@@ -4,22 +4,20 @@ using StrikeData.Models;
 
 namespace StrikeData.Data.Extensions
 {
-    /// <summary>
-    /// EF Core extensions to ensure and retrieve <see cref="StatCategory"/> records.
-    /// Centralizes the "get or create" logic and handles basic concurrency.
-    /// </summary>
+    /*
+        EF Core extensions to ensure and retrieve StatCategory records.
+        Centralizes the "get or create" logic and handles basic concurrency.
+    */
     public static class StatCategoryExtensions
     {
-        /// <summary>
-        /// Ensures a <see cref="StatCategory"/> with the given <paramref name="name"/> exists
-        /// and returns its database Id. If it does not exist, it is created and saved
-        /// immediately so the Id is materialized.
-        /// </summary>
-        /// <remarks>
-        /// - Checks the DbContext local cache first (avoids a roundtrip if already tracked).
-        /// - Handles a potential race (another process inserts the same name) by catching
-        ///   Postgres unique violations and reloading the existing row.
-        /// </remarks>
+        /*
+            Ensures a StatCategory with the given name exists and returns its database Id. 
+            If it does not exist, it is created and saved immediately so the Id is materialized.
+
+            - Checks the DbContext local cache first (avoids a roundtrip if already tracked).
+            - Handles a potential race (another process inserts the same name) by catching
+            Postgres unique violations and reloading the existing row.
+        */
         public static async Task<int> EnsureCategoryIdAsync(
             this AppDbContext context,
             string name,
@@ -54,9 +52,7 @@ namespace StrikeData.Data.Extensions
             }
         }
 
-        /// <summary>
-        /// Returns true if the exception indicates a Postgres unique-constraint violation.
-        /// </summary>
+        // Returns true if the exception indicates a Postgres unique-constraint violation.
         private static bool IsUniqueViolation(DbUpdateException ex)
             => ex.InnerException is PostgresException pg && pg.SqlState == "23505";
     }

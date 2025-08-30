@@ -1,9 +1,9 @@
 namespace StrikeData.Services.Normalization
 {
-    /// <summary>
-    /// Normalizes short/alternate team names into the official names used in the DB.
-    /// This is applied when external sources provide abbreviated or colloquial labels.
-    /// </summary>
+    /*
+        Normalizes short/alternate team names into the official names used in the DB.
+        This is applied when external sources provide abbreviated or colloquial labels.
+    */
     public static class TeamNameNormalizer
     {
         private static readonly Dictionary<string, string> TeamNameMap = new()
@@ -40,10 +40,10 @@ namespace StrikeData.Services.Normalization
             { "Colorado", "Colorado Rockies" }
         };
 
-        /// <summary>
-        /// Returns the official team name when a known alias is provided;
-        /// otherwise returns the original input unchanged.
-        /// </summary>
+        /*
+            Returns the official team name when a known alias is provided;
+            otherwise returns the original input unchanged.
+        */
         public static string Normalize(string name)
         {
             return TeamNameMap.TryGetValue(name, out var officialName) ? officialName : name;

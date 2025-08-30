@@ -46,7 +46,8 @@ button.accept-policy {
 
 /* Footer utility:
    - Sticks the footer to the bottom when content is short
-   - Ensures consistent line height and full width */
+   - Ensures consistent line height and full width 
+*/
 .footer {
   position: absolute;
   bottom: 0;

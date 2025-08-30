@@ -2,11 +2,11 @@ using HtmlAgilityPack;
 
 namespace StrikeData.Services.TeamData.Scrapers
 {
-    /// <summary>
-    /// Common base for Baseball Almanac scrapers:
-    /// - Issues HTTP GET requests with a desktop user-agent and a valid referrer,
-    /// - Loads the HTML into an HtmlDocument for downstream parsing.
-    /// </summary>
+    /*
+        Common base for Baseball Almanac scrapers:
+        - Issues HTTP GET requests with a desktop user-agent and a valid referrer,
+        - Loads the HTML into an HtmlDocument for downstream parsing.
+    */
     public abstract class BaseballAlmanacScraperBase
     {
         protected readonly HttpClient _httpClient;
@@ -16,9 +16,7 @@ namespace StrikeData.Services.TeamData.Scrapers
             _httpClient = httpClient;
         }
 
-        /// <summary>
-        /// Sends a GET request with UA/referrer headers and returns the parsed HtmlDocument.
-        /// </summary>
+        // Sends a GET request with UA/referrer headers and returns the parsed HtmlDocument.
         protected async Task<HtmlDocument> LoadDocumentAsync(string url)
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
