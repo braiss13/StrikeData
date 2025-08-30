@@ -7,8 +7,8 @@
 
 <h2 class="section-title">Win Trends</h2>
 
+@* Filter form: stat type selector. Triggers GET on change to refresh the table. *@
 <form method="get">
-    <!-- Desplegable del tipo de estadística -->
     <div class="table-selector">
         <select asp-for="SelectedStatType"
                 asp-items="Model.StatTypeOptions"
@@ -24,7 +24,7 @@
     </div>
 </form>
 
-<!-- Tabla de resultados -->
+@* Results grid: one row per team for the selected trend (Perspective=Team). *@
 <table class="table table-striped sortable-table table-bordered table-sm pitching-table"
        style="margin: 1 auto;">
     <thead>

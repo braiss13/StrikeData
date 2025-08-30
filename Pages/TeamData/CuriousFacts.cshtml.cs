@@ -8,6 +8,13 @@ using StrikeData.Services.Glossary;
 
 namespace StrikeData.Pages.TeamData
 {
+    /// <summary>
+    /// PageModel for "Curious Facts" team metrics. Provides:
+    /// - The list of available stat types (base keys without the optional 'O' prefix)
+    /// - A perspective toggle (team vs opponent)
+    /// - A single results table bound to the current selection
+    /// - A description dictionary used by the client-side helper to show contextual help
+    /// </summary>
     public class CuriousFactsModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -17,61 +24,60 @@ namespace StrikeData.Pages.TeamData
             _context = context;
         }
 
-        // Desplegable de tipos de estadística (CuriousFacts)
+        // Select options for stat types (category = CuriousFacts)
         public List<SelectListItem> StatTypeOptions { get; set; } = new();
 
-        // Datos para la tabla
+        // Table rows (projected view model)
         public List<CuriousFactRow> Rows { get; private set; } = new();
 
-        // Selecciones del usuario
+        // Current selections (bound from query string)
         [BindProperty(SupportsGet = true)]
         public string SelectedStatType { get; set; } = string.Empty;
 
-        // "team" o "opp"
+        // "team" or "opp" (string for easy toggle binding)
         [BindProperty(SupportsGet = true)]
         public string Perspective { get; set; } = "team";
 
-        // Diccionario abreviatura base -> descripción (para el panel bajo el select)
+        // Base abbreviation -> description (used to populate the helper under the <select>)
         public Dictionary<string, string> StatDescriptions { get; private set; } = new();
 
         public async Task OnGetAsync()
         {
-            // Cargar los stat types de la categoría CuriousFacts (valores = nombre base sin 'O')
+            // Load available stat types in the "CuriousFacts" category (values are base keys, e.g., "YRFI", "F5IR/G")
             StatTypeOptions = await _context.StatTypes
                 .Where(st => st.StatCategory.Name == "CuriousFacts")
                 .OrderBy(st => st.Name)
                 .Select(st => new SelectListItem
                 {
-                    Value = st.Name,   // clave = base (YRFI, 1IR/G, F5IR/G, etc.)
+                    Value = st.Name,   // base key
                     Text = st.Name
                 })
                 .ToListAsync();
 
-            // Si no hay selección previa, el primero por defecto
+            // Default to the first stat type if nothing is selected
             if (string.IsNullOrWhiteSpace(SelectedStatType) && StatTypeOptions.Any())
             {
                 SelectedStatType = StatTypeOptions.First().Value;
             }
 
-            // ---- DESCRIPCIONES DESDE GLOSARIO CENTRAL ----
-            // Cargamos el mapa del dominio CuriousFacts y construimos solo para las claves presentes en el select
+            // Build description dictionary using the central glossary (domain = CuriousFacts)
             var glossary = StatGlossary.GetMap(StatDomain.CuriousFacts);
             StatDescriptions.Clear();
             foreach (var opt in StatTypeOptions)
             {
-                var key = opt.Value; // p.ej. "YRFI", "1IR/G", "F5IR/G"
+                var key = opt.Value;
                 if (glossary.TryGetValue(key, out var st) && !string.IsNullOrWhiteSpace(st.Description))
                     StatDescriptions[key] = st.Description;
                 else
                     StatDescriptions[key] = "";
             }
 
-            // Normaliza perspectiva
+            // Map the UI perspective to the enum used in the database filter
             var desiredPerspective = Perspective?.ToLowerInvariant() == "opp"
                 ? StatPerspective.Opponent
                 : StatPerspective.Team;
 
-            // Consulta de TeamStats filtrada por tipo + perspectiva, incluyendo Team
+            // Query TeamStats for the selected type and perspective; include Team for display name
             var query = _context.TeamStats
                 .AsNoTracking()
                 .Include(ts => ts.Team)
@@ -81,7 +87,7 @@ namespace StrikeData.Pages.TeamData
                     ts.StatType.Name == SelectedStatType &&
                     ts.Perspective == desiredPerspective);
 
-            // Orden por CurrentSeason desc (nulls al final), y luego por nombre de equipo
+            // Order by current-season value (desc), then team name (stable tie-breaker)
             var list = await query
                 .OrderByDescending(ts => ts.CurrentSeason.HasValue)
                 .ThenByDescending(ts => ts.CurrentSeason)
@@ -101,6 +107,9 @@ namespace StrikeData.Pages.TeamData
             Rows = list;
         }
 
+        /// <summary>
+        /// View model projected for the table: only the fields displayed in the Razor view.
+        /// </summary>
         public class CuriousFactRow
         {
             public string TeamName { get; set; } = "";

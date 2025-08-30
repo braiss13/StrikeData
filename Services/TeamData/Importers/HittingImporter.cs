@@ -4,13 +4,20 @@ using StrikeData.Models;
 using System.Globalization;
 using Newtonsoft.Json.Linq;
 using StrikeData.Services.Normalization;
+using StrikeData.Data.Extensions;
 using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.TeamData.Importers
 {
+    /// <summary>
+    /// Imports team-level HITTING statistics from two sources:
+    /// 1) MLB Stats API (season totals + games count)
+    /// 2) TeamRankings (per-game splits such as current season, last N, home/away)
+    /// Results are persisted into StatType/TeamStat under the "Hitting" category.
+    /// </summary>
     public class HittingImporter
     {
-        // Este importador contiene los métodos para importar las estadísticas relativas a equipos en cuanto a bateo
+        // Data access for persistence and an HttpClient for outbound fetches.
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
 
@@ -22,26 +29,36 @@ namespace StrikeData.Services.TeamData.Importers
             _httpClient = new HttpClient();
         }
 
-        // Método principal -> Contiene las llamadas a los dos métodos de obtención de datos (MLB y TeamRankings)
+        /// <summary>
+        /// Orchestrates the import of all team-level hitting stats:
+        /// 1) Loads MLB season totals (and Games) per team
+        /// 2) Loads TeamRankings per-game splits for each hitting metric
+        /// </summary>
         public async Task ImportAllStatsAsyncH()
         {
-            // 1. Primero scrapear la MLB para tener el número de Games por equipo y el valor total para cada tipo de estadística
+            // Step 1: totals and games from MLB (authoritative for season aggregates)
             await ImportHittingTeamStatsMLB();
 
-            // 2. Luego, el scraping de TeamRankings con promedios por partido
+            // Step 2: enrich with TeamRankings per-game splits for each metric key
             foreach (var stat in TeamRankingsMaps.Hitting)
             {
                 await ImportHittingTeamStatsTR(stat.Key, stat.Value);
             }
         }
 
-        // Método que importa las estadísticas de la página oficial de la MLB y las trata para guardarlas en la BD
+        /// <summary>
+        /// Imports MLB season totals for hitting (one record per team).
+        /// MLB provides team "Games" and aggregated totals for core batting stats.
+        /// </summary>
         private async Task ImportHittingTeamStatsMLB()
         {
+            // Fetch raw array from MLB (each element corresponds to one team)
             var statsArray = await FetchTeamHittingStatsMLB();
-            var hittingCategoryId = await GetHittingCategoryIdAsync();
 
-            // Mapeo de nombres de la API (extendidos) a abreviaturas deseadas
+            // Ensure the "Hitting" category exists and retrieve its id
+            var hittingCategoryId = await _context.EnsureCategoryIdAsync("Hitting");
+
+            // Maps MLB API field names (long) to our canonical abbreviations
             var statMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 { "gamesPlayed", "G" },
@@ -62,23 +79,25 @@ namespace StrikeData.Services.TeamData.Importers
                 { "totalBases", "TB" },
                 { "hitByPitch", "HBP" },
                 { "atBatsPerHomeRun", "AB/HR" }
-
             };
 
+            // Iterate team results and upsert into Teams/TeamStats
             foreach (var statToken in statsArray)
             {
                 if (statToken is not JObject teamStat)
                     continue;
 
+                // Team name is the join key across sources; normalize to our official names
                 var teamNameRaw = teamStat["teamName"]?.ToString();
                 if (string.IsNullOrWhiteSpace(teamNameRaw))
                 {
-                    Console.WriteLine("⚠️ Nombre de equipo no encontrado o vacío.");
+                    Console.WriteLine("⚠️ Team name not found or empty.");
                     continue;
                 }
 
                 var teamName = TeamNameNormalizer.Normalize(teamNameRaw);
 
+                // Ensure Team row exists (create on first appearance)
                 var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
                 if (team == null)
                 {
@@ -87,19 +106,20 @@ namespace StrikeData.Services.TeamData.Importers
                     await _context.SaveChangesAsync();
                 }
 
+                // Persist each mapped stat
                 foreach (var mapping in statMappings)
                 {
-                    string apiField = mapping.Key;
-                    string shortName = mapping.Value;
+                    string apiField = mapping.Key;   // field from MLB JSON
+                    string shortName = mapping.Value; // canonical abbreviation
 
                     if (!teamStat.TryGetValue(apiField, out var token))
                         continue;
 
                     string rawValue = token?.ToString();
-
                     if (string.IsNullOrWhiteSpace(rawValue))
                         continue;
 
+                    // Special case: "G" is stored on Team (not TeamStat)
                     if (shortName == "G")
                     {
                         if (int.TryParse(rawValue, out int games))
@@ -109,23 +129,25 @@ namespace StrikeData.Services.TeamData.Importers
                         continue;
                     }
 
+                    // Parse numeric stat (float, invariant culture)
                     if (!float.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out float statValue))
                     {
-                        Console.WriteLine($"⚠️ Valor inválido para {shortName} en {teamName}: '{rawValue}'");
+                        Console.WriteLine($"⚠️ Invalid value for {shortName} in {teamName}: '{rawValue}'");
                         continue;
                     }
 
-                    // Obtener o crear el tipo de estadística
+                    // Ensure StatType exists within the Hitting category
                     var statType = _context.StatTypes.FirstOrDefault(s => s.Name == shortName);
                     if (statType == null)
                     {
+                        // Create in the Hitting category the first time we see it
                         statType = new StatType { Name = shortName };
                         statType = new StatType { Name = shortName, StatCategoryId = hittingCategoryId };
                         _context.StatTypes.Add(statType);
                         await _context.SaveChangesAsync();
                     }
 
-                    // Obtener o crear la estadística del equipo
+                    // Upsert TeamStat (one row per TeamId/StatTypeId)
                     var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id);
                     if (stat == null)
                     {
@@ -133,6 +155,7 @@ namespace StrikeData.Services.TeamData.Importers
                         _context.TeamStats.Add(stat);
                     }
 
+                    // MLB provides the season aggregate -> store in Total
                     stat.Total = statValue;
                 }
             }
@@ -140,6 +163,9 @@ namespace StrikeData.Services.TeamData.Importers
             await _context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Ensures the "Hitting" StatCategory exists and returns its Id.
+        /// </summary>
         private async Task<int> GetHittingCategoryIdAsync()
         {
             var category = _context.StatCategories.FirstOrDefault(c => c.Name == "Hitting");
@@ -152,11 +178,14 @@ namespace StrikeData.Services.TeamData.Importers
             return category.Id;
         }
 
-        // Método que realiza la llamada a la API de la MLB para obtener las estadísticas 
+        /// <summary>
+        /// Calls MLB Stats API (internal stitch endpoint used by MLB sites) to obtain
+        /// the team-level hitting stats for the 2025 regular season.
+        /// Returns the "stats" array as a JArray for further processing.
+        /// </summary>
         private async Task<JArray> FetchTeamHittingStatsMLB()
         {
-
-            // Esta URL es la que utiliza la página oficial de la MLB para obtener las estadísticas de los equipos (obtenida al hacer un análisis de red)
+            // Network-captured endpoint used by MLB pages to fetch season team stats
             var url = "https://bdfed.stitch.mlbinfra.com/bdfed/stats/team?stitch_env=prod&sportId=1&gameType=R&group=hitting&stats=season&season=2025&limit=30&offset=0";
 
             var response = await _httpClient.GetStringAsync(url);
@@ -165,7 +194,7 @@ namespace StrikeData.Services.TeamData.Importers
 
             if (stats == null || !stats.Any())
             {
-                Console.WriteLine("❌ No se encontraron estadísticas.");
+                Console.WriteLine("❌ No team stats found from MLB endpoint.");
                 return [];
             }
 
@@ -175,37 +204,34 @@ namespace StrikeData.Services.TeamData.Importers
         #endregion
 
         // ================================================================
-        // ========== SECCIÓN: ESTADÍSTICAS TEAM RANKINGS =================
+        // ========== SECTION: TEAM RANKINGS STATISTICS ===================
         // ================================================================
 
-
-        // Método que realiza scrapping para obtener estadísticas de TeamRankings
+        /// <summary>
+        /// Imports a single TeamRankings hitting metric (identified by <paramref statTypeName>)
+        /// from the provided <paramref url>. TeamRankings supplies per-game splits:
+        /// CurrentSeason, Last3Games, LastGame, Home, Away, PrevSeason.
+        /// </summary>
         public async Task ImportHittingTeamStatsTR(string statTypeName, string url)
         {
-
-            // Descarga la página html y crea un documento con todo el contenido
+            // Download the HTML page and load it into a DOM for parsing
             var response = await _httpClient.GetStringAsync(url);
             var doc = new HtmlDocument();
             doc.LoadHtml(response);
 
-            // Busca la etiqueta <table> dentro del doc
+            // TeamRankings renders a single datatable with the metric and splits
             var table = doc.DocumentNode.SelectSingleNode("//table[contains(@class, 'datatable')]");
 
-            // Obtiene la primera fila de la tabla que sería el encabezado
+            // Header row (unused beyond structural checks) and data rows (skip header)
             var header = table.SelectSingleNode(".//thead/tr");
-
-            // Obtiene las filas pero saltando el primero que sería el encabezado
             var rows = table.SelectNodes(".//tr").Skip(1);
 
-            // Se busca si el tipo de estadística ya está en la BD, sino se crea
+            // Ensure StatType exists (under Hitting category)
             var statType = _context.StatTypes.FirstOrDefault(s => s.Name == statTypeName);
             if (statType == null)
             {
+                var categoryId = await _context.EnsureCategoryIdAsync("Hitting");
 
-                // Obtener o crear la categoría Hitting y recuperar su Id
-                int categoryId = await GetHittingCategoryIdAsync();
-
-                // Crear el nuevo tipo de estadística asociándolo a esa categoría
                 statType = new StatType
                 {
                     Name = statTypeName,
@@ -216,20 +242,20 @@ namespace StrikeData.Services.TeamData.Importers
                 await _context.SaveChangesAsync();
             }
 
+            // Parse each row and upsert TeamStat with per-game split values
             foreach (var row in rows)
             {
-
-                // Se obtiene cada celda de cada fila (sería el <td>)
+                // Extract columns for: Position | Team | Current | Last3 | Last1 | Home | Away | Previous
                 var cells = row.SelectNodes("td");
 
-                // Como la tabla tiene Posición, Nombre Equipo y estadísticas (Current, Last 3...) si es menor a 8 se salta.
+                // Defensive guard: skip non-data rows (e.g., separators or malformed rows)
                 if (cells == null || cells.Count < 8) continue;
 
-                // Se obtiene el nombre del equipo y se normaliza para evitar abreviaciones o inconsistencias
+                // Team name normalization (align TR label with our official DB name)
                 string rawTeamName = cells[1].InnerText.Trim();
                 string teamName = TeamNameNormalizer.Normalize(rawTeamName);
 
-                // Se valida si el equipo ya existe en la BD, caso contrario se crea y se guarda
+                // Ensure Team exists
                 var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
                 if (team == null)
                 {
@@ -238,7 +264,7 @@ namespace StrikeData.Services.TeamData.Importers
                     await _context.SaveChangesAsync();
                 }
 
-                // Se busca si está el TeamStat en la BD, sino se crea
+                // Upsert TeamStat (one row per TeamId/StatTypeId)
                 var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id);
                 if (stat == null)
                 {
@@ -250,53 +276,50 @@ namespace StrikeData.Services.TeamData.Importers
                     _context.TeamStats.Add(stat);
                 }
 
-                // Se guarda cada valor en la propiedad correspondiente de TeamStat
+                // Populate per-game splits parsed from the table cells
                 stat.CurrentSeason = Utilities.Parse(cells[2].InnerText);
-                stat.Last3Games = Utilities.Parse(cells[3].InnerText);
-                stat.LastGame = Utilities.Parse(cells[4].InnerText);
-                stat.Home = Utilities.Parse(cells[5].InnerText);
-                stat.Away = Utilities.Parse(cells[6].InnerText);
-                stat.PrevSeason = Utilities.Parse(cells[7].InnerText);
+                stat.Last3Games    = Utilities.Parse(cells[3].InnerText);
+                stat.LastGame      = Utilities.Parse(cells[4].InnerText);
+                stat.Home          = Utilities.Parse(cells[5].InnerText);
+                stat.Away          = Utilities.Parse(cells[6].InnerText);
+                stat.PrevSeason    = Utilities.Parse(cells[7].InnerText);
 
+                // For some TR-only metrics, compute a season TOTAL from per-game × games
                 CalculateTotal(statTypeName, team, stat);
-
             }
 
-            // Guarda todo al final para evitar múltiples escrituras en la BD
+            // Persist all changes to the database
             await _context.SaveChangesAsync();
         }
 
-        // Este método calcula para los campos que no están en la página de la MLB, se calcula el "Total" como Games * CurrentSeason
-        // OJO: Se le ponen IFs puesto que en ese caso solo quiero calcular el Total de las que están en TR y no MLB; si no pusiera los ifs, se calcularían para todo el _trHMap
+        /// <summary>
+        /// Computes TeamStats.Total for TR-only metrics by multiplying
+        /// the per-game CurrentSeason value by the number of Games stored on Team.
+        /// Only applies to specific metrics that are not delivered as totals by MLB.
+        /// </summary>
         private static void CalculateTotal(string statTypeName, Team team, TeamStat stat)
         {
-
+            // Only compute TOTALS for these TR metrics (others already come as MLB totals)
             if (statTypeName == "S" || statTypeName == "SBA" || statTypeName == "LOB" || statTypeName == "TLOB" || statTypeName == "RLSP")
             {
                 if (team.Games < 1)
                 {
-                    Console.WriteLine($"⚠️ El equipo {team.Name} no tiene juegos registrados. La operación será inválida.");
+                    Console.WriteLine($"⚠️ Team {team.Name} has no games recorded. Total cannot be computed.");
                 }
                 else if (stat.CurrentSeason.HasValue)
                 {
-                    // Aquí se obtiene el valor de currentSeason como float
+                    // Use double for rounding API, then cast back to float (our DB type)
                     float currentSeasonValue = stat.CurrentSeason ?? 0;
-
-                    // Como la librería Math.Round no acepta float, se convierte a double el valor final (en .net no hay sobrecarga de Math.Round para float)
                     double rawTotal = (double)(team.Games * currentSeasonValue);
 
-                    // Por último, se redondea a 2 decimales y se asigna al Total en formato float, puesto que es el que hay en la BD
+                    // Two decimals for season-level totals derived from per-game averages
                     stat.Total = (float)Math.Round(rawTotal, 2);
                 }
                 else
                 {
-                    Console.WriteLine($"⚠️ El valor de CurrentSeason es null para el equipo {team.Name} en la estadística 'S' (Singles). La operación será inválida.");
+                    Console.WriteLine($"⚠️ CurrentSeason is null for team {team.Name} in '{statTypeName}'. Total cannot be computed.");
                 }
-
             }
-
         }
-
-
     }
 }

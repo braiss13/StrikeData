@@ -5,11 +5,19 @@ using System.Globalization;
 using Newtonsoft.Json.Linq;
 using StrikeData.Services.Normalization;
 using StrikeData.Services.StaticMaps;
+using StrikeData.Data.Extensions;
 
 namespace StrikeData.Services.TeamData.Importers
 {
+    /// <summary>
+    /// Imports team-level PITCHING statistics from two sources:
+    /// 1) MLB Stats API (season totals for core pitching metrics)
+    /// 2) TeamRankings (per-game "Current Season" values for selected metrics)
+    /// Data is written into StatType/TeamStat under the "Pitching" category.
+    /// </summary>
     public class PitchingImporter
     {
+        // EF Core DbContext for persistence and a dedicated HttpClient for network I/O.
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
 
@@ -19,65 +27,75 @@ namespace StrikeData.Services.TeamData.Importers
             _httpClient = new HttpClient();
         }
 
-        // Método principal que llama a MLB y luego a TR.
+        /// <summary>
+        /// Entry point for loading all pitching stats:
+        /// 1) Pull MLB season totals
+        /// 2) Pull TeamRankings metrics (per-game, current season)
+        /// </summary>
         public async Task ImportAllStatsAsyncP()
         {
-            // Primero obtenemos los totales de la MLB (ya implementado).
+            // Step 1: MLB provides authoritative season totals per team
             await ImportTeamPitchingStatsMLB();
 
+            // Step 2: Enrich with TeamRankings "Current Season" per-game metrics
             foreach (var stat in TeamRankingsMaps.Pitching)
             {
                 await ImportPitchingTeamStatTR(stat.Key, stat.Value);
             }
         }
 
-        // Importa las estadísticas de pitching necesarias desde la página oficial de la MLB y las guarda en la base de datos.
+        /// <summary>
+        /// Imports MLB team pitching stats and stores them as season totals.
+        /// Each JSON record corresponds to one team; values are mapped to our StatType abbreviations.
+        /// </summary>
         private async Task ImportTeamPitchingStatsMLB()
         {
             var statsArray = await FetchTeamPitchingStatsMLB();
-            var pitchingCategoryId = await GetPitchingCategoryIdAsync();
+            var pitchingCategoryId = await _context.EnsureCategoryIdAsync("Pitching");
 
-            // Mapeo de nombres de campos de la API a las abreviaturas usadas en StatType.
+
+            // Maps MLB JSON fields to our canonical abbreviations (StatType.Name).
             var statMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                { "era", "ERA" },                  // Earned Run Average
-                { "shutouts", "SHO" },             // Shutouts
-                { "completeGames", "CG" },         // Complete games
-                { "saves", "SV" },                 // Saves
-                { "saveOpportunities", "SVO" },    // Save opportunities
-                { "inningsPitched", "IP" },        // Innings pitched
-                { "hits", "H" },                   // Hits permitidos
-                { "runs", "R" },                   // Carreras permitidas
-                { "homeRuns", "HR" },              // Home runs permitidos
-                { "wins", "W" },                   // Victorias
-                { "strikeOuts", "SO" },            // Strikeouts (observa la mayúscula en “O”)
-                { "whip", "WHIP" },                // Walks + Hits por entrada lanzada
-                { "avg", "AVG" },                  // Promedio del rival
-                { "battersFaced", "TBF" },         // Turnos enfrentados (batters faced)
-                { "numberOfPitches", "NP" },       // Número de lanzamientos
-                { "pitchesPerInning", "P/IP" },    // Lanzamientos por entrada
-                { "gamesFinished", "GF" },         // Juegos finalizados
-                { "holds", "HLD" },                // Holds
-                { "intentionalWalks", "IBB" },     // Bases por bolas intencionales
-                { "wildPitches", "WP" },           // Wild pitches
-                { "strikeoutWalkRatio", "K/BB" }   // Relación strikeout/base por bolas
+                { "era", "ERA" },
+                { "shutouts", "SHO" },
+                { "completeGames", "CG" },
+                { "saves", "SV" },
+                { "saveOpportunities", "SVO" },
+                { "inningsPitched", "IP" },
+                { "hits", "H" },
+                { "runs", "R" },
+                { "homeRuns", "HR" },
+                { "wins", "W" },
+                { "strikeOuts", "SO" },
+                { "whip", "WHIP" },
+                { "avg", "AVG" },
+                { "battersFaced", "TBF" },
+                { "numberOfPitches", "NP" },
+                { "pitchesPerInning", "P/IP" },
+                { "gamesFinished", "GF" },
+                { "holds", "HLD" },
+                { "intentionalWalks", "IBB" },
+                { "wildPitches", "WP" },
+                { "strikeoutWalkRatio", "K/BB" }
             };
 
             foreach (var statToken in statsArray)
             {
-                // Cada elemento debe ser un JObject con los campos de estadísticas.
+                // Each element must be a structured object with team fields.
                 if (statToken is not JObject teamStat)
                     continue;
 
+                // Team name is the join key across sources; normalize to our canonical names.
                 var teamNameRaw = teamStat["teamName"]?.ToString();
                 if (string.IsNullOrWhiteSpace(teamNameRaw))
                 {
-                    Console.WriteLine("⚠️ Nombre de equipo no encontrado o vacío.");
+                    Console.WriteLine("⚠️ Team name not found or empty.");
                     continue;
                 }
                 var teamName = TeamNameNormalizer.Normalize(teamNameRaw);
 
-                // Busca o crea el equipo.
+                // Ensure Team exists in the database.
                 var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
                 if (team == null)
                 {
@@ -86,13 +104,13 @@ namespace StrikeData.Services.TeamData.Importers
                     await _context.SaveChangesAsync();
                 }
 
-                // Recorre todas las estadísticas que quieres importar.
+                // Upsert a TeamStat row for each mapped metric.
                 foreach (var mapping in statMappings)
                 {
                     var apiField = mapping.Key;
                     var shortName = mapping.Value;
 
-                    // Comprueba que el campo existe en el JSON.
+                    // Skip if the expected field is missing in MLB payload.
                     if (!teamStat.TryGetValue(apiField, out var token))
                         continue;
 
@@ -100,15 +118,15 @@ namespace StrikeData.Services.TeamData.Importers
                     if (string.IsNullOrWhiteSpace(rawValue))
                         continue;
 
+                    // Parse using invariant culture to avoid locale-dependent issues.
                     if (!float.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out float statValue))
                     {
-                        Console.WriteLine($"⚠️ Valor inválido para {shortName} en {teamName}: '{rawValue}'");
+                        Console.WriteLine($"⚠️ Invalid value for {shortName} in {teamName}: '{rawValue}'");
                         continue;
                     }
 
-                    // Busca o crea el tipo de estadística.
+                    // Ensure StatType exists under the Pitching category.
                     var statType = _context.StatTypes.FirstOrDefault(s => s.Name == shortName && s.StatCategoryId == pitchingCategoryId);
-
                     if (statType == null)
                     {
                         statType = new StatType { Name = shortName, StatCategoryId = pitchingCategoryId };
@@ -116,21 +134,26 @@ namespace StrikeData.Services.TeamData.Importers
                         await _context.SaveChangesAsync();
                     }
 
-                    // Busca o crea la estadística del equipo.
+                    // One TeamStat per (Team, StatType).
                     var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id);
                     if (stat == null)
                     {
                         stat = new TeamStat { TeamId = team.Id, StatTypeId = statType.Id };
                         _context.TeamStats.Add(stat);
                     }
+
+                    // MLB season aggregate is stored in Total.
                     stat.Total = statValue;
                 }
 
+                // Persist team-by-team so a partial import still leaves data saved if a later team fails.
                 await _context.SaveChangesAsync();
             }
         }
 
-        // Devuelve el Id de la categoría Pitching, creando la categoría si aún no existe.
+        /// <summary>
+        /// Returns the Id of the "Pitching" category, creating it if necessary.
+        /// </summary>
         private async Task<int> GetPitchingCategoryIdAsync()
         {
             var category = _context.StatCategories.FirstOrDefault(c => c.Name == "Pitching");
@@ -143,7 +166,10 @@ namespace StrikeData.Services.TeamData.Importers
             return category.Id;
         }
 
-        // Llama a la API oficial de MLB para recuperar las estadísticas de pitching.
+        /// <summary>
+        /// Calls the MLB endpoint used by their public site to retrieve team pitching stats
+        /// for the 2025 regular season and returns the "stats" array.
+        /// </summary>
         private async Task<JArray> FetchTeamPitchingStatsMLB()
         {
             var url = "https://bdfed.stitch.mlbinfra.com/bdfed/stats/team?&env=prod&gameType=R&group=pitching&order=desc&sortStat=strikeouts&stats=season&season=2025&limit=30&offset=0";
@@ -152,23 +178,27 @@ namespace StrikeData.Services.TeamData.Importers
             var stats = (JArray)json["stats"];
             if (stats == null || !stats.Any())
             {
-                Console.WriteLine("⚠️ No se encontraron estadísticas de pitching.");
+                Console.WriteLine("⚠️ No pitching stats found from MLB.");
                 return new JArray();
             }
             return stats;
         }
 
-        // Importa una estadística concreta desde TeamRankings (sólo columna 2025).
+        /// <summary>
+        /// Imports one pitching metric from TeamRankings.
+        /// Only the "2025" column is read and stored as TeamStat.CurrentSeason.
+        /// </summary>
         private async Task ImportPitchingTeamStatTR(string statTypeName, string url)
         {
             var response = await _httpClient.GetStringAsync(url);
             var doc = new HtmlDocument();
             doc.LoadHtml(response);
 
+            // TeamRankings renders a single data table with yearly columns (e.g., "2025").
             var table = doc.DocumentNode.SelectSingleNode("//table[contains(@class,'datatable')]");
             if (table == null) return;
 
-            // Localiza la columna cuyo encabezado es "2025".
+            // Locate the "2025" column in the header.
             var headerRow = table.SelectSingleNode(".//thead/tr");
             var headerCells = headerRow.SelectNodes(".//th|.//td");
             int currentSeasonIndex = -1;
@@ -183,17 +213,13 @@ namespace StrikeData.Services.TeamData.Importers
             }
             if (currentSeasonIndex == -1)
             {
-                Console.WriteLine("⚠️ No se encontró la columna 2025 en la tabla de TeamRankings.");
+                Console.WriteLine("⚠️ Column 2025 not found in TeamRankings table.");
                 return;
             }
 
-            // Busca o crea el tipo de estadística y lo asocia a la categoría Pitching.
-            // Obtener el Id de la categoría pitching (sólo una vez al principio del método)
-            int categoryId = await GetPitchingCategoryIdAsync();
-
-            // Buscar el StatType por nombre y por categoría
+            // Ensure the StatType exists under the Pitching category.
+            var categoryId = await _context.EnsureCategoryIdAsync("Pitching");
             var statType = _context.StatTypes.FirstOrDefault(s => s.Name == statTypeName && s.StatCategoryId == categoryId);
-
             if (statType == null)
             {
                 statType = new StatType { Name = statTypeName, StatCategoryId = categoryId };
@@ -201,19 +227,19 @@ namespace StrikeData.Services.TeamData.Importers
                 await _context.SaveChangesAsync();
             }
 
-            // Recorre todas las filas (equipos) de la tabla, saltando el encabezado.
+            // Iterate team rows and write the "2025" value into CurrentSeason.
             var rows = table.SelectNodes(".//tr").Skip(1);
             foreach (var row in rows)
             {
                 var cells = row.SelectNodes("./td").ToList();
                 if (cells.Count <= currentSeasonIndex) continue;
 
-                // Nombre del equipo está en la segunda columna (índice 1).
+                // Team name is in the second column (index 1).
                 var rawTeamName = cells[1].InnerText.Trim();
                 if (string.IsNullOrWhiteSpace(rawTeamName)) continue;
                 var teamName = TeamNameNormalizer.Normalize(rawTeamName);
 
-                // Busca o crea el equipo.
+                // Ensure Team exists.
                 var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
                 if (team == null)
                 {
@@ -222,17 +248,17 @@ namespace StrikeData.Services.TeamData.Importers
                     await _context.SaveChangesAsync();
                 }
 
-                // Obtiene el valor de la columna 2025.
+                // Parse "2025" cell as float (invariant culture).
                 var cellText = cells[currentSeasonIndex].InnerText.Trim();
                 if (string.IsNullOrWhiteSpace(cellText)) continue;
 
                 if (!float.TryParse(cellText, NumberStyles.Float, CultureInfo.InvariantCulture, out float currentSeason))
                 {
-                    Console.WriteLine($"⚠️ Valor inválido para {statTypeName} en {teamName}: '{cellText}'");
+                    Console.WriteLine($"⚠️ Invalid value for {statTypeName} in {teamName}: '{cellText}'");
                     continue;
                 }
 
-                // Busca o crea la estadística del equipo.
+                // Upsert TeamStat and store CurrentSeason (per-game value).
                 var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id);
                 if (stat == null)
                 {
@@ -245,6 +271,5 @@ namespace StrikeData.Services.TeamData.Importers
 
             await _context.SaveChangesAsync();
         }
-
     }
 }

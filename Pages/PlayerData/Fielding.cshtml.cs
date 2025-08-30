@@ -7,6 +7,10 @@ using StrikeData.Services.Glossary;
 
 namespace StrikeData.Pages.PlayerData
 {
+    /// <summary>
+    /// Razor PageModel for listing per-player fielding metrics by team.
+    /// Loads glossary metadata and PlayerStats for the "Fielding" category.
+    /// </summary>
     public class FieldingModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -16,29 +20,30 @@ namespace StrikeData.Pages.PlayerData
             _context = context;
         }
 
-        // Team dropdown options
+        // Options for the team dropdown
         public List<SelectListItem> TeamOptions { get; set; } = new();
 
-        // Bound property for selected team
+        // Selected team id from query string
         [BindProperty(SupportsGet = true)]
         public int SelectedTeamId { get; set; }
 
-        // Columns to display (all fielding stats)
+        // Fielding metrics rendered in the table (fixed list)
         public List<string> VisibleColumns { get; private set; } = new();
 
-        // Player rows
+        // Flattened rows for the view
         public List<PlayerRow> Rows { get; private set; } = new();
 
         private static readonly string CategoryName = "Fielding";
 
-        // Fielding stat abbreviations
+        // Set of fielding abbreviations expected to exist in PlayerStatTypes
         private static readonly List<string> Columns = new()
         {
             "OUTS", "TC", "CH", "PO", "A", "E", "DP", "PB", "CASB", "CACS", "FLD%"
         };
 
-        // Metadata for stats: long name and description
-        public Dictionary<string, StatInfo> StatMeta { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
+        // Tooltip metadata per abbreviation
+        public Dictionary<string, StatInfo> StatMeta { get; private set; } =
+            new(StringComparer.OrdinalIgnoreCase);
 
         public class StatInfo
         {
@@ -52,24 +57,25 @@ namespace StrikeData.Pages.PlayerData
             public int? Number { get; set; }
             public string Name { get; set; } = "";
             public string? Position { get; set; }
-            public Dictionary<string, float?> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+            public Dictionary<string, float?> Values { get; set; } =
+                new(StringComparer.OrdinalIgnoreCase);
         }
 
-        // Fill StatMeta with names and descriptions
+        /// <summary>
+        /// Populates StatMeta from the central glossary for the fixed Columns list.
+        /// </summary>
         private void InitStatMeta()
         {
             StatMeta.Clear();
 
-            // Trae el mapa del dominio
             var map = StatGlossary.GetMap(StatDomain.PlayerFielding);
 
-            // Si quieres solo las columnas visibles:
-            foreach (var col in Columns) // o VisibleColumns
+            foreach (var col in Columns)
             {
                 if (map.TryGetValue(col, out var st))
                     StatMeta[col] = new StatInfo { LongName = st.LongName, Description = st.Description };
                 else
-                    StatMeta[col] = new StatInfo { LongName = col, Description = "" }; // fallback
+                    StatMeta[col] = new StatInfo { LongName = col, Description = "" };
             }
         }
 
@@ -77,19 +83,20 @@ namespace StrikeData.Pages.PlayerData
         {
             InitStatMeta();
 
-            // Teams for dropdown
+            // Team dropdown data
             TeamOptions = await _context.Teams
                 .OrderBy(t => t.Name)
                 .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.Name })
                 .ToListAsync();
 
+            // Default to the first team if none selected
             if (SelectedTeamId == 0 && TeamOptions.Any())
                 SelectedTeamId = int.Parse(TeamOptions.First().Value);
 
-            // All fielding stats are visible
+            // All fielding columns are visible in this view
             VisibleColumns = Columns;
 
-            // Load players for selected team (any position)
+            // Load players for the selected team (fielding applies to all positions)
             var players = await _context.Players
                 .AsNoTracking()
                 .Where(p => p.TeamId == SelectedTeamId)
@@ -98,7 +105,7 @@ namespace StrikeData.Pages.PlayerData
 
             var playerIds = players.Select(p => p.Id).ToList();
 
-            // Load stat types in the Fielding category for these columns
+            // Resolve fielding stat types that match the expected columns
             var statTypes = await _context.PlayerStatTypes
                 .AsNoTracking()
                 .Include(st => st.StatCategory)
@@ -110,15 +117,16 @@ namespace StrikeData.Pages.PlayerData
             var typeIds = statTypes.Select(s => s.Id).ToList();
             var nameByTypeId = statTypes.ToDictionary(s => s.Id, s => s.Name);
 
-            // Load player stats
+            // Fetch PlayerStats for the selected players and fielding types
             var stats = await _context.PlayerStats
                 .AsNoTracking()
                 .Where(ps => playerIds.Contains(ps.PlayerId) && typeIds.Contains(ps.PlayerStatTypeId))
                 .ToListAsync();
 
-            // Build rows
+            // Group by player for quick lookups during row composition
             var rows = new List<PlayerRow>();
-            var byPlayer = stats.GroupBy(s => s.PlayerId).ToDictionary(g => g.Key, g => g.ToList());
+            var byPlayer = stats.GroupBy(s => s.PlayerId)
+                                .ToDictionary(g => g.Key, g => g.ToList());
 
             foreach (var p in players)
             {

@@ -8,7 +8,7 @@
 <h2 class="section-title">Team Schedule</h2>
 
 <form method="get">
-    <!-- Desplegable centrado y estilizado, separado del selector de vista -->
+    <!-- Team selector: styled and centered. Submits on change to reload page data. -->
     <div class="table-selector">
         <select asp-for="SelectedTeamId"
                 asp-items="Model.TeamOptions"
@@ -23,7 +23,7 @@
         </select>
     </div>
 
-    <!-- Selector Expanded / Summarized -->
+    <!-- View mode toggles: "expanded" (per-game) vs "summarized" (split tables). -->
     <div class="table-selector mb-3">
         <button type="submit"
                 name="ViewMode"
@@ -40,9 +40,13 @@
     </div>
 </form>
 
+@* =========================
+   Expanded: per-game table
+   ========================= *@
 @if (Model.ViewMode == "expanded")
 {
-    <!-- Tabla de calendario, centrada mediante margin:auto -->
+    <!-- The header cells declare data-sortable and data-type for generic JS sorting.
+         Dates are rendered as "yyyy-MM-dd" to align with the sorter's strict date parser. -->
     <table class="table table-striped sortable-table table-bordered table-sm pitching-table"
            style="margin: 1 auto;">
         <thead>
@@ -70,9 +74,12 @@
         </tbody>
     </table>
 }
+@* =========================
+   Summarized: split tables
+   ========================= *@
 else
 {
-    <!-- Sección Monthly Splits -->
+    <!-- Monthly Splits: one row per calendar month with win% formatted to 3 decimals. -->
     <div class="mb-4" style="max-width: 80%; margin: 0 auto;">
         <h4 class="table-subtitle">Monthly Splits</h4>
         <table class="table table-striped sortable-table table-bordered table-sm pitching-table">
@@ -100,7 +107,7 @@ else
         </table>
     </div>
 
-    <!-- Sección Team vs Team Splits -->
+    <!-- Team vs Team Splits: aggregated performance against each opponent. -->
     <div class="mb-4" style="max-width: 80%; margin: 0 auto;">
         <h4 class="table-subtitle">Team vs Team Splits</h4>
         <table class="table table-striped sortable-table table-bordered table-sm pitching-table">

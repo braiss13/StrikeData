@@ -1,8 +1,8 @@
 namespace StrikeData.Services.StaticMaps
 {
     /// <summary>
-    /// Mapa de código de Baseball-Almanac -> nombre oficial en la BD.
-    /// Reutilizado por importers de Team & Player.
+    /// Mapping from Baseball Almanac team codes to the official team names used in the DB.
+    /// This is reused by team and player importers/scrapers to resolve teams consistently.
     /// </summary>
     public static class TeamCodeMap
     {

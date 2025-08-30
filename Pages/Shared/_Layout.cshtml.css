@@ -1,25 +1,31 @@
-﻿a.navbar-brand {
+﻿/* Global link used for branding in navbars; allow wrapping on small screens */
+a.navbar-brand {
   white-space: normal;
   text-align: center;
   word-break: break-all;
 }
 
+/* Default link color across the site */
 a {
   color: #0077cc;
 }
 
+/* Primary button styling (consistent with brand palette) */
 .btn-primary {
   color: #fff;
   background-color: #1b6ec2;
   border-color: #1861ac;
 }
 
-.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
+/* Active state for .nav-pills navigation (Bootstrap-like naming) */
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
   color: #fff;
   background-color: #1b6ec2;
   border-color: #1861ac;
 }
 
+/* Thin utility borders for separating sections */
 .border-top {
   border-top: 1px solid #e5e5e5;
 }
@@ -27,15 +33,20 @@ a {
   border-bottom: 1px solid #e5e5e5;
 }
 
+/* Soft drop shadow for cards/containers marked with .box-shadow */
 .box-shadow {
   box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
 }
 
+/* Normalize policy/consent button text sizing to the surrounding context */
 button.accept-policy {
   font-size: 1rem;
   line-height: inherit;
 }
 
+/* Footer utility:
+   - Sticks the footer to the bottom when content is short
+   - Ensures consistent line height and full width */
 .footer {
   position: absolute;
   bottom: 0;

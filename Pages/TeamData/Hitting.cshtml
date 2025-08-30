@@ -8,6 +8,7 @@
 
 <h2 class="section-title">Hitting Stats</h2>
 
+<!-- Filter: StatType selection (All or a specific hitting metric) -->
 <form method="get">
     <div class="table-selector">
         <select id="statSelect"
@@ -25,9 +26,10 @@
     </div>
 </form>
 
-<!-- Área para mostrar la explicación de la estadística seleccionada -->
+<!-- Inline description for the selected metric (fed by StatDescriptions) -->
 <p id="statDescription" class="stat-desc" style="margin-left: 10px; color: #93c5fd;"></p>
 
+<!-- Team-level table with totals and per-game splits -->
 <table class="table table-striped sortable-table table-bordered table-sm pitching-table" style="margin: 1 auto;">
     <thead>
         <tr>
@@ -78,9 +80,9 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Diccionario renderizado desde el modelo en JSON seguro
+            // Descriptions dictionary, serialized from the PageModel (keys = StatType.Id as string)
             const descriptions = @Html.Raw(JsonSerializer.Serialize(Model.StatDescriptions));
-            // Inicializa el comportamiento reutilizable
+            // Initialize the reusable behavior (updates paragraph when selection changes)
             StrikeData.initStatDescription('statSelect', 'statDescription', descriptions);
         });
     </script>

@@ -7,6 +7,11 @@ using StrikeData.Models;
 
 namespace StrikeData.Pages.TeamData
 {
+    /// <summary>
+    /// PageModel for the Team Schedule page. It loads a team's full schedule and
+    /// two kinds of summaries (monthly splits and opponent splits) for a fixed season.
+    /// The view supports two modes: "expanded" (per-game table) and "summarized" (split tables).
+    /// </summary>
     public class ScheduleModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -16,49 +21,51 @@ namespace StrikeData.Pages.TeamData
             _context = context;
         }
 
-        // Lista de equipos para el desplegable
+        // Options for the team selector <select>.
         public List<SelectListItem> TeamOptions { get; set; } = new();
 
-        // Propiedades para vincular el equipo y el modo seleccionados
+        // Bound query parameters: selected team and current view mode.
         [BindProperty(SupportsGet = true)]
         public int SelectedTeamId { get; set; }
 
         [BindProperty(SupportsGet = true)]
-        public string ViewMode { get; set; } = "expanded";
+        public string ViewMode { get; set; } = "expanded"; // "expanded" | "summarized"
 
-        // Datos que se mostrarán en la página
+        // Data exposed to the Razor view.
         public List<TeamGame> Schedule { get; private set; } = new();
         public List<TeamMonthlySplit> MonthlySplits { get; private set; } = new();
         public List<TeamOpponentSplit> TeamSplits { get; private set; } = new();
 
         public async Task OnGetAsync()
         {
-            // Cargar equipos ordenados para el desplegable
+            // Populate team dropdown (sorted alphabetically).
             TeamOptions = await _context.Teams
                 .OrderBy(t => t.Name)
                 .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.Name })
                 .ToListAsync();
 
-            // Si no se ha seleccionado un equipo, por defecto el primero
+            // Default to the first team when none is selected.
             if (SelectedTeamId == 0 && TeamOptions.Any())
             {
                 SelectedTeamId = int.Parse(TeamOptions.First().Value);
             }
 
-            // Filtrar por temporada actual (2025) si ya has importado esa temporada
+            // Fixed season context (align with importers).
             int season = 2025;
 
-            // Cargar datos desde la base de datos para el equipo seleccionado
+            // Load per-game schedule for the selected team.
             Schedule = await _context.TeamGames
                 .Where(g => g.TeamId == SelectedTeamId && g.Season == season)
                 .OrderBy(g => g.GameNumber)
                 .ToListAsync();
 
+            // Load monthly split aggregates.
             MonthlySplits = await _context.TeamMonthlySplits
                 .Where(s => s.TeamId == SelectedTeamId && s.Season == season)
                 .OrderBy(s => s.Month)
                 .ToListAsync();
 
+            // Load opponent split aggregates.
             TeamSplits = await _context.TeamOpponentSplits
                 .Where(s => s.TeamId == SelectedTeamId && s.Season == season)
                 .OrderBy(s => s.OpponentName)

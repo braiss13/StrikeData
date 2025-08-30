@@ -3,11 +3,18 @@ using StrikeData.Data;
 using StrikeData.Models;
 using StrikeData.Services.Normalization;
 using StrikeData.Services.StaticMaps;
+using StrikeData.Data.Extensions;
 
 namespace StrikeData.Services.TeamData.Importers
 {
+    /// <summary>
+    /// Imports TEAM-level FIELDING statistics from TeamRankings and saves them
+    /// into StatType/TeamStat under the "Fielding" category.
+    /// TeamRankings provides per-game splits (Current season, Last 3, etc.).
+    /// </summary>
     public class FieldingImporter
     {
+        // EF Core DbContext for persistence and a dedicated HttpClient for network I/O.
         private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
 
@@ -17,42 +24,48 @@ namespace StrikeData.Services.TeamData.Importers
             _httpClient = new HttpClient();
         }
 
-        // Método principal -> Contiene las llamadas a los dos métodos de obtención de datos (TeamRankings)
+        /// <summary>
+        /// Entry point for Fielding: iterates over TeamRankings fielding endpoints
+        /// and imports each metric's per-game values for all teams.
+        /// </summary>
         public async Task ImportAllStatsAsyncF()
         {
             foreach (var stat in TeamRankingsMaps.Fielding)
             {
+                // stat.Key => abbreviation; stat.Value => TeamRankings URL
                 await ImportHittingTeamStatsTR(stat.Key, stat.Value);
             }
         }
 
-        // Método que realiza scrapping para obtener estadísticas de TeamRankings
+        /// <summary>
+        /// Scrapes a single TeamRankings fielding page and stores the split values
+        /// (CurrentSeason, Last3Games, LastGame, Home, Away, PrevSeason) into TeamStat.
+        /// </summary>
+        /// <param statTypeName> Abbreviation (e.g., "DP") used as StatType.Name.</param>
+        /// <param url> TeamRankings URL for the given fielding metric.</param>
         public async Task ImportHittingTeamStatsTR(string statTypeName, string url)
         {
-
-            // Descarga la página html y crea un documento con todo el contenido
+            // Download the HTML and load it into an HtmlAgilityPack document.
             var response = await _httpClient.GetStringAsync(url);
             var doc = new HtmlDocument();
             doc.LoadHtml(response);
 
-            // Busca la etiqueta <table> dentro del doc
+            // TeamRankings renders a single <table class="datatable"> with yearly columns.
             var table = doc.DocumentNode.SelectSingleNode("//table[contains(@class, 'datatable')]");
-
-            // Obtiene la primera fila de la tabla que sería el encabezado
+            // Header keeps the column labels, rows contain one team per row.
             var header = table.SelectSingleNode(".//thead/tr");
 
-            // Obtiene las filas pero saltando el primero que sería el encabezado
+            // Skip the header row: we only iterate data rows (one per team).
             var rows = table.SelectNodes(".//tr").Skip(1);
 
-            // Se busca si el tipo de estadística ya está en la BD, sino se crea
+            // Ensure the StatType exists under the "Fielding" category.
             var statType = _context.StatTypes.FirstOrDefault(s => s.Name == statTypeName);
             if (statType == null)
             {
+                // Ensure the category exists and get its Id.
+                var categoryId = await _context.EnsureCategoryIdAsync("Fielding");
 
-                // Obtener o crear la categoría Hitting y recuperar su Id
-                int categoryId = await GetFieldingCategoryIdAsync();
-
-                // Crear el nuevo tipo de estadística asociándolo a esa categoría
+                // Create the StatType bound to "Fielding" to keep the glossary and UI consistent.
                 statType = new StatType
                 {
                     Name = statTypeName,
@@ -65,18 +78,17 @@ namespace StrikeData.Services.TeamData.Importers
 
             foreach (var row in rows)
             {
-
-                // Se obtiene cada celda de cada fila (sería el <td>)
+                // Each row is a team. The table includes: Rank, Team Name, 2025 (Current), Last3, Last1, Home, Away, Prev
                 var cells = row.SelectNodes("td");
 
-                // Como la tabla tiene Posición, Nombre Equipo y estadísticas (Current, Last 3...) si es menor a 8 se salta.
+                // Guard against unexpected table shapes. We expect at least 8 cells.
                 if (cells == null || cells.Count < 8) continue;
 
-                // Se obtiene el nombre del equipo y se normaliza para evitar abreviaciones o inconsistencias
+                // Team name comes as a display label; normalize to our canonical DB name.
                 string rawTeamName = cells[1].InnerText.Trim();
                 string teamName = TeamNameNormalizer.Normalize(rawTeamName);
 
-                // Se valida si el equipo ya existe en la BD, caso contrario se crea y se guarda
+                // Ensure Team exists in the DB so TeamStat can reference it.
                 var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
                 if (team == null)
                 {
@@ -85,7 +97,7 @@ namespace StrikeData.Services.TeamData.Importers
                     await _context.SaveChangesAsync();
                 }
 
-                // Se busca si está el TeamStat en la BD, sino se crea
+                // One TeamStat row per (Team, StatType). Create it if missing.
                 var stat = _context.TeamStats.FirstOrDefault(ts => ts.TeamId == team.Id && ts.StatTypeId == statType.Id);
                 if (stat == null)
                 {
@@ -97,20 +109,24 @@ namespace StrikeData.Services.TeamData.Importers
                     _context.TeamStats.Add(stat);
                 }
 
-                // Se guarda cada valor en la propiedad correspondiente de TeamStat
+                // Parse all splits from the row using the shared invariant parser.
+                // Indexes map to TeamRankings table columns:
+                // 2 => Current Season (year column), 3 => Last 3, 4 => Last 1, 5 => Home, 6 => Away, 7 => Previous season
                 stat.CurrentSeason = Utilities.Parse(cells[2].InnerText);
-                stat.Last3Games = Utilities.Parse(cells[3].InnerText);
-                stat.LastGame = Utilities.Parse(cells[4].InnerText);
-                stat.Home = Utilities.Parse(cells[5].InnerText);
-                stat.Away = Utilities.Parse(cells[6].InnerText);
-                stat.PrevSeason = Utilities.Parse(cells[7].InnerText);
-
+                stat.Last3Games    = Utilities.Parse(cells[3].InnerText);
+                stat.LastGame      = Utilities.Parse(cells[4].InnerText);
+                stat.Home          = Utilities.Parse(cells[5].InnerText);
+                stat.Away          = Utilities.Parse(cells[6].InnerText);
+                stat.PrevSeason    = Utilities.Parse(cells[7].InnerText);
             }
 
-            // Guarda todo al final para evitar múltiples escrituras en la BD
+            // Persist all changes in a single batch to reduce DB round trips.
             await _context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Returns the Id of the "Fielding" StatCategory, creating it if necessary.
+        /// </summary>
         private async Task<int> GetFieldingCategoryIdAsync()
         {
             var category = _context.StatCategories.FirstOrDefault(c => c.Name == "Fielding");
@@ -122,6 +138,5 @@ namespace StrikeData.Services.TeamData.Importers
             }
             return category.Id;
         }
-
     }
 }

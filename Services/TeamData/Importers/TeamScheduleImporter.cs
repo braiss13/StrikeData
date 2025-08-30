@@ -1,3 +1,4 @@
+// TeamScheduleImporter.cs
 using StrikeData.Data;
 using StrikeData.Models;
 using StrikeData.Models.Scraping;
@@ -7,6 +8,11 @@ using StrikeData.Services.TeamData.Scrapers;
 
 namespace StrikeData.Services.TeamData.Importers
 {
+    /// <summary>
+    /// Imports team schedules and split summaries for an entire season
+    /// using Baseball Almanac pages (via TeamScheduleScraper).
+    /// Persists: TeamGames (per game), TeamMonthlySplits (per month), TeamOpponentSplits (per opponent).
+    /// </summary>
     public class TeamScheduleImporter
     {
         private readonly AppDbContext _context;
@@ -18,37 +24,51 @@ namespace StrikeData.Services.TeamData.Importers
             _scraper = scraper;
         }
 
+        /// <summary>
+        /// Iterates over all known Baseball Almanac team codes and imports:
+        /// - full schedule (per game data),
+        /// - monthly splits, and
+        /// - opponent splits
+        /// for the given season.
+        /// Only teams already present in the DB are processed.
+        /// </summary>
         public async Task ImportAllTeamsScheduleAsync(int season)
         {
             foreach (var kvp in TeamCodeMap.CodeToName)
             {
-                var code = kvp.Key;
-                var name = kvp.Value;
+                var code = kvp.Key;   // Baseball Almanac team code (e.g., "NYA")
+                var name = kvp.Value; // Official name in our DB
 
+                // Skip unknown teams to avoid creating teams implicitly here.
                 var team = _context.Teams.FirstOrDefault(t => t.Name == name);
                 if (team == null)
-                    continue; // Si el equipo no existe en la BD, lo ignoramos.
+                    continue;
 
                 TeamScheduleResultDto? result;
                 try
                 {
+                    // Scrape one team/year page and return schedule + split DTOs.
                     result = await _scraper.GetTeamScheduleAndSplitsAsync(code, season);
                 }
                 catch
                 {
-                    // La página puede no existir para ese equipo/año.
+                    // Some teams/years may not have a page; ignore failures silently here.
                     continue;
                 }
 
                 if (result == null) { continue; }
 
-                // Partidos del calendario
+                // ======================
+                // Games (per-game rows)
+                // ======================
                 foreach (var gameDto in result.Schedule)
                 {
-                    // Separar "vs " / "at "
+                    // The scraped "Opponent" text already includes a prefix ("vs " or "at ").
+                    // We derive IsHome from that prefix and strip it from the opponent's name.
                     bool isHome = false;
                     string oppText = gameDto.Opponent.Trim();
                     string oppName = oppText;
+
                     if (oppText.StartsWith("vs ", StringComparison.OrdinalIgnoreCase))
                     {
                         isHome = true;
@@ -60,11 +80,12 @@ namespace StrikeData.Services.TeamData.Importers
                         oppName = oppText[3..].Trim();
                     }
 
-                    // Normalizar el nombre del rival
+                    // Normalize opponent name so it matches the Team.Name stored in our DB.
                     string normalized = TeamNameNormalizer.Normalize(oppName);
                     var opponentTeam = _context.Teams.FirstOrDefault(t => t.Name == normalized);
-                    int? oppId = opponentTeam?.Id;
+                    int? oppId = opponentTeam?.Id; // may be null if the opponent is not in our DB
 
+                    // Idempotent upsert keyed by (TeamId, Season, GameNumber).
                     var existing = _context.TeamGames
                         .FirstOrDefault(x => x.TeamId == team.Id && x.Season == season && x.GameNumber == gameDto.GameNumber);
                     if (existing == null)
@@ -76,19 +97,24 @@ namespace StrikeData.Services.TeamData.Importers
                     existing.TeamId = team.Id;
                     existing.Season = season;
                     existing.GameNumber = gameDto.GameNumber;
-                    // Convertir la fecha a UTC (PostgreSQL)
+
+                    // Store Date as UTC to align with PostgreSQL timestamp semantics.
                     existing.Date = DateTime.SpecifyKind(gameDto.Date, DateTimeKind.Utc);
+
                     existing.IsHome = isHome;
                     existing.OpponentTeamId = oppId;
-                    existing.OpponentName = normalized;
+                    existing.OpponentName = normalized; // keep normalized text even when OpponentTeamId is null
                     existing.Score = gameDto.Score;
                     existing.Decision = gameDto.Decision;
                     existing.Record = gameDto.Record;
                 }
 
-                // Splits mensuales
+                // ======================
+                // Monthly splits (per month)
+                // ======================
                 foreach (var ms in result.MonthlySplits)
                 {
+                    // Upsert by (Team, Season, Month) to keep monthly aggregates unique.
                     var existing = _context.TeamMonthlySplits
                         .FirstOrDefault(x => x.TeamId == team.Id && x.Season == season && x.Month == ms.Month);
                     if (existing == null)
@@ -106,13 +132,17 @@ namespace StrikeData.Services.TeamData.Importers
                     existing.WinPercentage = ms.WinPercentage;
                 }
 
-                // Splits por rival
+                // ======================
+                // Opponent splits (per opponent)
+                // ======================
                 foreach (var ts in result.TeamSplits)
                 {
+                    // Normalize the opponent label to match our Team names.
                     string normalizedOpp = TeamNameNormalizer.Normalize(ts.Opponent);
                     var opponentTeam = _context.Teams.FirstOrDefault(t => t.Name == normalizedOpp);
                     int? oppId = opponentTeam?.Id;
 
+                    // Upsert by (Team, Season, OpponentName).
                     var existing = _context.TeamOpponentSplits
                         .FirstOrDefault(x => x.TeamId == team.Id && x.Season == season && x.OpponentName == normalizedOpp);
                     if (existing == null)
@@ -131,6 +161,7 @@ namespace StrikeData.Services.TeamData.Importers
                     existing.WinPercentage = ts.WinPercentage;
                 }
 
+                // Persist
                 await _context.SaveChangesAsync();
             }
         }

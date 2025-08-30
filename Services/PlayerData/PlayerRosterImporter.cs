@@ -6,6 +6,9 @@ using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.PlayerData
 {
+    /// <summary>
+    /// Imports the 40-man roster for all MLB teams (season 2025) and upserts Player records.
+    /// </summary>
     public class PlayerRosterImporter
     {
         private readonly AppDbContext _context;
@@ -14,29 +17,34 @@ namespace StrikeData.Services.PlayerData
         public PlayerRosterImporter(AppDbContext context)
         {
             _context = context;
-            _httpClient = new HttpClient();
+            _httpClient = new HttpClient(); // In production, prefer IHttpClientFactory
         }
 
-        /// Importa el 40-man roster de los 30 equipos (temporada 2025) y hace upsert de Players.
+        /// <summary>
+        /// Imports 40-man rosters for the 30 MLB teams and performs upserts into Players.
+        /// </summary>
         public async Task ImportAllPlayersAsync()
         {
-            // Cache de Teams por nombre (case-insensitive)
+            // Cache Teams by name (case-insensitive)
             var teams = await _context.Teams.AsNoTracking().ToListAsync();
             var teamsByName = teams.ToDictionary(t => t.Name, t => t, StringComparer.OrdinalIgnoreCase);
 
-            // Cache de Players por MLB_Player_Id (solo los que lo tienen) **TRACKED** (sin AsNoTracking)
+            // Cache Players by MLB_Player_Id (tracked, for upsert)
             var existingPlayers = await _context.Players
                 .Where(p => p.MLB_Player_Id != null)
                 .ToListAsync();
 
-            var playersByMlbId = existingPlayers.ToDictionary(p => p.MLB_Player_Id!.Value, p => p);
+            var playersByMlbId = existingPlayers.ToDictionary(
+                p => p.MLB_Player_Id!.Value,
+                p => p
+            );
 
             foreach (var kv in PlayerMaps.MlbTeamIdToOfficialName)
             {
-                int mlbTeamId = kv.Key;
-                string officialTeamName = kv.Value;
+                var mlbTeamId = kv.Key;
+                var officialTeamName = kv.Value;
 
-                // Asegurar el Team
+                // Ensure Team exists locally
                 if (!teamsByName.TryGetValue(officialTeamName, out var team))
                 {
                     team = new Team { Name = officialTeamName };
@@ -45,17 +53,20 @@ namespace StrikeData.Services.PlayerData
                     teamsByName[officialTeamName] = team;
                 }
 
-                // Importar roster del equipo
-                string url = $"https://statsapi.mlb.com/api/v1/teams/{mlbTeamId}/roster?rosterType=40Man&season=2025";
-                string json = await _httpClient.GetStringAsync(url);
+                // Fetch 40-man roster for the team
+                var url = $"https://statsapi.mlb.com/api/v1/teams/{mlbTeamId}/roster?rosterType=40Man&season=2025";
+                var json = await _httpClient.GetStringAsync(url);
 
                 using var doc = JsonDocument.Parse(json);
-                if (!doc.RootElement.TryGetProperty("roster", out var roster) || roster.ValueKind != JsonValueKind.Array)
+                if (!doc.RootElement.TryGetProperty("roster", out var roster) ||
+                    roster.ValueKind != JsonValueKind.Array)
+                {
                     continue;
+                }
 
                 foreach (var item in roster.EnumerateArray())
                 {
-                    // person.id (MLB_Player_Id)
+                    // person.id (MLB player id)
                     if (!item.TryGetProperty("person", out var person)) continue;
                     if (!person.TryGetProperty("id", out var idEl)) continue;
                     if (!idEl.TryGetInt64(out var mlbId)) continue;
@@ -74,7 +85,7 @@ namespace StrikeData.Services.PlayerData
                             number = jerseyNum;
                     }
 
-                    // position.abbreviation
+                    // position.abbreviation (e.g., "P", "C", "1B", ...)
                     string? position = null;
                     if (item.TryGetProperty("position", out var posEl) &&
                         posEl.TryGetProperty("abbreviation", out var abbrEl))
@@ -82,7 +93,7 @@ namespace StrikeData.Services.PlayerData
                         position = abbrEl.GetString();
                     }
 
-                    // status.code
+                    // status.code (e.g., Active/IL)
                     string? status = null;
                     if (item.TryGetProperty("status", out var statusEl) &&
                         statusEl.TryGetProperty("code", out var codeEl))
@@ -90,10 +101,10 @@ namespace StrikeData.Services.PlayerData
                         status = codeEl.GetString();
                     }
 
-                    // Upsert por MLB_Player_Id
+                    // Upsert by MLB_Player_Id
                     if (!playersByMlbId.TryGetValue(mlbId, out var player))
                     {
-                        // NUEVO -> Add (quedará trackeado como Added)
+                        // New tracked entity
                         player = new Player
                         {
                             MLB_Player_Id = mlbId,
@@ -104,21 +115,22 @@ namespace StrikeData.Services.PlayerData
                             Status = status
                         };
                         _context.Players.Add(player);
-                        playersByMlbId[mlbId] = player; // OK: si reaparece en el mismo pase, seguirá siendo la MISMA entidad trackeada
+
+                        // Keep dictionary in sync to avoid duplicates within the same pass
+                        playersByMlbId[mlbId] = player;
                     }
                     else
                     {
-                        // EXISTENTE (trackeado) -> asignar propiedades; NO llamar a Update
+                        // Existing tracked entity: set properties; Update() is not required
                         player.TeamId = team.Id;
                         player.Name = fullName!.Trim();
                         player.Number = number;
                         player.Position = position;
                         player.Status = status;
-                        // _context.Players.Update(player); // <- eliminado: no necesario y evita problemas con PK temporal si fuera una nueva entidad
                     }
                 }
 
-                // Guarda por equipo (reduce tamaño de lote y deja progreso parcial)
+                // Save per team to keep batches small and allow partial progress
                 await _context.SaveChangesAsync();
             }
         }

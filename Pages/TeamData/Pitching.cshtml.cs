@@ -5,6 +5,11 @@ using StrikeData.Services.Glossary;
 
 namespace StrikeData.Pages.TeamData
 {
+    /// <summary>
+    /// PageModel for the team-level Pitching view.
+    /// Exposes two sets of abbreviations (Basic and Advanced), loads the corresponding
+    /// values for each team, and provides glossary metadata used by the Razor view.
+    /// </summary>
     public class PitchingModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -14,19 +19,18 @@ namespace StrikeData.Pages.TeamData
             _context = context;
         }
 
-        // Listas de abreviaturas según el tipo de vista
+        // Abbreviation lists for the two views. Order defines column order in the table.
         public List<string> BasicStatNames { get; private set; } = new();
         public List<string> AdvancedStatNames { get; private set; } = new();
 
-        // Lista de view models para la tabla
+        // One view model per team (team name, games, and a map of stat values).
         public List<PitchingStatsViewModel> TeamPitchingStats { get; private set; } = new();
 
+        // Tooltip metadata keyed by abbreviation (long name + description).
         public Dictionary<string, StatInfo> StatMeta { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
-        /// Contiene información de depuración sobre el número de registros recuperados
-        /// y el contenido de la primera fila. Se puede mostrar en la vista para
-        /// diagnosticar por qué la tabla aparece vacía.
+        /// Optional diagnostics used during development (e.g., counts/first row).
         /// </summary>
         public string DebugInfo { get; private set; } = string.Empty;
 
@@ -37,8 +41,8 @@ namespace StrikeData.Pages.TeamData
         }
 
         /// <summary>
-        /// Rellena StatMeta usando el glosario central (TeamPitching) para todas las
-        /// abreviaturas definidas en BasicStatNames y AdvancedStatNames.
+        /// Fills StatMeta using the central glossary (TeamPitching) for all abbreviations
+        /// present in BasicStatNames and AdvancedStatNames.
         /// </summary>
         private void InitStatMeta()
         {
@@ -58,7 +62,7 @@ namespace StrikeData.Pages.TeamData
                 }
                 else
                 {
-                    // Fallback por si alguna clave no estuviera en el glosario
+                    // Fallback when an abbreviation is not present in the glossary.
                     StatMeta[abbr] = new StatInfo
                     {
                         LongName = abbr,
@@ -77,7 +81,7 @@ namespace StrikeData.Pages.TeamData
 
         public async Task OnGetAsync()
         {
-            // 1) Define las abreviaturas que mostrarán las tablas
+            // 1) Define which abbreviations will be display in each table
             BasicStatNames = new List<string>
             {
                 "ERA", "SHO", "CG", "SV", "SVO", "IP",
@@ -90,29 +94,29 @@ namespace StrikeData.Pages.TeamData
                 "OP/G", "ER/G", "SO/9", "H/9", "HR/9", "W/9"
             };
 
-            // 2) Carga definiciones (tooltips) desde el glosario
+            // 2) Load glossary metadata for tooltips
             InitStatMeta();
 
-            // 3) Reiniciar la lista de estadísticas por equipo
+            // 3) Reset the list used by the view
             TeamPitchingStats.Clear();
 
-            // 4) Obtener StatTypes de la categoría Pitching
+            // 4) Build a map (abbr -> StatTypeId) for all Pitching StatTypes
             var statTypeMap = await _context.StatTypes
                 .Include(st => st.StatCategory)
                 .Where(st => st.StatCategory != null && st.StatCategory.Name == "Pitching")
                 .ToDictionaryAsync(st => st.Name, st => st.Id);
 
-            // 5) Cargar TeamStats asociados a Pitching
+            // 5) Load all TeamStats for those StatTypes (includes totals and TR splits)
             var pitchingStats = await _context.TeamStats
                 .Include(ts => ts.StatType)
                 .Include(ts => ts.Team)
                 .Where(ts => statTypeMap.Values.Contains(ts.StatTypeId))
                 .ToListAsync();
 
-            // 6) Cargar todos los equipos
+            // 6) Load teams (name and number of games)
             var teams = await _context.Teams.ToListAsync();
 
-            // 7) Construir un view model por equipo
+            // 7) Compose one view model per team with values for all requested abbreviations
             foreach (var team in teams)
             {
                 var vm = new PitchingStatsViewModel
@@ -128,11 +132,15 @@ namespace StrikeData.Pages.TeamData
                     {
                         var ts = pitchingStats.FirstOrDefault(s => s.TeamId == team.Id && s.StatTypeId == statTypeId);
                         float? value = null;
+
                         if (ts != null)
                         {
-                            // Total para MLB, CurrentSeason para TeamRankings (fallback)
+                            // Convention:
+                            // - MLB values are season aggregates -> stored in Total
+                            // - TeamRankings values are per-game -> stored in CurrentSeason
                             value = ts.Total ?? ts.CurrentSeason;
                         }
+
                         statsDict[statName] = value;
                     }
                     else
@@ -140,6 +148,7 @@ namespace StrikeData.Pages.TeamData
                         statsDict[statName] = null;
                     }
                 }
+
                 vm.Stats = statsDict;
                 TeamPitchingStats.Add(vm);
             }

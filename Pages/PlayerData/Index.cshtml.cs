@@ -6,7 +6,7 @@ namespace StrikeData.Pages.PlayerData
     {
         public void OnGet()
         {
-            // No se requiere lógica adicional por ahora.
+            // There is no specific logic needed for the Index page
         }
     }
 }

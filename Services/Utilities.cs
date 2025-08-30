@@ -4,15 +4,24 @@ using HtmlAgilityPack;
 
 namespace StrikeData.Services
 {
+    /// <summary>
+    /// Utility helpers used across scrapers/importers for parsing and normalization.
+    /// </summary>
     public static class Utilities
     {
-        // Método creado para convertir el String a float (empleado para parsear los datos al final)
+        /// <summary>
+        /// Parses a string into float? using invariant culture. Returns null on failure.
+        /// Used to convert scraped numeric strings into typed values.
+        /// </summary>
         public static float? Parse(string input)
         {
             return float.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out float val) ? val : null;
         }
 
-        // Método para limpiar texto: quita entidades HTML, espacios extra y normaliza
+        /// <summary>
+        /// Cleans HTML-derived text: decodes entities, trims, collapses whitespace,
+        /// and removes line/tab controls to produce a single-line string.
+        /// </summary>
         public static string CleanText(string? s)
         {
             if (string.IsNullOrWhiteSpace(s)) return "";
@@ -23,9 +32,13 @@ namespace StrikeData.Services
         }
 
         // ======================
-        //  NORMALIZACIÓN NOMBRES
+        //  NAME NORMALIZATION
         // ======================
 
+        /// <summary>
+        /// Removes diacritics (accents) while preserving base characters.
+        /// This supports matching when sources differ in accent use.
+        /// </summary>
         private static string RemoveDiacritics(string s)
         {
             var normalized = s.Normalize(NormalizationForm.FormD);
@@ -39,6 +52,10 @@ namespace StrikeData.Services
             return sb.ToString().Normalize(NormalizationForm.FormC);
         }
 
+        /// <summary>
+        /// Strips common suffix tokens (e.g., Jr., Sr., II, III) from the end of a name.
+        /// This avoids mismatches where rosters include a suffix and tables do not.
+        /// </summary>
         private static string StripSuffixes(string s)
         {
             var tokens = s.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
@@ -55,6 +72,9 @@ namespace StrikeData.Services
             return string.Join(' ', tokens);
         }
 
+        /// <summary>
+        /// Reorders “Last, First” to “First Last”. Leaves other formats unchanged.
+        /// </summary>
         private static string ReorderIfComma(string s)
         {
             // "Bichette, Bo" -> "Bo Bichette"
@@ -69,7 +89,10 @@ namespace StrikeData.Services
             return s;
         }
 
-        // "michaelmichael" -> "michael", "bobo" -> "bo"
+        /// <summary>
+        /// Collapses a doubled token if the token is exactly two identical halves
+        /// (e.g., "michaelmichael" -> "michael"). This defends against rare scraper artifacts.
+        /// </summary>
         private static string CollapseDoubledSubstring(string token)
         {
             if (string.IsNullOrEmpty(token)) return token;
@@ -83,7 +106,9 @@ namespace StrikeData.Services
             return token;
         }
 
-        // "king king" -> "king"
+        /// <summary>
+        /// Removes immediate repeated tokens in sequence (e.g., "king king" -> "king").
+        /// </summary>
         private static IEnumerable<string> DedupAdjacentTokens(IEnumerable<string> tokens)
         {
             string? prev = null;
@@ -97,6 +122,17 @@ namespace StrikeData.Services
             }
         }
 
+        /// <summary>
+        /// Normalizes a player name to a consistent, comparable form:
+        /// 1) Reorders "Last, First" to "First Last"
+        /// 2) Removes suffixes (Jr., Sr., II, ...)
+        /// 3) Removes diacritics (accents)
+        /// 4) Strips punctuation (keeps letters/digits/spaces)
+        /// 5) Collapses whitespace
+        /// 6) Lowercases tokens and collapses doubled-token artifacts
+        /// 7) Deduplicates adjacent tokens
+        /// The result improves matching between roster data and scraped tables.
+        /// </summary>
         public static string NormalizePlayerName(string? name)
         {
             if (string.IsNullOrWhiteSpace(name)) return "";
@@ -104,16 +140,16 @@ namespace StrikeData.Services
             var s = name.Trim();
             s = s.Replace("“", "\"").Replace("”", "\"").Replace("’", "'").Replace("`", "'");
 
-            // 1) "Apellido, Nombre" -> "Nombre Apellido"
+            // 1) "Last, First" -> "First Last"
             s = ReorderIfComma(s);
 
-            // 2) quitar sufijos
+            // 2) Drop suffixes
             s = StripSuffixes(s);
 
-            // 3) quitar diacríticos
+            // 3) Remove diacritics
             s = RemoveDiacritics(s);
 
-            // 4) quitar puntuación salvo espacios
+            // 4) Remove punctuation except spaces
             var sb = new StringBuilder(s.Length);
             foreach (var ch in s)
             {
@@ -122,17 +158,17 @@ namespace StrikeData.Services
             }
             s = sb.ToString();
 
-            // 5) colapsar espacios
+            // 5) Collapse whitespace
             s = CleanText(s);
 
-            // 6) dividir tokens, colapsar tokens doblados y duplicados adyacentes
+            // 6) Token-level cleanup
             var tokens = s.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                           .Select(t => CollapseDoubledSubstring(t.ToLowerInvariant()))
                           .ToList();
 
             tokens = DedupAdjacentTokens(tokens).ToList();
 
-            // 7) unir final
+            // 7) Join normalized tokens
             return string.Join(' ', tokens);
         }
     }

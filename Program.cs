@@ -1,23 +1,22 @@
 using Microsoft.EntityFrameworkCore;
 using StrikeData.Data;
-using StrikeData.Services.TeamData;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Register Razor Pages
 builder.Services.AddRazorPages();
 
+// Register EF Core DbContext (PostgreSQL)
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// HTTP request pipeline configuration
 if (!app.Environment.IsDevelopment())
 {
-
+    // Production-friendly error page + HSTS
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -26,6 +25,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// No explicit auth/identity in this project yet, but keep the middleware in place
 app.UseAuthorization();
 
 app.MapRazorPages();

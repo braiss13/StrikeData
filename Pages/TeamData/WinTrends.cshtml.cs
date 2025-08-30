@@ -6,6 +6,11 @@ using StrikeData.Data;
 
 namespace StrikeData.Pages.TeamData
 {
+    /// <summary>
+    /// PageModel for the Win Trends page.
+    /// Loads the available trend types (from StatTypes in the WinTrends category),
+    /// applies the selected filter, and projects TeamStats into a lightweight row model.
+    /// </summary>
     public class WinTrendsModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -15,19 +20,25 @@ namespace StrikeData.Pages.TeamData
             _context = context;
         }
 
-        // Desplegable de tipos de estadística (WinTrends)
+        /// <summary>
+        /// Options for the stat-type <select> (Value/Text = StatType.Name).
+        /// </summary>
         public List<SelectListItem> StatTypeOptions { get; set; } = new();
 
-        // Datos para la tabla
+        /// <summary>
+        /// Materialized rows for the current selection.
+        /// </summary>
         public List<WinTrendRow> Rows { get; private set; } = new();
 
-        // Selección del usuario
+        /// <summary>
+        /// Two-way bound stat type name chosen by the user (via query string).
+        /// </summary>
         [BindProperty(SupportsGet = true)]
         public string SelectedStatType { get; set; } = string.Empty;
 
         public async Task OnGetAsync()
         {
-            // Cargar los stat types de la categoría WinTrends
+            // 1) Load available stat types in the WinTrends category
             StatTypeOptions = await _context.StatTypes
                 .Where(st => st.StatCategory.Name == "WinTrends")
                 .OrderBy(st => st.Name)
@@ -38,13 +49,13 @@ namespace StrikeData.Pages.TeamData
                 })
                 .ToListAsync();
 
-            // Si no hay selección previa, el primero por defecto
+            // Default to the first option if nothing was selected
             if (string.IsNullOrWhiteSpace(SelectedStatType) && StatTypeOptions.Any())
             {
                 SelectedStatType = StatTypeOptions.First().Value;
             }
 
-            // Consulta de TeamStats filtrada por tipo (Perspective fijo Team)
+            // 2) Query TeamStats filtered by the selected StatType and Perspective=Team
             var query = _context.TeamStats
                 .AsNoTracking()
                 .Include(ts => ts.Team)
@@ -54,7 +65,7 @@ namespace StrikeData.Pages.TeamData
                     ts.StatType.Name == SelectedStatType &&
                     ts.Perspective == Models.Enums.StatPerspective.Team);
 
-            // Ordenar por WinPct desc (nulls al final), luego por nombre de equipo
+            // 3) Order by WinPct descending (nulls last), then by team name
             var list = await query
                 .OrderByDescending(ts => ts.WinPct.HasValue)
                 .ThenByDescending(ts => ts.WinPct)
@@ -70,6 +81,9 @@ namespace StrikeData.Pages.TeamData
             Rows = list;
         }
 
+        /// <summary>
+        /// Small DTO for rendering a table row (keeps the view simple).
+        /// </summary>
         public class WinTrendRow
         {
             public string TeamName { get; set; } = "";

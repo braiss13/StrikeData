@@ -2,11 +2,17 @@ using HtmlAgilityPack;
 using StrikeData.Data;
 using StrikeData.Models;
 using StrikeData.Models.Enums;
-using StrikeData.Services.Normalization; // StatPerspective
+using StrikeData.Services.Normalization; 
 using StrikeData.Services.StaticMaps;
+using StrikeData.Data.Extensions;
 
 namespace StrikeData.Services.TeamData.Importers
 {
+    /// <summary>
+    /// Imports "Curious Facts" team metrics from TeamRankings.
+    /// Each metric can be displayed from the team's own perspective or from opponents (prefixed with 'O').
+    /// Persists values into TeamStats associated to the "CuriousFacts" category.
+    /// </summary>
     public class CuriousFactsImporter
     {
         private readonly AppDbContext _context;
@@ -18,7 +24,9 @@ namespace StrikeData.Services.TeamData.Importers
             _httpClient = new HttpClient();
         }
 
-        // Método principal -> recorre el map y llama al método que hace scraping/guardado (mismo patrón que FieldingImporter)
+        /// <summary>
+        /// Main entry point. Iterates <see cref="TeamRankingsMaps.CuriousFacts"/> and imports each metric.
+        /// </summary>
         public async Task ImportAllStatsAsyncCF()
         {
             foreach (var stat in TeamRankingsMaps.CuriousFacts)
@@ -27,23 +35,29 @@ namespace StrikeData.Services.TeamData.Importers
             }
         }
 
-        // Scraping TeamRankings + upsert en BD para una métrica concreta
+        /// <summary>
+        /// Scrapes a single TeamRankings "curious fact" table and upserts rows into TeamStats.
+        /// The <paramref statTypeKey> may start with 'O' to indicate the "Opponent" perspective
+        /// </summary>
+        /// <param statTypeKey> Abbreviation from the map (e.g., "YRFI", "OYRFI", "F5IR/G").</param>
+        /// <param url> TeamRankings URL for that metric.</param>
         public async Task ImportCuriousTeamStatsTR(string statTypeKey, string url)
         {
-            // Descarga la página html y crea un documento con todo el contenido
+            // Download HTML and load it into an HtmlAgilityPack document
             var response = await _httpClient.GetStringAsync(url);
             var doc = new HtmlDocument();
             doc.LoadHtml(response);
 
-            // Busca la tabla principal
+            // Locate the main datatable (TeamRankings layout)
             var table = doc.DocumentNode.SelectSingleNode("//table[contains(@class, 'datatable')]");
             if (table == null) return;
 
-            // Filas: acotamos al tbody para evitar filas extrañas
+            // Restrict to <tbody> rows to ignore the header and extraneous rows
             var rows = table.SelectNodes(".//tbody/tr");
             if (rows == null) return;
 
-            // Determina perspectiva y abreviatura base del StatType (sin 'O' inicial)
+            // Perspective and base abbreviation:
+            // - If the key starts with 'O', treat as Opponent perspective and strip the prefix for the StatType name.
             var perspective = statTypeKey.StartsWith("O", StringComparison.OrdinalIgnoreCase)
                 ? StatPerspective.Opponent
                 : StatPerspective.Team;
@@ -52,11 +66,12 @@ namespace StrikeData.Services.TeamData.Importers
                 ? statTypeKey.Substring(1)
                 : statTypeKey;
 
-            // Asegura StatType dentro de la categoría CuriousFacts
+            // Ensure StatType is present under "CuriousFacts" and use the base name (without the optional 'O')
             var statType = _context.StatTypes.FirstOrDefault(s => s.Name == baseKey);
             if (statType == null)
             {
-                int categoryId = await GetCuriousFactsCategoryIdAsync();
+                // Centralized "get or create" for StatCategory; returns a stable Id
+                var categoryId = await _context.EnsureCategoryIdAsync("CuriousFacts"); 
 
                 statType = new StatType
                 {
@@ -68,17 +83,18 @@ namespace StrikeData.Services.TeamData.Importers
                 await _context.SaveChangesAsync();
             }
 
+            // Iterate table rows and upsert a TeamStat per team/perspective
             foreach (var row in rows)
             {
                 var cells = row.SelectNodes("td");
-                // La tabla típica: Posición, Equipo, Current, Last 3, Last 1, Home, Away, Prev Season
+                // Expected columns (TeamRankings): Position, Team, Current, Last 3, Last 1, Home, Away, Prev Season
                 if (cells == null || cells.Count < 7) continue;
 
-                // Normaliza nombre de equipo con tu utilidad
+                // Normalize team name to the canonical DB form (defensive against aliases/abbreviations)
                 string rawTeamName = cells[1].InnerText.Trim();
                 string teamName = TeamNameNormalizer.Normalize(rawTeamName);
 
-                // Asegura Team en BD
+                // Ensure Team exists
                 var team = _context.Teams.FirstOrDefault(t => t.Name == teamName);
                 if (team == null)
                 {
@@ -87,7 +103,7 @@ namespace StrikeData.Services.TeamData.Importers
                     await _context.SaveChangesAsync();
                 }
 
-                // Busca TeamStat por (Team, StatType, Perspective)
+                // Find or create TeamStat for (Team, StatType, Perspective)
                 var stat = _context.TeamStats.FirstOrDefault(ts =>
                     ts.TeamId == team.Id &&
                     ts.StatTypeId == statType.Id &&
@@ -104,7 +120,7 @@ namespace StrikeData.Services.TeamData.Importers
                     _context.TeamStats.Add(stat);
                 }
 
-                // Asignación de métricas (limpiando % donde corresponda)
+                // Assign values parsed from the row; percentages (e.g., YRFI) are stored as numeric values (percent sign stripped)
                 stat.CurrentSeason = ParseCell(cells, 2);
                 stat.Last3Games    = ParseCell(cells, 3);
                 stat.LastGame      = ParseCell(cells, 4);
@@ -113,10 +129,13 @@ namespace StrikeData.Services.TeamData.Importers
                 stat.PrevSeason    = cells.Count > 7 ? ParseCell(cells, 7) : null;
             }
 
-            // Guarda todo al final
+            // Flush all pending inserts/updates for this metric
             await _context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Legacy helper retained for compatibility; current importer ensures the category
+        /// </summary>
         private async Task<int> GetCuriousFactsCategoryIdAsync()
         {
             var category = _context.StatCategories.FirstOrDefault(c => c.Name == "CuriousFacts");
@@ -129,8 +148,16 @@ namespace StrikeData.Services.TeamData.Importers
             return category.Id;
         }
 
-        // --- helpers ---
+        // --- local parsing helper ---
 
+        /// <summary>
+        /// Extracts a numeric value from a TD cell:
+        /// - Trims whitespace
+        /// - Removes percent signs (if present)
+        /// - HTML-deentitizes
+        /// - Parses using <see cref="Utilities.Parse(string)"/>
+        /// Returns null if the cell is empty or cannot be parsed.
+        /// </summary>
         private static float? ParseCell(IList<HtmlNode> cells, int index)
         {
             if (index >= cells.Count) return null;
@@ -138,7 +165,7 @@ namespace StrikeData.Services.TeamData.Importers
             var txt = Utilities.CleanText(cells[index].InnerText);
             if (string.IsNullOrWhiteSpace(txt)) return null;
 
-            // Quitar símbolo de porcentaje (YRFI/NRFI) y normalizar
+            // Drop percent symbols (YRFI/NRFI etc.) and normalize content
             txt = txt.Replace("%", "").Trim();
             txt = HtmlEntity.DeEntitize(txt);
 

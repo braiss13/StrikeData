@@ -2,12 +2,18 @@
 @model StrikeData.Pages.PlayerData.FieldingModel
 
 @{
+    // Page title for layout and browser tab
     ViewData["Title"] = "Players – Fielding";
 }
 
 <h2 class="section-title">Fielding</h2>
 
-<!-- Team selector -->
+<!--
+    Team selector:
+    - Bound to SelectedTeamId
+    - Options come from Model.TeamOptions
+    - Auto-submits on change to refresh the table contents
+-->
 <form method="get">
     <div class="table-selector">
         <select asp-for="SelectedTeamId"
@@ -24,12 +30,20 @@
     </div>
 </form>
 
+<!--
+    Data table:
+    - Fixed columns: #, Player, Pos
+    - Fielding metrics come from Model.VisibleColumns
+    - Tooltips are sourced from Model.StatMeta (LongName + Description)
+-->
 <table class="table table-striped sortable-table table-bordered table-sm pitching-table table-with-tooltips" style="margin: 1 auto;">
     <thead>
         <tr>
             <th data-sortable data-type="number">#</th>
             <th data-sortable data-type="string">Player</th>
             <th data-sortable data-type="string">Pos</th>
+
+            @* Dynamic metric headers with optional tooltip *@
             @foreach (var col in Model.VisibleColumns)
             {
                 var hasMeta = Model.StatMeta.TryGetValue(col, out var meta);
@@ -51,6 +65,7 @@
                 }
                 else
                 {
+                    // Render a clean header even when the glossary lacks a description
                     <th>
                         <span class="stat-head">
                             <span class="stat-abbr"
@@ -63,9 +78,12 @@
             }
         </tr>
     </thead>
+
     <tbody>
     @{
+        // 1-based row numbering for readability
         int index = 1;
+
         if (Model.Rows != null && Model.Rows.Count > 0)
         {
             foreach (var r in Model.Rows)
@@ -74,6 +92,8 @@
                     <td>@index</td>
                     <td>@r.Name</td>
                     <td>@(string.IsNullOrWhiteSpace(r.Position) ? "-" : r.Position)</td>
+
+                    @* Metric cells: percentages use 3 decimals; counts render as integers *@
                     @foreach (var col in Model.VisibleColumns)
                     {
                         float? val = null;
@@ -82,13 +102,15 @@
                             r.Values.TryGetValue(col, out var v);
                             val = v;
                         }
+
                         if (val.HasValue)
                         {
-                            // Show three decimals for fielding percentage; counts as integer
                             var isPercentage = col == "FLD%";
-                            <td>@(isPercentage
-                                   ? val.Value.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)
-                                   : val.Value.ToString("0", System.Globalization.CultureInfo.InvariantCulture))</td>
+                            <td>
+                                @(isPercentage
+                                    ? val.Value.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)
+                                    : val.Value.ToString("0", System.Globalization.CultureInfo.InvariantCulture))
+                            </td>
                         }
                         else
                         {
@@ -101,8 +123,11 @@
         }
         else
         {
+            // Empty state uses a dynamic colspan: 3 fixed columns + N metrics
             <tr>
-                <td colspan="@(3 + Model.VisibleColumns.Count)" style="text-align:center;">No data available</td>
+                <td colspan="@(3 + Model.VisibleColumns.Count)" style="text-align:center;">
+                    No data available
+                </td>
             </tr>
         }
     }

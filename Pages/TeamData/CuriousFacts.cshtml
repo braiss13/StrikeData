@@ -8,7 +8,7 @@
 <h2 class="section-title">Curious Facts</h2>
 
 <form method="get">
-    <!-- Desplegable del tipo de estadística -->
+    <!-- Stat type selector: the <option> values are the base keys (e.g., "YRFI", "1IR/G", "F5IR/G") -->
     <div class="table-selector">
         <select id="statSelect"
                 asp-for="SelectedStatType"
@@ -24,7 +24,7 @@
         </select>
     </div>
 
-    <!-- Selector de perspectiva: Team / Opp (solo una tabla, cambia según selección) -->
+    <!-- View toggle: same stat, different perspective (team itself vs opponents) -->
     <div class="table-selector mb-3">
         <button type="submit"
                 name="Perspective"
@@ -41,10 +41,10 @@
     </div>
 </form>
 
-<!-- Área para mostrar la explicación de la estadística seleccionada -->
+<!-- Live description under the selector (populated by site.js based on the current selection) -->
 <p id="statDescription" class="stat-desc" style="margin-left: 10px; color: #93c5fd;"></p>
 
-<!-- Tabla única de resultados -->
+<!-- Single results table (the selected perspective is reflected in the underlying query) -->
 <table class="table table-striped sortable-table table-bordered table-sm pitching-table"
        style="margin: 1 auto;">
     <thead>
@@ -68,6 +68,7 @@
             <tr>
                 <td>@index</td>
                 <td>@r.TeamName</td>
+                <!-- Values are displayed with two decimals; hyphen when null -->
                 <td>@(r.CurrentSeason?.ToString("0.00") ?? "-")</td>
                 <td>@(r.Last3Games?.ToString("0.00") ?? "-")</td>
                 <td>@(r.LastGame?.ToString("0.00") ?? "-")</td>
@@ -85,7 +86,8 @@
 @section Scripts {
     <script>
         (function () {
-            // Diccionario de descripciones generado desde el modelo
+            // Description dictionary rendered server-side (base key -> text).
+            // Escapes backslashes/quotes to keep valid JS string literals.
             const descriptions = {
                 @foreach (var kvp in Model.StatDescriptions)
                 {
@@ -93,10 +95,10 @@
                 }
             };
 
-            // Perspectiva actual desde el modelo ("team" | "opp")
+            // Current perspective from the model ("team" | "opp")
             const perspective = "@Model.Perspective";
 
-            // Inicializa texto bajo el select utilizando el helper global de site.js
+            // Initialize description behavior using the global helper (adds a perspective suffix automatically)
             StrikeData.initCuriousFactsDescription('statSelect', 'statDescription', descriptions, perspective);
         })();
     </script>

@@ -3,10 +3,15 @@ using StrikeData.Data;
 using StrikeData.Models;
 using StrikeData.Models.Enums;
 using StrikeData.Services.Normalization;
-using StrikeData.Services.StaticMaps; // StatPerspective
+using StrikeData.Services.StaticMaps; 
+using StrikeData.Data.Extensions;
 
 namespace StrikeData.Services.TeamData.Importers
 {
+    /// <summary>
+    /// Imports "win trends" team statistics from TeamRankings.
+    /// Persists data into TeamStats under the "WinTrends" category, using the Team perspective.
+    /// </summary>
     public class WinTrendsImporter
     {
         private readonly AppDbContext _context;
@@ -18,66 +23,80 @@ namespace StrikeData.Services.TeamData.Importers
             _httpClient = new HttpClient();
         }
 
+        /// <summary>
+        /// Entry point: iterates the WinTrends map and imports each stat from TeamRankings.
+        /// </summary>
         public async Task ImportAllStatsAsyncWT()
         {
             foreach (var stat in TeamRankingsMaps.WinTrends)
                 await ImportWinTrendsTeamStatsTR(stat.Key, stat.Value);
         }
 
+        /// <summary>
+        /// Scrapes one WinTrends table from TeamRankings and upserts:
+        /// - StatType (category = WinTrends)
+        /// - Team entities (normalized name)
+        /// - TeamStats for that StatType and Team (Perspective = Team), setting WinLossRecord and WinPct
+        /// </summary>
         public async Task ImportWinTrendsTeamStatsTR(string statTypeName, string url)
         {
             var response = await _httpClient.GetStringAsync(url);
             var doc = new HtmlDocument();
             doc.LoadHtml(response);
 
+            // Main data table for this trend
             var table = doc.DocumentNode.SelectSingleNode("//table[contains(@class, 'datatable')]");
             if (table == null) return;
 
             var rows = table.SelectNodes(".//tbody/tr");
             if (rows == null) return;
 
-            // 1) StatType en categoría WinTrends
+            // 1) Ensure StatType exists in the "WinTrends" category
             var statType = _context.StatTypes
                 .FirstOrDefault(s => s.Name == statTypeName && s.StatCategory.Name == "WinTrends");
             if (statType == null)
             {
-                int categoryId = await GetWinTrendsCategoryIdAsync();
+                var categoryId = await _context.EnsureCategoryIdAsync("WinTrends");
                 statType = new StatType { Name = statTypeName, StatCategoryId = categoryId };
                 _context.StatTypes.Add(statType);
                 await _context.SaveChangesAsync();
             }
 
-            // 2) Pre-cargar Teams en diccionario (CLAVE: nombre normalizado)
+            // 2) Preload Teams into a dictionary keyed by normalized name (case-insensitive)
             var allTeams = _context.Teams.ToList();
             var teamsByNormName = allTeams
                 .GroupBy(t => NormalizeName(t.Name))
                 .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
-            // 3) Pre-cargar TeamStats existentes para este StatType + Team (Perspective=Team)
+            // 3) Preload existing TeamStats for this StatType and Perspective=Team, keyed by TeamId
             var existingStats = _context.TeamStats
                 .Where(ts => ts.StatTypeId == statType.Id && ts.Perspective == StatPerspective.Team)
                 .ToList()
                 .ToDictionary(ts => ts.TeamId, ts => ts);
 
+            // Iterate table rows and upsert team stats
             foreach (var row in rows)
             {
                 var cells = row.SelectNodes("td");
                 if (cells == null || cells.Count < 4) continue; 
 
+                // Normalize team name to match DB representation
                 var rawTeam = cells[0].InnerText;
                 var normName = NormalizeName(rawTeam);
                 if (string.IsNullOrWhiteSpace(normName)) continue;
 
+                // Ensure Team exists (using normalized name)
                 if (!teamsByNormName.TryGetValue(normName, out var team))
                 {
-                    team = new Team { Name = normName }; // guarda el nombre ya normalizado
+                    team = new Team { Name = normName };
                     _context.Teams.Add(team);
                     await _context.SaveChangesAsync();
 
-                    teamsByNormName[normName] = team; // añade a la cache para no reinsertar en este mismo run
+                    // Cache the newly inserted team to avoid re-insert in this run
+                    teamsByNormName[normName] = team;
                 }
 
-                // Buscar en cache de TeamStat ya existente
+                // Fetch or create TeamStat for this team/statType/perspective
                 if (!existingStats.TryGetValue(team.Id, out var stat))
                 {
                     stat = new TeamStat
@@ -90,8 +109,10 @@ namespace StrikeData.Services.TeamData.Importers
                     existingStats[team.Id] = stat;
                 }
 
+                // W-L record is presented as plain text in the table
                 stat.WinLossRecord = Utilities.CleanText(cells[1].InnerText);
 
+                // Win% may include a '%' sign; parse as float (null if parsing fails)
                 var winPctText = Utilities.CleanText(cells[2].InnerText).Replace("%", "").Trim();
                 stat.WinPct = Utilities.Parse(winPctText);
             }
@@ -99,13 +120,20 @@ namespace StrikeData.Services.TeamData.Importers
             await _context.SaveChangesAsync();
         }
 
-        // Normaliza: limpia + mapea alias a nombre oficial
+        /// <summary>
+        /// Normalizes a team name using the shared helpers:
+        /// - Cleans HTML/whitespace
+        /// - Maps aliases to official DB names
+        /// </summary>
         private static string NormalizeName(string? raw)
         {
             var cleaned = Utilities.CleanText(raw ?? "");
             return TeamNameNormalizer.Normalize(cleaned);
         }
 
+        /// <summary>
+        /// Ensures the "WinTrends" StatCategory exists and returns its Id.
+        /// </summary>
         private async Task<int> GetWinTrendsCategoryIdAsync()
         {
             var category = _context.StatCategories.FirstOrDefault(c => c.Name == "WinTrends");
@@ -117,6 +145,5 @@ namespace StrikeData.Services.TeamData.Importers
             }
             return category.Id;
         }
-
     }
 }

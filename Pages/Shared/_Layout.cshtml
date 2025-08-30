@@ -1,16 +1,26 @@
-﻿<!DOCTYPE html>
+﻿@* Global layout for all Razor pages.
+   - Provides the HTML skeleton, site-wide navigation, and footer.
+   - Child pages render their main content via @RenderBody().
+   - A per-page optional "Scripts" section can be injected at the end of <body>.
+*@
+<!DOCTYPE html>
 <html lang="en">
-    
 <head>
     <meta charset="utf-8" />
+    @* Ensure proper responsive scaling on mobile devices *@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    @* Page title is supplied by each page via ViewData["Title"] *@
     <title>@ViewData["Title"]</title>
+
+    @* Global stylesheet for the site (custom styles live under /wwwroot/css) *@
     <link rel="stylesheet" href="/css/styles.css" />
+    @* Favicon shown in the browser tab *@
     <link rel="icon" type="image/png" href="~/images/baseball.png">
 </head>
 
 <body>
     <header>
+        @* Primary navigation for top-level sections *@
         <nav>
             <a href="/">Home</a>
             <a href="/TeamData">Teams</a>
@@ -18,16 +28,23 @@
             <a href="/MatchData">Matches</a>
         </nav>
     </header>
+
     <main>
+        @* Placeholder where individual pages inject their content *@
         @RenderBody()
     </main>
+
     <footer>
         <p>&copy; 2025 StrikeData - Baseball Statistics Platform</p>
     </footer>
 
-    <!-- Scripts globales -->
+    @* Global client-side helpers (sorting, stat descriptions, etc.).
+       asp-append-version appends a cache-busting query string based on file hash. *@
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @* Optional per-page scripts section. If a page defines:
+         @section Scripts { <script>/* page-specific JS */</script> }
+       it will be rendered here, after the global bundle. *@
     @RenderSection("Scripts", required: false)
-    
 </body>
 </html>

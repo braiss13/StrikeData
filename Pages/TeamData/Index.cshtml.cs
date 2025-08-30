@@ -6,7 +6,7 @@ namespace StrikeData.Pages.TeamData
     {
         public void OnGet()
         {
-            // No se requiere lógica adicional por ahora.
+            // There is no specific logic needed for this page at the moment.
         }
     }
 }

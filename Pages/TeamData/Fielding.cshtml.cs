@@ -8,6 +8,11 @@ using StrikeData.Services.Glossary;
 
 namespace StrikeData.Pages.TeamData
 {
+    /// <summary>
+    /// PageModel for TEAM Fielding. Loads the list of fielding StatTypes, builds the
+    /// dropdown, retrieves TeamStats for the "Fielding" category, and exposes a
+    /// description map (from the central glossary) keyed by StatType.Id for the UI.
+    /// </summary>
     public class FieldingModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -17,39 +22,43 @@ namespace StrikeData.Pages.TeamData
             _context = context;
         }
 
+        // Bound filter: selected StatType to display. Null => show all fielding metrics.
         [BindProperty(SupportsGet = true)]
         public int? SelectedStatTypeId { get; set; }
 
+        // Loaded from DB to populate options and render names in the table.
         public List<StatType> StatTypes { get; set; } = new();
+
+        // Result set shown in the table (one row per team/stat combination).
         public List<TeamStat> TeamStats { get; set; } = new();
 
-        // Opciones estilizadas para el desplegable de estadísticas
+        // Dropdown options; includes a leading "-- All --" entry.
         public List<SelectListItem> StatOptions { get; set; } = new();
 
-        // Diccionario Id -> descripción de la estadística (para el panel bajo el select)
+        // Id (as string) -> description text. The view uses this to show contextual help.
         public Dictionary<string, string> StatDescriptions { get; private set; } = new();
 
         public async Task OnGetAsync()
         {
-            // Cargar tipos de estadística de la categoría Fielding
+            // 1) Load the StatTypes under the "Fielding" category.
             StatTypes = await _context.StatTypes
                 .Include(st => st.StatCategory)
                 .Where(st => st.StatCategory != null && st.StatCategory.Name == "Fielding")
                 .OrderBy(st => st.Name)
                 .ToListAsync();
 
-            // Crear opciones del select y añadir "All"
+            // 2) Build <select> options and prepend the "All" option for convenience.
             StatOptions = StatTypes
                 .Select(st => new SelectListItem { Value = st.Id.ToString(), Text = st.Name })
                 .ToList();
             StatOptions.Insert(0, new SelectListItem { Value = "", Text = "-- All --" });
 
-            // Construir el diccionario de descripciones por Id usando el glosario central
+            // 3) Build the Id -> description map using the centralized glossary.
+            //    Lookups are by abbreviation (StatType.Name); empty description if not found.
             var glossary = StatGlossary.GetMap(StatDomain.TeamFielding);
             StatDescriptions.Clear();
             foreach (var st in StatTypes)
             {
-                // Buscamos por nombre (abreviatura). Si no existe en el glosario, dejamos vacío.
                 if (!string.IsNullOrWhiteSpace(st.Name) &&
                     glossary.TryGetValue(st.Name, out var statText) &&
                     !string.IsNullOrWhiteSpace(statText.Description))
@@ -62,20 +71,20 @@ namespace StrikeData.Pages.TeamData
                 }
             }
 
-            // Consulta base de TeamStats para Fielding
+            // 4) Base query: all TeamStats bound to the "Fielding" category.
             var query = _context.TeamStats
                 .Include(ts => ts.Team)
                 .Include(ts => ts.StatType)
                 .Where(ts => ts.StatType.StatCategory != null && ts.StatType.StatCategory.Name == "Fielding")
                 .AsQueryable();
 
-            // Filtrado por tipo de estadística si el usuario selecciona uno
+            // 5) Optional filter: if a specific StatType was selected, narrow the result set.
             if (SelectedStatTypeId.HasValue)
             {
                 query = query.Where(ts => ts.StatTypeId == SelectedStatTypeId.Value);
             }
 
-            // Ordenar y materializar resultados
+            // 6) Sort by current season value (descending) and then by team name for a stable order.
             TeamStats = await query
                 .OrderByDescending(ts => ts.CurrentSeason)
                 .ThenBy(ts => ts.Team.Name)

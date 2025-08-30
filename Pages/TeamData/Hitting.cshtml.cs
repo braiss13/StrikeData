@@ -8,6 +8,11 @@ using StrikeData.Services.Glossary;
 
 namespace StrikeData.Pages.TeamData
 {
+    /// <summary>
+    /// PageModel for the team-level Hitting view.
+    /// Loads available Hitting StatTypes, exposes a filterable list of TeamStats,
+    /// and provides glossary descriptions for the selected stat (for UI tooltips/explanations).
+    /// </summary>
     public class HittingModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -17,62 +22,76 @@ namespace StrikeData.Pages.TeamData
             _context = context;
         }
 
-        // Propiedad enlazada para el ID de la estadística seleccionada en el desplegable
+        /// <summary>
+        /// Bound query parameter for the selected StatType in the dropdown.
+        /// Null (or empty) means "All".
+        /// </summary>
         [BindProperty(SupportsGet = true)]
         public int? SelectedStatTypeId { get; set; }
 
-        // Lista de tipos de estadística cargados desde la BD
+        /// <summary>
+        /// All hitting StatTypes loaded from the database (category = "Hitting").
+        /// </summary>
         public List<StatType> StatTypes { get; set; } = new();
-        // Lista de estadísticas de equipo que se mostrarán en la tabla
+
+        /// <summary>
+        /// TeamStat rows to be displayed in the table. Filtered by SelectedStatTypeId if provided.
+        /// </summary>
         public List<TeamStat> TeamStats { get; set; } = new();
-        // Opciones para el desplegable de estadística, con formato SelectListItem
+
+        /// <summary>
+        /// Options for the <select> element (value = StatType.Id, text = StatType.Name).
+        /// </summary>
         public List<SelectListItem> StatOptions { get; set; } = new();
-        // Diccionario que asocia el Id de StatType con su descripción (se usa en el panel bajo el select)
+
+        /// <summary>
+        /// Maps StatType.Id (as string, matching the select's value) to the glossary description text.
+        /// Used by the client-side script to display an explanation of the chosen stat.
+        /// </summary>
         public Dictionary<string, string> StatDescriptions { get; private set; } = new();
 
         public async Task OnGetAsync()
         {
-            // Cargar los tipos de estadística de la categoría Hitting
+            // Load StatTypes under the "Hitting" category
             StatTypes = await _context.StatTypes
                 .Include(st => st.StatCategory)
                 .Where(st => st.StatCategory != null && st.StatCategory.Name == "Hitting")
                 .OrderBy(st => st.Name)
                 .ToListAsync();
 
-            // Rellenar las opciones del desplegable y añadir una opción "All"
+            // Build dropdown options and prepend the "All" option
             StatOptions = StatTypes
                 .Select(st => new SelectListItem { Value = st.Id.ToString(), Text = st.Name })
                 .ToList();
             StatOptions.Insert(0, new SelectListItem { Value = "", Text = "-- All --" });
 
-            // ===== Descripciones desde el glosario central =====
-            // Usamos el dominio TeamHitting y mapeamos por st.Name (abreviatura)
+            // ===== Descriptions from the central glossary =====
+            // Domain: TeamHitting. Keyed by abbreviation (st.Name).
             var glossary = StatGlossary.GetMap(StatDomain.TeamHitting);
             StatDescriptions = new Dictionary<string, string>();
             foreach (var st in StatTypes)
             {
-                // st.Id.ToString() es la clave que usa el <select>; necesitamos dejar la descripción ahí.
+                // The select expects string keys (StatType.Id as string)
                 if (glossary.TryGetValue(st.Name, out var statText) && !string.IsNullOrWhiteSpace(statText.Description))
                     StatDescriptions[st.Id.ToString()] = statText.Description;
                 else
-                    StatDescriptions[st.Id.ToString()] = ""; // fallback si no hay entrada en el glosario
+                    StatDescriptions[st.Id.ToString()] = ""; // fallback: no description available
             }
-            // ===================================================
 
-            // Consulta base de estadísticas por equipo para la categoría Hitting
+            // Base query: all TeamStats for Hitting category
             var query = _context.TeamStats
                 .Include(ts => ts.Team)
                 .Include(ts => ts.StatType)
                 .Where(ts => ts.StatType.StatCategory != null && ts.StatType.StatCategory.Name == "Hitting")
                 .AsQueryable();
 
-            // Si hay un tipo seleccionado (distinto de All), filtrar por ese Id
+            // Optional filter: single StatType selection (omit when "-- All --")
             if (SelectedStatTypeId.HasValue)
             {
                 query = query.Where(ts => ts.StatTypeId == SelectedStatTypeId.Value);
             }
 
-            // Ordenar y materializar resultados
+            // Order by current-season per-game value desc, then by team name
             TeamStats = await query
                 .OrderByDescending(ts => ts.CurrentSeason)
                 .ThenBy(ts => ts.Team.Name)

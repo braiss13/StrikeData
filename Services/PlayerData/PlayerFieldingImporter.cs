@@ -5,6 +5,10 @@ using StrikeData.Services.StaticMaps;
 
 namespace StrikeData.Services.PlayerData
 {
+    /// <summary>
+    /// Imports per-player fielding metrics from a web scraper and stores them
+    /// under the "Fielding" StatCategory in PlayerStats.
+    /// </summary>
     public class PlayerFieldingImporter
     {
         private readonly AppDbContext _context;
@@ -16,34 +20,51 @@ namespace StrikeData.Services.PlayerData
             _scraper = scraper;
         }
 
+        /// <summary>
+        /// Imports fielding stats for all teams in the given season.
+        /// Ensures StatCategory and PlayerStatTypes exist, matches rows to Players,
+        /// and upserts PlayerStats.
+        /// </summary>
         public async Task ImportAllTeamsPlayerFieldingAsync(int season)
         {
+            // Ensure the "Fielding" category exists
             var fieldingCat = await _context.StatCategories.FirstOrDefaultAsync(c => c.Name == "Fielding")
                               ?? new StatCategory { Name = "Fielding" };
-            if (fieldingCat.Id == 0) { _context.StatCategories.Add(fieldingCat); await _context.SaveChangesAsync(); }
+            if (fieldingCat.Id == 0)
+            {
+                _context.StatCategories.Add(fieldingCat);
+                await _context.SaveChangesAsync();
+            }
 
+            // Ensure the set of PlayerStatTypes used for fielding
             var existingTypes = await _context.PlayerStatTypes
                 .Where(pst => pst.StatCategoryId == fieldingCat.Id)
                 .ToListAsync();
 
             var byName = existingTypes.ToDictionary(t => t.Name, t => t, StringComparer.OrdinalIgnoreCase);
             int created = 0;
-            
+
+            // PlayerMaps.FieldingMetrics defines the expected column abbreviations
             foreach (var m in PlayerMaps.FieldingMetrics)
             {
                 if (!byName.ContainsKey(m))
                 {
                     var t = new PlayerStatType { Name = m, StatCategoryId = fieldingCat.Id };
                     _context.PlayerStatTypes.Add(t);
-                    byName[m] = t; created++;
+                    byName[m] = t;
+                    created++;
                 }
             }
             if (created > 0) await _context.SaveChangesAsync();
 
-            // Cache jugadores por TeamId y (NombreNormalizado, Pos)
-            var allPlayers = await _context.Players.Include(p => p.Team).AsNoTracking().ToListAsync();
+            // Preload players (with Team navigation) for name/position matching
+            var allPlayers = await _context.Players
+                .Include(p => p.Team)
+                .AsNoTracking()
+                .ToListAsync();
 
-            // clave: $"{Normalize(name)}|{posUpper}"
+            // Build a per-team dictionary keyed by normalized "Name|POS" variants
+            // to improve match rate against scraped rows.
             static string Key(string name, string? pos)
                 => $"{Utilities.NormalizePlayerName(name)}|{(pos ?? "").ToUpperInvariant()}";
 
@@ -54,13 +75,16 @@ namespace StrikeData.Services.PlayerData
                     g =>
                     {
                         var dict = new Dictionary<string, Player>(StringComparer.OrdinalIgnoreCase);
+
                         foreach (var p in g)
                         {
                             var posU = (p.Position ?? "").ToUpperInvariant();
+
+                            // Variant 1: "FirstName LastName"
                             var k1 = Key(p.Name, posU);
                             if (!dict.ContainsKey(k1)) dict[k1] = p;
 
-                            // variante "Apellido, Nombre"
+                            // Variant 2: "LastName, FirstName"
                             var parts = p.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                             if (parts.Length >= 2)
                             {
@@ -73,46 +97,53 @@ namespace StrikeData.Services.PlayerData
                         return dict;
                     });
 
+            // Iterate teams by external code -> official team name mapping
             foreach (var kv in TeamCodeMap.CodeToName)
             {
                 var code = kv.Key;
                 var teamName = kv.Value;
 
+                // Resolve local Team row by official name
                 var team = await _context.Teams.FirstOrDefaultAsync(t => t.Name == teamName);
                 if (team == null) continue;
 
+                // Scrape fielding rows for this team and season
                 var rows = await _scraper.GetTeamFieldingRowsAsync(code, season);
 
+                // Player matching dictionary for this team
                 if (!playersByTeam.TryGetValue(team.Id, out var byPlayerKey))
                 {
-                    Console.WriteLine($"[FieldingImporter][INFO] There isn't players for TeamId={team.Id}. Skipping.");
+                    Console.WriteLine($"[FieldingImporter][INFO] There aren't players for TeamId={team.Id}. Skipping.");
                     continue;
                 }
 
-                // Anti-duplicados dentro de la misma ejecución (antes de SaveChanges)
+                // Prevent duplicates within the same execution before SaveChanges
                 var seen = new HashSet<(int playerId, int typeId)>();
 
                 int matchedPlayers = 0, upserts = 0;
 
                 foreach (var row in rows)
                 {
-                    var k = Key(row.Name, row.Pos); // <-- nombre + POS del scraper
+                    // Match by normalized Name+POS, as the scraped table is position-specific
+                    var k = Key(row.Name, row.Pos);
                     if (!byPlayerKey.TryGetValue(k, out var player))
-                        continue; // si POS no coincide con la guardada, se ignora
+                        continue; // position mismatch or name not found -> row is ignored
 
                     matchedPlayers++;
 
+                    // Persist all metrics present in this row
                     foreach (var kvp in row.Values)
                     {
                         if (!byName.TryGetValue(kvp.Key, out var statType)) continue;
 
-                        var keyPair = (player.Id, statType.Id);
-                        if (seen.Contains(keyPair)) continue; // ya insertado/actualizado en este lote
-                        seen.Add(keyPair);
+                        var logicalKey = (player.Id, statType.Id);
+                        if (seen.Contains(logicalKey)) continue; // already processed in this batch
+                        seen.Add(logicalKey);
 
                         var existing = await _context.PlayerStats
-                            .FirstOrDefaultAsync(ps => ps.PlayerId == player.Id &&
-                                                       ps.PlayerStatTypeId == statType.Id);
+                            .FirstOrDefaultAsync(ps =>
+                                ps.PlayerId == player.Id &&
+                                ps.PlayerStatTypeId == statType.Id);
 
                         if (existing == null)
                         {
@@ -131,9 +162,9 @@ namespace StrikeData.Services.PlayerData
                     }
                 }
 
+                // Commit team-level changes to keep batches manageable
                 await _context.SaveChangesAsync();
             }
-
         }
     }
 }

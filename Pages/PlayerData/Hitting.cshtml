@@ -7,43 +7,79 @@
 
 <h2 class="section-title">Hitting</h2>
 
-<!-- Form with team selector and view mode buttons -->
+<!--
+    Query-driven UI:
+    - Team selector posts back with SelectedTeamId
+    - View mode toggles between "basic" and "advanced" (affects visible columns)
+-->
 <form method="get">
     <div class="table-selector">
-        <select asp-for="SelectedTeamId" asp-items="Model.TeamOptions" class="form-select w-auto d-inline-block" style="background-color:#1e3a8a; 
-                       color:#ffffff; 
-                       border:1px solid #2563eb; 
-                       border-radius:0.25rem; 
+        <!--
+            Team dropdown:
+            - Bound to SelectedTeamId
+            - Options come from Model.TeamOptions
+            - Auto-submits on change to refresh the table
+        -->
+        <select asp-for="SelectedTeamId"
+                asp-items="Model.TeamOptions"
+                class="form-select w-auto d-inline-block"
+                style="background-color:#1e3a8a;
+                       color:#ffffff;
+                       border:1px solid #2563eb;
+                       border-radius:0.25rem;
                        padding:0.4rem 0.8rem;
-                       margin-bottom: 1rem;" onchange="this.form.submit()">
+                       margin-bottom: 1rem;"
+                onchange="this.form.submit()">
         </select>
     </div>
 
     <div class="table-selector mb-3">
-        <button type="submit" name="ViewMode" value="basic"
-            class="btn-stat-toggle @(Model.ViewMode == "basic" ? "" : "inactive")">
+        <!--
+            View mode buttons:
+            - "basic" shows the base set of counting/rate stats
+            - "advanced" shows extended metrics (e.g., BABIP, ISO, BB/K)
+            - Both submit as GET so the page is easily shareable/bookmarkable
+        -->
+        <button type="submit"
+                name="ViewMode"
+                value="basic"
+                class="btn-stat-toggle @(Model.ViewMode == "basic" ? "" : "inactive")">
             Basic
         </button>
-        <button type="submit" name="ViewMode" value="advanced"
-            class="btn-stat-toggle @(Model.ViewMode == "advanced" ? "" : "inactive")">
+        <button type="submit"
+                name="ViewMode"
+                value="advanced"
+                class="btn-stat-toggle @(Model.ViewMode == "advanced" ? "" : "inactive")">
             Advanced
         </button>
     </div>
 </form>
 
-<table class="table table-striped sortable-table table-bordered table-sm pitching-table table-with-tooltips" style="margin: 1 auto;">
+<!--
+    Data table:
+    - First columns are fixed (#, Player, Pos, Status)
+    - Metric columns are driven by Model.VisibleColumns
+    - Tooltips are powered by Model.StatMeta (LongName + Description)
+-->
+<table class="table table-striped sortable-table table-bordered table-sm pitching-table table-with-tooltips"
+       style="margin: 1 auto;">
     <thead>
         <tr>
             <th data-sortable data-type="number">#</th>
             <th data-sortable data-type="string">Player</th>
             <th data-sortable data-type="string">Pos</th>
+
             @{
+                // Tooltip metadata for the fixed "Status" column
                 var metaStatus = Model.StatMeta.TryGetValue("Status", out var ms) ? ms : null;
             }
             <th data-sortable data-type="number">
                 <span class="stat-head">
-                    <span class="stat-abbr" title="" tabindex="0" aria-label="@(metaStatus?.LongName ?? "Status")"
-                        aria-describedby="tip-Status">Status</span>
+                    <span class="stat-abbr"
+                          title=""
+                          tabindex="0"
+                          aria-label="@(metaStatus?.LongName ?? "Status")"
+                          aria-describedby="tip-Status">Status</span>
                     @if (metaStatus != null)
                     {
                         <div id="tip-Status" class="stat-tooltip" role="tooltip">
@@ -53,6 +89,8 @@
                     }
                 </span>
             </th>
+
+            @* Dynamic metric headers with optional tooltip *@
             @foreach (var col in Model.VisibleColumns)
             {
                 var hasMeta = Model.StatMeta.TryGetValue(col, out var meta);
@@ -60,8 +98,11 @@
                 {
                     <th data-sortable data-type="number">
                         <span class="stat-head">
-                            <span class="stat-abbr" title="" tabindex="0" aria-label="@meta.LongName"
-                                aria-describedby="tip-@col">@col</span>
+                            <span class="stat-abbr"
+                                  title=""
+                                  tabindex="0"
+                                  aria-label="@meta.LongName"
+                                  aria-describedby="tip-@col">@col</span>
                             <div id="tip-@col" class="stat-tooltip" role="tooltip">
                                 <div class="stat-tooltip-title">@meta.LongName (@col)</div>
                                 <div class="stat-tooltip-body">@meta.Description</div>
@@ -71,19 +112,25 @@
                 }
                 else
                 {
+                    // If the stat isn't in the glossary, still render a clean header
                     <th>
                         <span class="stat-head">
-                            <span class="stat-abbr" title="" tabindex="0"
-                                aria-label="@(hasMeta? meta!.LongName : col)">@col</span>
+                            <span class="stat-abbr"
+                                  title=""
+                                  tabindex="0"
+                                  aria-label="@(hasMeta ? meta!.LongName : col)">@col</span>
                         </span>
                     </th>
                 }
             }
         </tr>
     </thead>
+
     <tbody>
         @{
-            int index = 1;
+            // 1-based row numbering for readability
+            var index = 1;
+
             if (Model.Rows != null && Model.Rows.Count > 0)
             {
                 foreach (var r in Model.Rows)
@@ -92,27 +139,39 @@
                         <td>@index</td>
                         <td>@r.Name</td>
                         <td>@(string.IsNullOrWhiteSpace(r.Position) ? "-" : r.Position)</td>
-                        <!-- Mostrar siempre status -->
+
+                        <!-- Always render Status (can be null/empty) -->
                         <td>@(string.IsNullOrWhiteSpace(r.Status) ? "-" : r.Status)</td>
+
+                        @* Metric cells *@
                         @foreach (var col in Model.VisibleColumns)
                         {
                             float? val = null;
+
+                            // Defensive lookup: Values may not have all the requested columns
                             if (r.Values != null)
                             {
                                 r.Values.TryGetValue(col, out var v);
                                 val = v;
                             }
+
                             if (val.HasValue)
                             {
+                                // Format with 3 decimals for rate-like metrics;
+                                // leave default invariant formatting for counting stats.
                                 var show3 = col is "AVG" or "OBP" or "SLG" or "OPS"
-                                or "BABIP" or "ISO" or "BB/K" or "GO/AO"
-                                or "AB/HR" or "BB%" or "SO%" or "HR%";
-                                <td>@(show3
-                                                    ? val.Value.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)
-                                : val.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))</td>
+                                            or "BABIP" or "ISO" or "BB/K" or "GO/AO"
+                                            or "AB/HR" or "BB%" or "SO%" or "HR%";
+
+                                <td>
+                                    @(show3
+                                        ? val.Value.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)
+                                        : val.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                                </td>
                             }
                             else
                             {
+                                // No value available for this player/metric
                                 <td>-</td>
                             }
                         }
@@ -122,12 +181,13 @@
             }
             else
             {
-                <!-- Ajustar el colspan: ahora hay 4 columnas fijas (num, player, pos, status) -->
+                // Empty state with dynamic colspan (4 fixed cols + N metrics)
                 <tr>
-                    <td colspan="@(4 + Model.VisibleColumns.Count)" style="text-align:center;">No data available</td>
+                    <td colspan="@(4 + Model.VisibleColumns.Count)" style="text-align:center;">
+                        No data available
+                    </td>
                 </tr>
             }
         }
     </tbody>
-
 </table>

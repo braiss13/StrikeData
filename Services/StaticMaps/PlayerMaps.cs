@@ -1,19 +1,29 @@
 namespace StrikeData.Services.StaticMaps
 {
     /// <summary>
-    /// Mapas estáticos usados por importadores/scrapers de JUGADORES.
+    /// Static maps consumed by PLAYER importers/scrapers to translate external payloads
+    /// (API fields, HTML headers, ids) into the internal model (categories, types, names).
     /// </summary>
     public static class PlayerMaps
     {
         // ===========================
         // Fielding (Players)
         // ===========================
+
+        /// <summary>
+        /// Canonical set of fielding metric abbreviations used in PlayerStatType and UI.
+        /// Scraped values are aligned to this list.
+        /// </summary>
         public static readonly string[] FieldingMetrics = new[]
         {
             "OUTS","TC","CH","PO","A","E","DP","PB","CASB","CACS","FLD%"
         };
 
-        /// <summary>Sinónimos de cabeceras de Baseball Almanac para Fielding.</summary>
+        /// <summary>
+        /// Header synonyms as they appear on Baseball Almanac fielding tables.
+        /// Each key is our canonical abbreviation; the value lists acceptable header texts.
+        /// This allows the scraper to locate the correct columns despite header variations.
+        /// </summary>
         public static IReadOnlyDictionary<string, string[]> FieldingHeaderSynonyms { get; } =
             new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
             {
@@ -35,6 +45,11 @@ namespace StrikeData.Services.StaticMaps
         // ===========================
         // MLB team_id -> Official name
         // ===========================
+
+        /// <summary>
+        /// MLB stats API team ids mapped to the official team names used in our database.
+        /// Importers use this to connect API ids to the local Team rows by name.
+        /// </summary>
         public static IReadOnlyDictionary<int, string> MlbTeamIdToOfficialName { get; } =
             new Dictionary<int, string>
             {
@@ -73,12 +88,18 @@ namespace StrikeData.Services.StaticMaps
         // ===========================
         // Player JSON field maps (MLB API)
         // ===========================
+
+        /// <summary>
+        /// Maps internal stat abbreviations to field names in the MLB player stats API payload.
+        /// Keys match PlayerStatType.Name; values are JSON properties under each "stats" array item.
+        /// Case-insensitive for robustness.
+        /// </summary>
         public static class StatJsonFields
         {
             public static IReadOnlyDictionary<string, string> Pitching { get; } =
                 new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    // Básicas
+                    // Basic
                     { "W", "wins" },
                     { "L", "losses" },
                     { "ERA", "era" },
@@ -98,7 +119,8 @@ namespace StrikeData.Services.StaticMaps
                     { "SO", "strikeOuts" },
                     { "WHIP", "whip" },
                     { "AVG", "avg" },
-                    // Avanzadas
+
+                    // Advanced
                     { "TBF", "battersFaced" },
                     { "NP", "numberOfPitches" },
                     { "P/IP", "pitchesPerInning" },

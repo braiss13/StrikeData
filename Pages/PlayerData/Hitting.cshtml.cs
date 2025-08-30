@@ -7,6 +7,10 @@ using StrikeData.Services.Glossary;
 
 namespace StrikeData.Pages.PlayerData
 {
+    /// <summary>
+    /// Razor PageModel for listing hitting stats by team.
+    /// It renders a basic/advanced view with tooltips sourced from the glossary.
+    /// </summary>
     public class HittingPlayerModel : PageModel
     {
         private readonly AppDbContext _context;
@@ -16,37 +20,39 @@ namespace StrikeData.Pages.PlayerData
             _context = context;
         }
 
-        // Dropdown teams
+        // Team dropdown options
         public List<SelectListItem> TeamOptions { get; set; } = new();
 
-        // Bindings
+        // Query string bindings
         [BindProperty(SupportsGet = true)]
         public int SelectedTeamId { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public string ViewMode { get; set; } = "basic"; // "basic" | "advanced"
 
-        // Columns visible according to mode
+        // Columns resolved for the selected view mode
         public List<string> VisibleColumns { get; private set; } = new();
 
-        // Rows for display
+        // Rows to render in the view
         public List<PlayerRow> Rows { get; private set; } = new();
 
         private static readonly string CategoryName = "Hitting";
 
-        // Basic and advanced column lists
+        // Base column sets
         private static readonly List<string> BasicCols = new()
         {
             "G","AB","R","H","2B","3B","HR","RBI","BB","SO","SB","CS","AVG","OBP","SLG","OPS"
         };
 
+         // Advanced column sets
         private static readonly List<string> AdvancedCols = new()
         {
             "PA","HBP","SAC","SF","GIDP","GO/AO","XBH","TB","IBB","BABIP","ISO","AB/HR","BB/K","BB%","SO%","HR%"
         };
 
-        // Metadata for stats (long name and description)
-        public Dictionary<string, StatInfo> StatMeta { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
+        // Tooltip metadata (long name + description) per stat key
+        public Dictionary<string, StatInfo> StatMeta { get; private set; } =
+            new(StringComparer.OrdinalIgnoreCase);
 
         public class StatInfo
         {
@@ -61,47 +67,59 @@ namespace StrikeData.Pages.PlayerData
             public string Name { get; set; } = "";
             public string? Position { get; set; }
             public string? Status { get; set; }
-            public Dictionary<string, float?> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+            public Dictionary<string, float?> Values { get; set; } =
+                new(StringComparer.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Loads glossary metadata for the current set of visible keys (Status + columns).
+        /// </summary>
         private void InitStatMeta()
         {
             StatMeta.Clear();
 
-            // Trae el mapa del dominio (glosario completo)
             var map = StatGlossary.GetMap(StatDomain.PlayerHitting);
 
-            // Claves visibles en esta vista: Status + columnas visibles (basic/advanced)
             var keys = new List<string> { "Status" };
             keys.AddRange(VisibleColumns);
 
             foreach (var key in keys)
             {
                 if (map.TryGetValue(key, out var st))
-                    StatMeta[key] = new StatInfo { LongName = st.LongName, Description = st.Description };
+                {
+                    StatMeta[key] = new StatInfo
+                    {
+                        LongName = st.LongName,
+                        Description = st.Description
+                    };
+                }
                 else
-                    StatMeta[key] = new StatInfo { LongName = key, Description = "" }; // fallback
+                {
+                    // Fallback when a key is not defined in the glossary
+                    StatMeta[key] = new StatInfo { LongName = key, Description = "" };
+                }
             }
         }
 
-
         public async Task OnGetAsync()
         {
-            // Teams for dropdown
+            // Load teams for the dropdown
             TeamOptions = await _context.Teams
                 .OrderBy(t => t.Name)
                 .Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.Name })
                 .ToListAsync();
 
+            // Default to the first team when none is selected
             if (SelectedTeamId == 0 && TeamOptions.Any())
                 SelectedTeamId = int.Parse(TeamOptions.First().Value);
 
-            // Determina columnas visibles según el modo
+            // Resolve visible columns based on the selected mode
             VisibleColumns = (ViewMode?.ToLowerInvariant() == "advanced") ? AdvancedCols : BasicCols;
 
+            // Prepare glossary metadata for tooltips
             InitStatMeta();
 
-            // Non-pitcher players for the selected team
+            // Non-pitchers for the selected team
             var players = await _context.Players
                 .AsNoTracking()
                 .Where(p =>
@@ -112,7 +130,7 @@ namespace StrikeData.Pages.PlayerData
 
             var playerIds = players.Select(p => p.Id).ToList();
 
-            // Get PlayerStatTypes in this category for visible columns
+            // PlayerStatTypes for "Hitting" that match the visible columns
             var statTypes = await _context.PlayerStatTypes
                 .AsNoTracking()
                 .Include(st => st.StatCategory)
@@ -124,16 +142,17 @@ namespace StrikeData.Pages.PlayerData
             var typeIds = statTypes.Select(s => s.Id).ToList();
             var nameByTypeId = statTypes.ToDictionary(s => s.Id, s => s.Name);
 
-            // PlayerStats for those players and metrics
+            // PlayerStats for those players and types
             var stats = await _context.PlayerStats
                 .AsNoTracking()
                 .Where(ps => playerIds.Contains(ps.PlayerId) && typeIds.Contains(ps.PlayerStatTypeId))
                 .ToListAsync();
 
-            // Build rows
+            // Build rows keyed by player
             var rows = new List<PlayerRow>();
-            var byPlayer = stats.GroupBy(s => s.PlayerId)
-                                .ToDictionary(g => g.Key, g => g.ToList());
+            var byPlayer = stats
+                .GroupBy(s => s.PlayerId)
+                .ToDictionary(g => g.Key, g => g.ToList());
 
             foreach (var p in players)
             {
@@ -160,5 +179,5 @@ namespace StrikeData.Pages.PlayerData
 
             Rows = rows;
         }
-    }
+        }
 }

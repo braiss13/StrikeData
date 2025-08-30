@@ -10,7 +10,7 @@ namespace StrikeData.Data
         {
         }
 
-        // Entidades nuevas
+        // Entities
         public DbSet<Team> Teams { get; set; }
         public DbSet<Match> Matches { get; set; }
         public DbSet<StatType> StatTypes { get; set; }
@@ -28,64 +28,64 @@ namespace StrikeData.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Unicidad GamePk
+            // Uniqueness GamePk
             modelBuilder.Entity<Match>()
                 .HasIndex(m => m.GamePk)
                 .IsUnique();
 
-            // Relación Match ↔ MatchInning
+            // Relation Match ↔ MatchInning
             modelBuilder.Entity<Match>()
                 .HasMany(m => m.Innings)
                 .WithOne(mi => mi.Match)
                 .HasForeignKey(mi => mi.MatchId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Evitar duplicados por entrada
+            // Avoid duplicates per entry
             modelBuilder.Entity<MatchInning>()
                 .HasIndex(mi => new { mi.MatchId, mi.InningNumber })
                 .IsUnique();
 
-            // Unicidad en el nombre del equipo
+            // Uniqueness Team Name
             modelBuilder.Entity<Team>()
                 .HasIndex(t => t.Name)
                 .IsUnique();
 
-            // Relación 1:N Team → Player
+            // Relation 1:N Team → Player
             modelBuilder.Entity<Player>()
                 .HasOne(p => p.Team)
                 .WithMany(t => t.Players)
                 .HasForeignKey(p => p.TeamId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Relación 1:N Team → Match (como equipo local)
+            // Relation 1:N Team → Match (as local team)
             modelBuilder.Entity<Match>()
                 .HasOne(m => m.HomeTeam)
                 .WithMany(t => t.HomeMatches)
                 .HasForeignKey(m => m.HomeTeamId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Relación 1:N Team → Match (como equipo visitante)
+            // Relation 1:N Team → Match (as away team)
             modelBuilder.Entity<Match>()
                 .HasOne(m => m.AwayTeam)
                 .WithMany(t => t.AwayMatches)
                 .HasForeignKey(m => m.AwayTeamId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Relación 1:N Team → TeamStat
+            // Relation 1:N Team → TeamStat
             modelBuilder.Entity<TeamStat>()
                 .HasOne(ts => ts.Team)
                 .WithMany(t => t.TeamStats)
                 .HasForeignKey(ts => ts.TeamId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Relación 1:N StatType → TeamStat
+            // Relation 1:N StatType → TeamStat
             modelBuilder.Entity<TeamStat>()
                 .HasOne(ts => ts.StatType)
                 .WithMany(st => st.TeamStats)
                 .HasForeignKey(ts => ts.StatTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Relación 1:N StatCategory → StatType
+            // Relation 1:N StatCategory → StatType
             modelBuilder.Entity<StatType>()
                 .HasOne(st => st.StatCategory)
                 .WithMany(sc => sc.StatTypes)
@@ -103,14 +103,14 @@ namespace StrikeData.Data
                 .HasForeignKey(tg => tg.TeamId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // TeamGame -> OpponentTeam (secundaria)
+            // TeamGame -> OpponentTeam (secundary)
             modelBuilder.Entity<TeamGame>()
                 .HasOne(tg => tg.OpponentTeam)
                 .WithMany()
                 .HasForeignKey(tg => tg.OpponentTeamId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Índice único para evitar duplicados (un partido por número y temporada)
+            // Unique index to avoid duplicates (one match per number and season)
             modelBuilder.Entity<TeamGame>()
                 .HasIndex(tg => new { tg.TeamId, tg.Season, tg.GameNumber })
                 .IsUnique();
@@ -122,7 +122,7 @@ namespace StrikeData.Data
                 .HasForeignKey(ms => ms.TeamId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Índice único (un mes por equipo y temporada)
+            // Single index (one month per team per season)
             modelBuilder.Entity<TeamMonthlySplit>()
                 .HasIndex(ms => new { ms.TeamId, ms.Season, ms.Month })
                 .IsUnique();
@@ -141,18 +141,18 @@ namespace StrikeData.Data
                 .HasForeignKey(ts => ts.OpponentTeamId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Índice único (rival por equipo y temporada)
+            // Single index (rival per team and season)
             modelBuilder.Entity<TeamOpponentSplit>()
                 .HasIndex(ts => new { ts.TeamId, ts.Season, ts.OpponentName })
                 .IsUnique();
 
             modelBuilder.Entity<TeamStat>(e =>
             {
-                // mapear enum a tinyint/byte
+                // Mapping enum to tinyint/byte
                 e.Property(ts => ts.Perspective)
                 .HasConversion<byte>();
 
-                // índice único por equipo + tipo + perspectiva
+                // Single index by team + type + perspective
                 e.HasIndex(ts => new { ts.TeamId, ts.StatTypeId, ts.Perspective })
                 .IsUnique()
                 .HasDatabaseName("UX_TeamStat_Team_Type_Persp");
@@ -162,7 +162,7 @@ namespace StrikeData.Data
             modelBuilder.Entity<StatType>()
                 .ToTable("TeamStatTypes");
 
-            // Único por MLB_Player_Id para evitar duplicar jugadores cuando venga ese id
+            // Unique by MLB_Player_Id to avoid duplicating players when that id comes up
             modelBuilder.Entity<Player>()
                 .HasIndex(p => p.MLB_Player_Id)
                 .IsUnique();
@@ -181,7 +181,7 @@ namespace StrikeData.Data
                 .HasForeignKey(ps => ps.PlayerStatTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Evita duplicar la misma métrica para un jugador
+            // Avoid duplicating the same metric for a player
             modelBuilder.Entity<PlayerStat>()
                 .HasIndex(ps => new { ps.PlayerId, ps.PlayerStatTypeId })
                 .IsUnique()

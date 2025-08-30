@@ -1,7 +1,16 @@
-﻿<!-- Este archivo contiene librerías de validación de formularios en el lado del cliente en aplicaciones ASP.NET Core.-->
+﻿@* Client-side form validation scripts for ASP.NET Core.
+   Include this partial inside a page's @section Scripts to enable unobtrusive validation:
+     @section Scripts {
+         <partial name="_ValidationScriptsPartial" />
+     }
+   These libraries:
+   - Validate inputs in the browser (required fields, ranges, formats, etc.)
+   - Automatically translate C# DataAnnotations ([Required], [Range], ...) into JS rules
+   No manual JavaScript is needed on each page when using standard tag helpers. *@
 
-<!-- Permite validar campos de formularios (texto vacío, email incorrecto, etc.) sin necesidad de enviar el formulario al servidor. -->
+<!-- Core jQuery Validation library (rules + messages, runs in the browser) -->
 <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
 
-<!-- Hace que las anotaciones de validación en tus modelos C# ([Required], [Range]...) se traduzcan automáticamente a validaciones JavaScript en el navegador, sin que tengas que escribir JS manualmente. -->
+<!-- ASP.NET Core "unobtrusive" adapter:
+     Converts server-side DataAnnotations into jQuery Validation attributes/rules -->
 <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
