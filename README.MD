@@ -61,10 +61,13 @@ dotnet restore
 
     3.2 -> Editar el archivo appsettings.Development.json y añadir la cadena de conexión: 
             {
-                "ConnectionStrings": {
-                    "DefaultConnection": "Host=localhost;Port=5432;Database=strikedata;Username=postgres;Password=TU_PASSWORD"
+                {
+                    "ConnectionStrings": {
+                        "DefaultConnection": "Host=localhost;Port=5432;Database=strikedata;Username=postgres;Password=YOURPASSWORD"
+                    }
                 }
             }
+            * _Reemplazar YOURPASSWORD por tu contraseña de POSTGRESQL_
 
 4. _Aplicar migraciones_
 
