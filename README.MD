@@ -67,7 +67,7 @@ dotnet restore
                     }
                 }
             }
-            * _Reemplazar YOURPASSWORD por tu contraseña de POSTGRESQL_
+            ¡ _Reemplazar YOURPASSWORD por tu contraseña de POSTGRESQL_ !
 
 4. _Aplicar migraciones_
 
