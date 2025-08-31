@@ -48,6 +48,8 @@ Antes de ejecutar el proyecto, asegúrate de tener instalado:
 1. _Clonar el repositorio_
 
 git clone https://github.com/braiss13/StrikeData.git
+
+
 cd StrikeData
 
 2. _Restaurar dependencias_
