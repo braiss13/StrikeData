@@ -62,6 +62,8 @@ dotnet restore
             CREATE DATABASE strikedata;
 
     3.2 -> Editar el archivo appsettings.Development.json y añadir la cadena de conexión: 
+
+    
             {
                 {
                     "ConnectionStrings": {
