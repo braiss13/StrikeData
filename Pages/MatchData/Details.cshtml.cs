@@ -8,7 +8,6 @@ namespace StrikeData.Pages.MatchData
 {
     /*  Page model that renders a single match with its per-inning breakdown.
       - Loads Match by PK including HomeTeam, AwayTeam, and Innings.
-      - If not found, returns 404.
     */
     public class DetailsModel : PageModel
     {
