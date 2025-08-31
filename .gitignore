@@ -1,0 +1,45 @@
+## Git ignore rules for the StrikeData project
+
+# Ignore build outputs and temporary files
+bin/
+obj/
+
+# Ignore Visual Studio/IDE files
+.vs/
+*.user
+*.suo
+
+# Ignore compiled assemblies and debugging symbols
+*.dll
+*.exe
+*.pdb
+
+# Ignore build caches and intermediate files
+*.cache
+*.genruntimeconfig.cache
+*.CoreCompileInputs.cache
+*.AssemblyReference.cache
+*.AssemblyInfoInputs.cache
+*.FileListAbsolute.txt
+*.nuget.dgspec.json
+project.nuget.cache
+
+# Ignore static web asset bundles generated during build
+**/staticwebassets/
+**/scopedcss/
+
+# Ignore EF Core design-time files generated under obj/
+**/StrikeData.AssemblyInfo.cs
+**/StrikeData.RazorAssemblyInfo.cs
+
+# Ignore configuration files containing local secrets
+# Keep a template (e.g. appsettings.Template.json) in the repo and ignore real files
+appsettings.json
+appsettings.Development.json
+
+# Ignore database files or local data
+*.db
+*.sqlite
+
+# Ignore log files
+*.log
