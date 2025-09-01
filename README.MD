@@ -1,101 +1,94 @@
 # StrikeData ⚾📊
 
-Aplicación web en **ASP.NET Core Razor Pages** para consultar y gestionar estadísticas de béisbol, obtenidas de la **API oficial de la MLB** y de **TeamRankings**.  
+Web application in **ASP.NET Core Razor Pages** to query and manage baseball statistics, obtained from **MLB APIs**, **TeamRankings**, and **Baseball-Almanac**.  
 
-Este proyecto centraliza las estadísticas en una base de datos PostgreSQL, permitiendo explorarlas a través de una interfaz web ligera y extensible.
-
----
-
-## 🚀 Características principales
-- Obtención de estadísticas acumuladas desde varias APIs.
-- Scraping a varias aplicaciones webs.
-- Cálculo de estadísticas derivadas desde páginas como **TeamRankings**.
-- Persistencia con **Entity Framework Core**.
-- Interfaz web con **Razor Pages**.
-- Soporte inicial para **splits** (home/away, vs LHP/RHP, últimos partidos).
-- Preparado para ejecutar importaciones periódicas de datos.
+This project centralizes statistics in a PostgreSQL database, allowing them to be explored through a lightweight and extensible web interface.
 
 ---
 
-## 📂 Estructura del proyecto
-
-La organización de carpetas sigue una arquitectura sencilla para separar responsabilidades:
-
-- **`Data/`** → Configuración de Entity Framework Core y `AppDbContext`.  
-- **`Models/`** → Entidades de dominio (ej. `Team`, `TeamStat`, `StatType`).  
-- **`Services/`** → Lógica de negocio e importadores (MLB API, TeamRankings).  
-- **`Pages/`** → Páginas Razor que conforman la interfaz web.  
-- **`Migrations/`** → Migraciones generadas con EF Core para versionar la base de datos.  
-- **`wwwroot/`** → Archivos estáticos (CSS, JS, imágenes).  
-- **`Program.cs`** → Punto de entrada y configuración principal de la aplicación.  
-- **`appsettings.json`** → Configuración de la aplicación (cadenas de conexión, opciones, etc.).
+## 🚀 Main Features
+- Retrieval of aggregated statistics from multiple APIs.
+- Scraping of various web applications.
+- Calculation of derived statistics from sites like **TeamRankings**.
+- Quick explanation and visualization of statistics.
+- Persistence with **Entity Framework Core**.
+- Web interface with **Razor Pages**.
+- Development using **ASP.NET (C#)**
 
 ---
 
-## 📦 Requisitos previos
-Antes de ejecutar el proyecto, asegúrate de tener instalado:
+## 📂 Project Structure
+
+The folder organization follows a simple architecture to separate responsibilities:
+
+- **`Data/`** → Entity Framework Core configuration and `AppDbContext`.  
+- **`Models/`** → Domain entities (e.g. `Team`, `TeamStat`, `StatType`).  
+- **`Services/`** → Business logic and importers (MLB API, TeamRankings).  
+- **`Pages/`** → Razor Pages that make up the web interface.  
+- **`Migrations/`** → EF Core migrations for database versioning.  
+- **`wwwroot/`** → Static files (CSS, JS, images).  
+- **`Program.cs`** → Entry point and main application configuration.  
+- **`appsettings.json`** → Application configuration (connection strings, options, etc.).
+
+---
+
+## 📦 Prerequisites
+Before running the project, make sure you have installed:
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download)
-- [PostgreSQL](https://www.postgresql.org/) (versión 13 o superior recomendada)
+- [PostgreSQL](https://www.postgresql.org/) (version 13 or higher recommended)
 - [EF Core Tools](https://learn.microsoft.com/en-us/ef/core/cli/dotnet)  
   ```bash
   dotnet tool install --global dotnet-ef
 
 ---
 
-## 🔧 Configuración del entorno
+## 🔧 Environment Setup
 
-1. _Clonar el repositorio_
+1. _Clone the repository_
 
-git clone https://github.com/braiss13/StrikeData.git
+    git clone https://github.com/braiss13/StrikeData.git
 
+    cd StrikeData
 
-cd StrikeData
+2. _Restore dependencies_
 
-2. _Restaurar dependencias_
+    dotnet restore
 
-dotnet restore
+3. _Configure the PostgreSQL database_
 
-3. _Configurar la base de datos PostgreSQL_
+    3.1 -> Create the database: 
 
-    3.1 -> Crear la base de datos: 
             CREATE DATABASE strikedata;
 
-    3.2 -> Editar el archivo appsettings.Development.json y añadir la cadena de conexión: 
+    3.2 -> Edit the appsettings.Development.json file and add the connection string: 
 
-    
             {
                 {
                     "ConnectionStrings": {
-                        "DefaultConnection": "Host=localhost;Port=5432;Database=strikedata;Username=postgres;Password=YOURPASSWORD"
+                        "DefaultConnection": "Host=localhost;Port=5432;Database=database_name;Username=database_user;Password=user_password"
                     }
                 }
             }
             
-    ¡¡ _Reemplazar YOURPASSWORD por tu contraseña de POSTGRESQL_ !!
+    ⚠️ _Replace the database name, user, and password parameters_ 
 
-4. _Aplicar migraciones_
+4. _Apply migrations_
 
 dotnet ef database update
 
-5. _Ejecutar el proyecto_
+5. _Run the project_
 
 dotnet run
 
 ---
 
-## 🛠 Uso
+## 🛠 Usage
 
-1. Inicia la aplicación con dotnet run.
+1. Start the application with dotnet run.
 
-2. Abre el navegador en https://localhost:5001.
+2. Open your browser at https://localhost:7081.
 
-3. Explora estadísticas de equipos.
+3. The StrikeData service is responsible for retrieving and updating the data in the database.
 
-4. El servicio de StrikeData se encarga de obtener y actualizar los datos en la base de datos.
-
----
-
-## 📄 Licencia
-Este proyecto está bajo la licencia MIT.  
-© 2025 [braiss13](https://github.com/braiss13)
+4. You can now access the different sections and get the desired statistics.
