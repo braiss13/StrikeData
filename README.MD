@@ -49,11 +49,10 @@ Before running the project, make sure you have installed:
     ```bash
     git clone https://github.com/braiss13/StrikeData.git
 
-    ```bash
     cd StrikeData
 
 2. _Restore dependencies_
-
+    ```bash
     dotnet restore
 
 3. _Configure the PostgreSQL database_
@@ -75,12 +74,12 @@ Before running the project, make sure you have installed:
     ⚠️ _Replace the database name, user, and password parameters_ 
 
 4. _Apply migrations_
-
-dotnet ef database update
+    ```bash
+    dotnet ef database update
 
 5. _Run the project_
-
-dotnet run
+    ```bash
+    dotnet run
 
 ---
 
