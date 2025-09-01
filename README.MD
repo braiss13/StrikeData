@@ -46,9 +46,10 @@ Before running the project, make sure you have installed:
 ## 🔧 Environment Setup
 
 1. _Clone the repository_
-
+    ```bash
     git clone https://github.com/braiss13/StrikeData.git
 
+    ```bash
     cd StrikeData
 
 2. _Restore dependencies_
